@@ -163,6 +163,7 @@ export async function getCakeBySlug(
       hero_image_url, gallery_image_urls, is_customisable,
       flavor:flavors ( id, name, slug ),
       cake_dietary_tags ( tag ),
+      cake_events ( event_code ),
       cake_option_groups (
         option_groups (
           id, code, label, input_type, min_select, max_select,
