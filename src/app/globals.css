@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-orange: #ff8225;
+  --color-brand-chocolate: #3c2415;
+  --color-cream: #fff9f0;
+  --color-mint: #e5f6f0;
+  --color-pink: #ffecee;
+
+  --font-display: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
+  --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-3xl: 1.75rem;
+
+  --shadow-brand: 0 8px 20px -4px rgb(255 130 37 / 0.2);
+}
+
+body {
+  background-color: var(--color-cream);
+  background-image: url("/patterns/doodle-bg.svg");
+  background-repeat: repeat;
+  color: var(--color-brand-chocolate);
+  font-family: var(--font-body);
+}

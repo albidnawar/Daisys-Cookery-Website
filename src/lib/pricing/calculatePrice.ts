@@ -1,0 +1,84 @@
+import type { CakeDetail, DraftOrderSpec, OptionValue, PriceBreakdown } from "@/lib/types/domain";
+
+// Deposit % is a placeholder pending a real business number (see plan's
+// "Prerequisites" section) — every screen that shows a deposit reads it
+// from here, so it only needs updating in one place.
+const DEPOSIT_RATE = 0.3;
+
+function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
+  const byGroupAndCode = new Map<string, OptionValue>();
+  for (const group of cake.optionGroups) {
+    for (const value of group.values) {
+      byGroupAndCode.set(`${group.code}:${value.valueCode}`, value);
+    }
+  }
+
+  const codes: [string, string | string[] | undefined][] = [
+    ["tiers", spec.tiers],
+    ["filling", spec.filling],
+    ["frosting_finish", spec.frostingFinish],
+    ["extras", spec.extras],
+    ["allergen_swap", spec.allergenSwap],
+  ];
+  if (spec.sponge) codes.push(["sponge", spec.sponge]);
+  if (spec.photoPrint) codes.push(["photo_print", "photo_print"]);
+
+  const values: OptionValue[] = [];
+  for (const [group, code] of codes) {
+    if (!code) continue;
+    const list = Array.isArray(code) ? code : [code];
+    for (const c of list) {
+      const value = byGroupAndCode.get(`${group}:${c}`);
+      if (value) values.push(value);
+    }
+  }
+  return values;
+}
+
+/** The single place price math happens — called both for optimistic
+ * client-side feedback and as the server-authoritative source on every
+ * draft-order update and at checkout. Returns null when the size is
+ * "other" (>5lb, quoted by phone) since there's nothing to compute yet. */
+export function calculatePrice(
+  cake: CakeDetail,
+  spec: DraftOrderSpec,
+): PriceBreakdown | null {
+  if (!spec.sizeCode || spec.sizeCode === "other") return null;
+  const sizeLb = Number(spec.sizeCode);
+  if (!Number.isFinite(sizeLb) || sizeLb <= 0) return null;
+
+  const subtotal = cake.basePrice * sizeLb;
+  const extrasTotal = selectedValues(cake, spec).reduce(
+    (sum, v) => sum + v.priceDelta,
+    0,
+  );
+  const total = subtotal + extrasTotal;
+  const depositAmount = Math.round(total * DEPOSIT_RATE);
+
+  return {
+    subtotal,
+    extrasTotal,
+    total,
+    depositAmount,
+    balanceDue: total - depositAmount,
+  };
+}
+
+/** Folds a delivery fee into the cake+extras price from calculatePrice(),
+ * recomputing the deposit/balance off the new grand total. Used once
+ * fulfilment (pickup = free, delivery = zone fee) is known — kept separate
+ * from calculatePrice() so the Customiser's price stays cake-only until
+ * Buying Options adds delivery into the picture. */
+export function withDeliveryFee(
+  price: PriceBreakdown,
+  deliveryFee: number,
+): PriceBreakdown {
+  const total = price.subtotal + price.extrasTotal + deliveryFee;
+  const depositAmount = Math.round(total * DEPOSIT_RATE);
+  return {
+    ...price,
+    total,
+    depositAmount,
+    balanceDue: total - depositAmount,
+  };
+}
