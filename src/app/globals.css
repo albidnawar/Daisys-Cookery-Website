@@ -22,3 +22,43 @@ body {
   color: var(--color-brand-chocolate);
   font-family: var(--font-body);
 }
+
+/* Reviews marquee (src/components/home/ReviewsMarquee.tsx): the track holds
+   the review list twice back-to-back, and scrolls exactly one copy's width
+   (-50%) so the loop seams invisibly. */
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-rtl {
+  animation: marquee-rtl 45s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-rtl {
+    animation: none;
+  }
+}
+
+/* Shared text-input styling for admin forms (src/components/admin/**). */
+.input-field {
+  width: 100%;
+  border-radius: 1rem;
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--color-brand-chocolate) 10%, transparent);
+  background-color: white;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-brand-chocolate);
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--color-brand-orange);
+}

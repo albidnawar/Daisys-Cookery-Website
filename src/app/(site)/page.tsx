@@ -7,6 +7,11 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { listFeaturedCakes, listFlavors } from "@/lib/catalog/queries";
 import { FIXTURE_CAKES, FIXTURE_FLAVORS } from "@/lib/catalog/fixtures";
+import { listReviews } from "@/lib/reviews/queries";
+import { FIXTURE_REVIEWS } from "@/lib/reviews/fixtures";
+import { getActiveHeroBanner } from "@/lib/home/heroBanner";
+import { ReviewsMarquee } from "@/components/home/ReviewsMarquee";
+import { HeroBanner } from "@/components/home/HeroBanner";
 
 const VALUE_PROPS = [
   {
@@ -25,18 +30,25 @@ const VALUE_PROPS = [
 
 async function getHomeData() {
   if (!isSupabaseConfigured()) {
-    return { flavors: FIXTURE_FLAVORS, cakes: FIXTURE_CAKES };
+    return {
+      flavors: FIXTURE_FLAVORS,
+      cakes: FIXTURE_CAKES,
+      reviews: FIXTURE_REVIEWS,
+      heroBanner: null,
+    };
   }
   const supabase = await createServerSupabaseClient();
-  const [flavors, cakes] = await Promise.all([
+  const [flavors, cakes, reviews, heroBanner] = await Promise.all([
     listFlavors(supabase),
     listFeaturedCakes(supabase, 4),
+    listReviews(supabase),
+    getActiveHeroBanner(supabase),
   ]);
-  return { flavors, cakes };
+  return { flavors, cakes, reviews, heroBanner };
 }
 
 export default async function Home() {
-  const { flavors, cakes } = await getHomeData();
+  const { flavors, cakes, reviews, heroBanner } = await getHomeData();
 
   return (
     <div className="flex flex-col gap-16 pb-24">
@@ -63,14 +75,7 @@ export default async function Home() {
             Cakes over five pounds are quoted by phone — call 01814438989.
           </p>
         </div>
-        <div className="relative aspect-4/3 w-full overflow-hidden rounded-3xl border-2 border-brand-chocolate/10 bg-white shadow-brand">
-          <Image
-            src="/next.svg"
-            alt="Placeholder hero cake photograph"
-            fill
-            className="object-contain p-16 opacity-30"
-          />
-        </div>
+        <HeroBanner banner={heroBanner} />
       </section>
 
       <section className="mx-auto max-w-6xl px-4 sm:px-8">
@@ -103,7 +108,11 @@ export default async function Home() {
           {cakes.map((cake) => (
             <Card key={cake.id} className="flex flex-col gap-3 p-4">
               <Link href={`/cakes/${cake.slug}`} className="contents">
-                <div className="aspect-4/3 rounded-2xl bg-cream" />
+                <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-cream">
+                  {cake.heroImageUrl && (
+                    <Image src={cake.heroImageUrl} alt={cake.name} fill className="object-cover" />
+                  )}
+                </div>
                 {cake.flavor && <Badge variant="chocolate">{cake.flavor.name}</Badge>}
                 <p className="font-display text-xl font-medium text-brand-chocolate">
                   {cake.name}
@@ -129,6 +138,8 @@ export default async function Home() {
           </div>
         ))}
       </section>
+
+      <ReviewsMarquee reviews={reviews} />
     </div>
   );
 }

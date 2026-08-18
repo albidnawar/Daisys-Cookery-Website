@@ -202,3 +202,13 @@ where date = current_date + 1 and start_time = '18:00' and fulfilment_type = 'de
 
 update delivery_slots set booked_count = capacity
 where date = current_date + 2 and start_time = '16:00' and fulfilment_type = 'delivery';
+
+insert into reviews (customer_name, review_text, rating, sort_order, review_date) values
+  ('Nabila Rahman', 'Ordered the Black Forest for my daughter''s birthday and it was gone in minutes. Every layer was fresh and the message piping was so neat.', 5, 1, current_date - interval '3 days'),
+  ('Tanvir Ahmed', 'Best red velvet in Chattogram, hands down. I have tried a lot of bakeries around College Road and Daisy''s is the only one I keep going back to.', 5, 2, current_date - interval '9 days'),
+  ('Farzana Islam', 'We customised a two-tier cake for our Gaye Holud and they nailed the floral design from just one reference photo. Guests kept asking where we got it.', 5, 3, current_date - interval '16 days'),
+  ('Shakib Hasan', 'Delivery was right on time and the box was still cold when it arrived. The pistachio cake tastes like it is worth every taka.', 5, 4, current_date - interval '24 days'),
+  ('Ayesha Siddika', 'Ordered a last-minute eggless cake for a baby shower and they sorted it out over WhatsApp within the hour. Incredibly kind and responsive.', 5, 5, current_date - interval '32 days'),
+  ('Rafiul Karim', 'The mango cream cake was the highlight of our office anniversary party. Clean design, not too sweet, and beautifully boxed.', 4, 6, current_date - interval '45 days'),
+  ('Mim Chowdhury', 'Their Eid special box was a hit with the whole family. Will definitely be ordering again for Pahela Baishakh.', 5, 7, current_date - interval '60 days'),
+  ('Imran Hossain', 'Got a custom fondant cake for my son''s superhero-themed birthday. The kids were amazed and it tasted even better than it looked.', 5, 8, current_date - interval '75 days');

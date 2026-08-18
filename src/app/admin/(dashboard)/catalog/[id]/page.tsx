@@ -1,0 +1,27 @@
+import { notFound } from "next/navigation";
+import { CakeForm } from "@/components/admin/CakeForm";
+import { getCakeForEdit } from "@/lib/admin/catalogAdmin";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { listFlavors } from "@/lib/catalog/queries";
+
+export default async function EditCakePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [cake, flavors] = await Promise.all([
+    getCakeForEdit(id),
+    listFlavors(createServiceRoleClient()),
+  ]);
+  if (!cake) notFound();
+
+  return (
+    <div>
+      <h1 className="mb-6 font-display text-3xl font-semibold text-brand-chocolate">
+        Edit {cake.name}
+      </h1>
+      <CakeForm flavors={flavors} initial={cake} cakeId={id} />
+    </div>
+  );
+}

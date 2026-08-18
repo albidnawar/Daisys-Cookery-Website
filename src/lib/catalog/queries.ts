@@ -136,10 +136,25 @@ export async function listCakes(
   return cakes;
 }
 
+/** Cakes the admin has explicitly picked for the homepage "Shop by flavor"
+ * grid (Module 4's homepage placement controls). Falls back to the
+ * earliest-added active cakes so the homepage is never empty before an
+ * admin has curated anything. */
 export async function listFeaturedCakes(
   supabase: Client,
   limit = 4,
 ): Promise<CakeSummary[]> {
+  const { data: featured, error: featuredError } = await supabase
+    .from("cakes")
+    .select(CAKE_SUMMARY_SELECT)
+    .eq("is_active", true)
+    .eq("is_featured_home", true)
+    .order("featured_sort_order", { ascending: true })
+    .limit(limit)
+    .returns<CakeSummaryRow[]>();
+  if (featuredError) throw featuredError;
+  if (featured.length > 0) return featured.map(toCakeSummary);
+
   const { data, error } = await supabase
     .from("cakes")
     .select(CAKE_SUMMARY_SELECT)

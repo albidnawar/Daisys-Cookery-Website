@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
-import { FloatingChatWidget } from "@/components/layout/FloatingChatWidget";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -31,10 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         className="flex min-h-full flex-col font-body"
         suppressHydrationWarning
       >
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-        <FloatingChatWidget />
+        {children}
       </body>
     </html>
   );

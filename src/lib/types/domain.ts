@@ -8,6 +8,15 @@ export type Flavor = {
   slug: string;
 };
 
+export type Review = {
+  id: string;
+  customerName: string;
+  reviewText: string;
+  cakeImageUrl: string | null;
+  rating: number;
+  reviewDate: string;
+};
+
 export type CakeSummary = {
   id: string;
   slug: string;

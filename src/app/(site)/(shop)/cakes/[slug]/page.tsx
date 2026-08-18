@@ -42,7 +42,12 @@ export default async function CakeDetailPage({
       </p>
 
       <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <Gallery images={cake.galleryImageUrls} />
+        <Gallery
+          images={[
+            ...(cake.heroImageUrl ? [cake.heroImageUrl] : []),
+            ...cake.galleryImageUrls,
+          ]}
+        />
 
         <div className="flex flex-col gap-4">
           {cake.flavor && (

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -8,7 +9,11 @@ export function CakeCard({ cake }: { cake: CakeSummary }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
       <Link href={`/cakes/${cake.slug}`} className="contents">
-        <div className="aspect-4/3 rounded-2xl bg-cream" />
+        <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-cream">
+          {cake.heroImageUrl && (
+            <Image src={cake.heroImageUrl} alt={cake.name} fill className="object-cover" />
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {cake.flavor && <Badge variant="mint">{cake.flavor.name}</Badge>}
           {cake.dietaryTags.map((tag) => (
