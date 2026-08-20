@@ -5,10 +5,12 @@ export function StepSizeShapeTiers({
   groupsByCode,
   spec,
   onChange,
+  shopPhone,
 }: {
   groupsByCode: Record<string, OptionGroup>;
   spec: DraftOrderSpec;
   onChange: (patch: Partial<DraftOrderSpec>) => void;
+  shopPhone: string;
 }) {
   return (
     <div className="flex flex-col gap-8">
@@ -23,7 +25,7 @@ export function StepSizeShapeTiers({
       {spec.sizeCode === "other" && (
         <p className="border-l-2 border-brand-orange pl-3 font-body text-sm leading-relaxed text-brand-chocolate/70">
           Cakes can be provided from 1 to 200 pounds. For more than 5
-          pounds, call <strong>01814438989</strong> — or use the chat
+          pounds, call <strong>{shopPhone}</strong> — or use the chat
           button to send us the details.
         </p>
       )}

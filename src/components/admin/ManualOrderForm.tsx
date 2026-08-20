@@ -24,9 +24,11 @@ const PAYMENT_STATUSES: { value: PaymentStatus; label: string }[] = [
 export function ManualOrderForm({
   cakes,
   zones,
+  depositRate,
 }: {
   cakes: AdminCakeSummary[];
   zones: DeliveryZone[];
+  depositRate: number;
 }) {
   // Customer
   const [phone, setPhone] = useState("");
@@ -83,15 +85,15 @@ export function ManualOrderForm({
 
   const groupsByCode = Object.fromEntries((cakeDetail?.optionGroups ?? []).map((g) => [g.code, g]));
 
-  const cakePrice = cakeDetail ? calculatePrice(cakeDetail, spec) : null;
+  const cakePrice = cakeDetail ? calculatePrice(cakeDetail, spec, depositRate) : null;
   const deliveryFee = fulfilmentType === "delivery" ? deliveryZones.find((z) => z.id === zoneId)?.deliveryFee ?? 0 : 0;
   const override = priceOverride ? Number(priceOverride) : null;
   const computedTotal = override != null
     ? override + deliveryFee
     : cakePrice
-      ? withDeliveryFee(cakePrice, deliveryFee).total
+      ? withDeliveryFee(cakePrice, deliveryFee, depositRate).total
       : null;
-  const computedDeposit = depositOverride ? Number(depositOverride) : computedTotal != null ? Math.round(computedTotal * 0.3) : null;
+  const computedDeposit = depositOverride ? Number(depositOverride) : computedTotal != null ? Math.round(computedTotal * depositRate) : null;
 
   const lookupCustomer = async () => {
     if (!phone) return;
@@ -423,12 +425,12 @@ export function ManualOrderForm({
               />
             </Field>
           )}
-          <Field label="Deposit due now (defaults to 30%)">
+          <Field label={`Deposit due now (defaults to ${Math.round(depositRate * 100)}%)`}>
             <input
               type="number"
               value={depositOverride}
               onChange={(e) => setDepositOverride(e.target.value)}
-              placeholder={computedTotal != null ? String(Math.round(computedTotal * 0.3)) : ""}
+              placeholder={computedTotal != null ? String(Math.round(computedTotal * depositRate)) : ""}
               className="input-field"
             />
           </Field>

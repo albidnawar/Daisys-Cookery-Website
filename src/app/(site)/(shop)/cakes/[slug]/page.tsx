@@ -8,6 +8,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { getCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
+import { getStoreSettings } from "@/lib/settings/store";
 
 export default async function CakeDetailPage({
   params,
@@ -21,6 +22,8 @@ export default async function CakeDetailPage({
     : getFixtureCakeDetail(slug);
 
   if (!cake) notFound();
+
+  const settings = await getStoreSettings();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
@@ -69,6 +72,8 @@ export default async function CakeDetailPage({
             slug={cake.slug}
             name={cake.name}
             basePrice={cake.basePrice}
+            depositRate={settings.depositRate}
+            shopPhone={settings.shopPhone}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { calculatePrice } from "@/lib/pricing/calculatePrice";
+import { getStoreSettings } from "@/lib/settings/store";
 import { getCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
 import { readJson, withFileLock, writeJson } from "@/lib/devStore/fileStore";
@@ -165,7 +166,7 @@ export async function updateDraftOrderSpec(
 
   const spec = { ...existing.spec, ...specPatch };
   const cake = existing.cakeSlug ? await resolveCake(existing.cakeSlug) : null;
-  const computedPrice = cake ? calculatePrice(cake, spec) : null;
+  const computedPrice = cake ? calculatePrice(cake, spec, (await getStoreSettings()).depositRate) : null;
 
   const updated: DraftOrder = {
     ...existing,

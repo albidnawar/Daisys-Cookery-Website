@@ -19,10 +19,12 @@ export function CustomQuoteForm({
   initial,
   quoteId,
   contactPhone,
+  depositRate,
 }: {
   initial: CustomQuoteInput | null;
   quoteId: string | null;
   contactPhone: string | null;
+  depositRate: number;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<CustomQuoteInput>(
@@ -215,6 +217,7 @@ export function CustomQuoteForm({
           quotedPrice={values.quotedPrice}
           contactPhone={contactPhone ?? values.contactPhone}
           cakeTitle={values.cakeTitle}
+          depositRate={depositRate}
         />
       )}
     </div>

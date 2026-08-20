@@ -18,7 +18,15 @@ const STEP_TITLES = [
   "Message & extras",
 ];
 
-export function WizardShell({ cake }: { cake: CakeDetail }) {
+export function WizardShell({
+  cake,
+  depositRate,
+  shopPhone,
+}: {
+  cake: CakeDetail;
+  depositRate: number;
+  shopPhone: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -35,7 +43,7 @@ export function WizardShell({ cake }: { cake: CakeDetail }) {
   // lib/pricing/calculatePrice.ts), so computing it here is already
   // "authoritative" for any given spec — no need to round-trip for a
   // number that would come back identical.
-  const price = calculatePrice(cake, spec);
+  const price = calculatePrice(cake, spec, depositRate);
   const patchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -96,7 +104,7 @@ export function WizardShell({ cake }: { cake: CakeDetail }) {
         </div>
 
         {step === 1 && (
-          <StepSizeShapeTiers groupsByCode={groupsByCode} spec={spec} onChange={patch} />
+          <StepSizeShapeTiers groupsByCode={groupsByCode} spec={spec} onChange={patch} shopPhone={shopPhone} />
         )}
         {step === 2 && (
           <StepSponge groupsByCode={groupsByCode} spec={spec} onChange={patch} />

@@ -26,15 +26,16 @@ const PAYMENT_METHOD_LABELS: Record<Order["paymentMethod"], string> = {
 export function OrderSummaryCard({
   order,
   groupsByCode,
+  shopAddress,
+  shopPhone,
 }: {
   order: Order;
   groupsByCode: Record<string, OptionGroup>;
+  shopAddress: string;
+  shopPhone: string;
 }) {
   const collectOrDeliver = order.fulfilmentType === "pickup" ? "Collect" : "Delivered";
-  const fromOrTo =
-    order.fulfilmentType === "pickup"
-      ? "Flat D3, House - 176, Sanmar Santino, Devpahar, College Road, Chattogram"
-      : (order.zoneName ?? "your address");
+  const fromOrTo = order.fulfilmentType === "pickup" ? shopAddress : (order.zoneName ?? "your address");
 
   return (
     <div className="flex flex-col gap-4">
@@ -80,7 +81,7 @@ export function OrderSummaryCard({
         />
       </div>
       <p className="font-body text-xs text-brand-chocolate/60">
-        Change something? Call the shop on 01814438989 up to 24 hours
+        Change something? Call the shop on {shopPhone} up to 24 hours
         before your slot.
       </p>
     </div>

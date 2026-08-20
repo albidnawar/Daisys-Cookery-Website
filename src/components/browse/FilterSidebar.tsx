@@ -20,10 +20,12 @@ export function FilterSidebar({
   flavors,
   value,
   onChange,
+  shopPhone,
 }: {
   flavors: Flavor[];
   value: FilterValue;
   onChange: (next: FilterValue) => void;
+  shopPhone: string;
 }) {
   const toggleDietary = (tag: DietaryTag) => {
     const has = value.dietary.includes(tag);
@@ -147,7 +149,7 @@ export function FilterSidebar({
         {value.sizeLb === "other" && (
           <p className="mt-3 border-l-2 border-brand-orange pl-3 font-body text-xs leading-relaxed text-brand-chocolate/70">
             Cakes can be provided from 1 to 200 pounds. For more than 5
-            pounds, call <strong>01814438989</strong> or use the chat button
+            pounds, call <strong>{shopPhone}</strong> or use the chat button
             on any cake.
           </p>
         )}

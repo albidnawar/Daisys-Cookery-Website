@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { getCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
+import { getStoreSettings } from "@/lib/settings/store";
 
 // /customise/new is the from-scratch "Build your cake" entry point (no
 // starting cake picked yet) — it uses this cake purely for base pricing
@@ -25,6 +26,8 @@ export default async function CustomisePage({
 
   if (!cake || !cake.isCustomisable) notFound();
 
+  const settings = await getStoreSettings();
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="px-4 pt-8 sm:px-8">
@@ -32,7 +35,7 @@ export default async function CustomisePage({
           {slug === "new" ? "Build your cake" : `Customise ${cake.name}`}
         </p>
       </div>
-      <WizardShell cake={cake} />
+      <WizardShell cake={cake} depositRate={settings.depositRate} shopPhone={settings.shopPhone} />
     </div>
   );
 }

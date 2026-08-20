@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BuyingOptionsClient } from "@/components/buying-options/BuyingOptionsClient";
 import { getDraftOrder } from "@/lib/draftOrders/store";
 import { listZones } from "@/lib/slots/store";
+import { getStoreSettings } from "@/lib/settings/store";
 
 export default async function BuyingOptionsPage({
   searchParams,
@@ -31,7 +32,7 @@ export default async function BuyingOptionsPage({
     );
   }
 
-  const zones = await listZones();
+  const [zones, settings] = await Promise.all([listZones(), getStoreSettings()]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
@@ -45,7 +46,13 @@ export default async function BuyingOptionsPage({
         Everything is finished on the morning of your slot, so the date you
         pick is the date we bake.
       </p>
-      <BuyingOptionsClient draft={draft} zones={zones} />
+      <BuyingOptionsClient
+        draft={draft}
+        zones={zones}
+        depositRate={settings.depositRate}
+        shopAddress={settings.shopAddress}
+        shopHours={settings.shopHours}
+      />
     </div>
   );
 }

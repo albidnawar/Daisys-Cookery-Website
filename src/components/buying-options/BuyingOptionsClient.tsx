@@ -12,9 +12,15 @@ import type { DeliveryZone, DraftOrder, SlotAvailability } from "@/lib/types/dom
 export function BuyingOptionsClient({
   draft,
   zones,
+  depositRate,
+  shopAddress,
+  shopHours,
 }: {
   draft: DraftOrder;
   zones: DeliveryZone[];
+  depositRate: number;
+  shopAddress: string;
+  shopHours: string;
 }) {
   const pickupZone = zones.find((z) => z.distanceBand === "pickup") ?? null;
   const deliveryZones = zones.filter((z) => z.distanceBand !== "pickup");
@@ -62,7 +68,12 @@ export function BuyingOptionsClient({
       }),
     });
     if (res.status === 409) {
-      setError("That slot just filled up — pick another one.");
+      const data = await res.json().catch(() => ({}));
+      const messages: Record<string, string> = {
+        date_blocked: "That date isn't available for orders — please pick another date.",
+        daily_cap_reached: "We've reached our production limit for that date — please pick another date.",
+      };
+      setError(messages[data.error] ?? "That slot just filled up — pick another one.");
       const params = new URLSearchParams({ date, fulfilmentType: fulfilmentType!, zoneId: effectiveZoneId! });
       const refreshed = await fetch(`/api/slots/availability?${params}`).then((r) => r.json());
       setSlots(refreshed.slots ?? []);
@@ -80,7 +91,7 @@ export function BuyingOptionsClient({
       ? deliveryZones.find((z) => z.id === zoneId)?.deliveryFee ?? 0
       : 0;
   const price = draft.computedPrice
-    ? withDeliveryFee(draft.computedPrice, deliveryFee)
+    ? withDeliveryFee(draft.computedPrice, deliveryFee, depositRate)
     : null;
   const canContinue = Boolean(fulfilmentType && effectiveZoneId && selectedSlotId);
 
@@ -98,6 +109,8 @@ export function BuyingOptionsClient({
           setZoneId(z);
           setSelectedSlotId(null);
         }}
+        shopAddress={shopAddress}
+        shopHours={shopHours}
       />
 
       {fulfilmentType && effectiveZoneId && (
@@ -134,7 +147,7 @@ export function BuyingOptionsClient({
                 {error && <p className="mt-2 font-body text-xs text-red-600">{error}</p>}
               </div>
               <hr className="border-brand-chocolate/10" />
-              <DepositSummary price={price} draftId={draft.id} canContinue={canContinue} />
+              <DepositSummary price={price} draftId={draft.id} canContinue={canContinue} depositRate={depositRate} />
             </div>
           </div>
         </>

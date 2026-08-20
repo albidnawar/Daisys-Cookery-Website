@@ -177,6 +177,14 @@ export async function listAvailability(
   if (isSupabaseConfigured()) {
     const supabase = await createServiceRoleClient();
     await supabase.rpc("release_expired_holds");
+
+    const { data: dateSetting } = await supabase
+      .from("date_capacity_settings")
+      .select("is_blocked")
+      .eq("date", date)
+      .maybeSingle();
+    if (dateSetting?.is_blocked) return [];
+
     let query = supabase
       .from("delivery_slots")
       .select("id, date, start_time, end_time, fulfilment_type, zone_id, capacity, booked_count")
@@ -242,6 +250,8 @@ export async function holdSlot(
       .single();
     if (error) {
       if (error.message?.includes("slot_full")) throw new SlotFullError();
+      if (error.message?.includes("date_blocked")) throw new DateBlockedError();
+      if (error.message?.includes("daily_cap_reached")) throw new DailyCapReachedError();
       throw error;
     }
     const row = data as { hold_id: string; expires_at: string };
@@ -317,6 +327,18 @@ export async function getSlotLabel(slotId: string): Promise<string | null> {
 export class SlotFullError extends Error {
   constructor() {
     super("slot_full");
+  }
+}
+
+export class DateBlockedError extends Error {
+  constructor() {
+    super("date_blocked");
+  }
+}
+
+export class DailyCapReachedError extends Error {
+  constructor() {
+    super("daily_cap_reached");
   }
 }
 

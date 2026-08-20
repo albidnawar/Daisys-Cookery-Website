@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { createAdminHoldDraft, markDraftOrderConverted, resolveCake } from "@/lib/draftOrders/store";
 import { convertHold, getSlotLabel, holdSlot, listZones, SlotFullError } from "@/lib/slots/store";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import { getStoreSettings } from "@/lib/settings/store";
 import { generateOrderNumber } from "@/lib/orders/store";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
 import type { CakeSnapshot, DraftOrderSpec, Order, PaymentMethod, PaymentStatus } from "@/lib/types/domain";
@@ -80,19 +81,20 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
   const zone = zones.find((z) => z.id === input.zoneId);
   if (!zone) throw new ManualOrderError("Unknown delivery zone");
   const deliveryFee = input.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
+  const { depositRate } = await getStoreSettings();
 
   if (input.cakeSlug) {
     const cake = await resolveCake(input.cakeSlug);
     if (!cake) throw new ManualOrderError("Unknown cake");
     cakeName = cake.name;
     cakeId = cake.id;
-    const cakePrice = calculatePrice(cake, input.spec);
+    const cakePrice = calculatePrice(cake, input.spec, depositRate);
     if (input.priceOverride != null) {
       subtotal = input.priceOverride;
       extrasTotal = 0;
       total = input.priceOverride + deliveryFee;
     } else if (cakePrice) {
-      const withFee = withDeliveryFee(cakePrice, deliveryFee);
+      const withFee = withDeliveryFee(cakePrice, deliveryFee, depositRate);
       subtotal = withFee.subtotal;
       extrasTotal = withFee.extrasTotal;
       total = withFee.total;
@@ -109,7 +111,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     total = input.priceOverride + deliveryFee;
   }
 
-  const depositAmount = input.depositOverride ?? Math.round(total * 0.3);
+  const depositAmount = input.depositOverride ?? Math.round(total * depositRate);
   const balanceDue = total - depositAmount;
 
   // Manual orders draw from the exact same slot capacity as web orders —

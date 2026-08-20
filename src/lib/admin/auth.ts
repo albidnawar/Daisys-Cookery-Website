@@ -46,3 +46,13 @@ export class AdminAuthError extends Error {
     super("Not authorized");
   }
 }
+
+/** Store Settings' financial numbers and Admin Accounts (who else can log
+ * in) are gated to owners only — any staff account being able to add/
+ * remove other admins or change the deposit rate would be a real gap, not
+ * just a nice-to-have restriction. */
+export async function requireOwner(): Promise<AdminUser> {
+  const admin = await requireAdmin();
+  if (admin.role !== "owner") throw new AdminAuthError();
+  return admin;
+}

@@ -7,7 +7,7 @@ const PAYMENT_METHODS: PaymentMethod[] = ["bkash", "nagad", "card", "cash_on_col
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { draftId, contactName, contactPhone, kitchenNote, paymentMethod } = body;
+  const { draftId, contactName, contactPhone, kitchenNote, paymentMethod, manualTrxId } = body;
 
   if (!draftId || !contactName || !contactPhone) {
     return NextResponse.json(
@@ -18,6 +18,12 @@ export async function POST(request: NextRequest) {
   if (!PAYMENT_METHODS.includes(paymentMethod)) {
     return NextResponse.json({ error: "Invalid paymentMethod" }, { status: 400 });
   }
+  if ((paymentMethod === "bkash" || paymentMethod === "nagad") && !manualTrxId) {
+    return NextResponse.json(
+      { error: "manualTrxId is required for bKash/Nagad — there's no merchant gateway to verify it any other way" },
+      { status: 400 },
+    );
+  }
 
   try {
     const customer = await getCurrentCustomer();
@@ -27,6 +33,7 @@ export async function POST(request: NextRequest) {
       contactPhone,
       kitchenNote,
       paymentMethod,
+      manualTrxId: manualTrxId ?? null,
       customerId: customer?.id ?? null,
     });
     return NextResponse.json({ order }, { status: 201 });

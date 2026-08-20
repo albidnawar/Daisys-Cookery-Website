@@ -1,10 +1,9 @@
 import { Card } from "@/components/ui/Card";
+import { getStoreSettings } from "@/lib/settings/store";
 
-const HOURS = [
-  ["Every day", "9:00 am – 9:00 pm"],
-];
+export default async function AboutPage() {
+  const settings = await getStoreSettings();
 
-export default function AboutPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-14 sm:px-8">
       <p className="mb-3 font-body text-xs font-bold uppercase tracking-widest text-brand-orange">
@@ -25,9 +24,7 @@ export default function AboutPage() {
             Visit us
           </h2>
           <p className="font-body text-sm leading-relaxed text-brand-chocolate/75">
-            Flat D3, House - 176, Sanmar Santino
-            <br />
-            Devpahar, College Road, Chattogram
+            {settings.shopAddress}
           </p>
         </Card>
         <Card className="flex flex-col gap-2 p-6">
@@ -35,7 +32,7 @@ export default function AboutPage() {
             Talk to us
           </h2>
           <p className="font-body text-sm leading-relaxed text-brand-chocolate/75">
-            Call 01814438989, or use the chat button in the corner of any
+            Call {settings.shopPhone}, or use the chat button in the corner of any
             page for WhatsApp/Messenger.
           </p>
         </Card>
@@ -43,14 +40,7 @@ export default function AboutPage() {
           <h2 className="mb-3 font-display text-xl font-medium text-brand-chocolate">
             Opening hours
           </h2>
-          <dl className="flex flex-col gap-1 font-body text-sm text-brand-chocolate/75">
-            {HOURS.map(([day, time]) => (
-              <div key={day} className="flex justify-between">
-                <dt>{day}</dt>
-                <dd>{time}</dd>
-              </div>
-            ))}
-          </dl>
+          <p className="font-body text-sm text-brand-chocolate/75">{settings.shopHours}</p>
         </Card>
       </div>
     </div>

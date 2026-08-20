@@ -12,6 +12,7 @@ import { FIXTURE_REVIEWS } from "@/lib/reviews/fixtures";
 import { getActiveHeroBanner } from "@/lib/home/heroBanner";
 import { ReviewsMarquee } from "@/components/home/ReviewsMarquee";
 import { HeroBanner } from "@/components/home/HeroBanner";
+import { getStoreSettings } from "@/lib/settings/store";
 
 const VALUE_PROPS = [
   {
@@ -48,7 +49,10 @@ async function getHomeData() {
 }
 
 export default async function Home() {
-  const { flavors, cakes, reviews, heroBanner } = await getHomeData();
+  const [{ flavors, cakes, reviews, heroBanner }, settings] = await Promise.all([
+    getHomeData(),
+    getStoreSettings(),
+  ]);
 
   return (
     <div className="flex flex-col gap-16 pb-24">
@@ -72,7 +76,7 @@ export default async function Home() {
             </LinkButton>
           </div>
           <p className="font-body text-sm text-brand-chocolate/60">
-            Cakes over five pounds are quoted by phone — call 01814438989.
+            Cakes over five pounds are quoted by phone — call {settings.shopPhone}.
           </p>
         </div>
         <HeroBanner banner={heroBanner} />

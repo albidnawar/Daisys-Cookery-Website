@@ -5,6 +5,7 @@ import { readJson, withFileLock, writeJson } from "@/lib/devStore/fileStore";
 import { getDraftOrder, markDraftOrderConverted, resolveCake } from "@/lib/draftOrders/store";
 import { convertHold, formatSlotLabel, getSlotLabel, listZones } from "@/lib/slots/store";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import { getStoreSettings } from "@/lib/settings/store";
 import { getPaymentProvider } from "@/lib/payments";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
 import type { Order, PaymentMethod } from "@/lib/types/domain";
@@ -35,6 +36,7 @@ export type CreateOrderInput = {
   contactPhone: string;
   kitchenNote?: string;
   paymentMethod: PaymentMethod;
+  manualTrxId?: string | null;
   customerId?: string | null;
 };
 
@@ -61,19 +63,20 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const zone = zones.find((z) => z.id === draft.zoneId);
   if (!zone) throw new OrderValidationError("Unknown delivery zone");
   const deliveryFee = draft.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
+  const { depositRate } = await getStoreSettings();
 
   let price;
   let cakeSnapshot;
   if (isCustomQuote) {
     if (!draft.computedPrice) throw new OrderValidationError("This quote has no price yet");
-    price = withDeliveryFee(draft.computedPrice, deliveryFee);
+    price = withDeliveryFee(draft.computedPrice, deliveryFee, depositRate);
     cakeSnapshot = { name: draft.customCakeName!, slug: null, spec: draft.spec };
   } else {
     const cake = await resolveCake(draft.cakeSlug!);
     if (!cake) throw new OrderValidationError("Unknown cake");
-    const cakePrice = calculatePrice(cake, draft.spec);
+    const cakePrice = calculatePrice(cake, draft.spec, depositRate);
     if (!cakePrice) throw new OrderValidationError("Cake size must be set before checkout");
-    price = withDeliveryFee(cakePrice, deliveryFee);
+    price = withDeliveryFee(cakePrice, deliveryFee, depositRate);
     cakeSnapshot = { name: cake.name, slug: cake.slug, spec: draft.spec };
   }
 
@@ -103,14 +106,17 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     contactPhone: input.contactPhone,
     kitchenNote: input.kitchenNote ?? null,
     orderSource: "web",
-    manualTrxId: null,
+    manualTrxId: input.manualTrxId ?? null,
     createdAt: new Date().toISOString(),
   };
 
-  // Cash on collection needs no payment gateway step at all; every other
-  // method goes through the (currently mocked) provider so the seam is
-  // exercised the same way a real bKash/Nagad integration would use it.
-  if (input.paymentMethod !== "cash_on_collection") {
+  // bKash/Nagad have no merchant gateway — the customer sends money to a
+  // personal number and self-reports the TrxID, which stays "pending"
+  // until an admin manually matches it against their own app (see the
+  // Payments ledger). Cash on collection needs no payment step at all.
+  // Card is the only method still exercised through the mock provider
+  // seam, standing in for a future real gateway.
+  if (input.paymentMethod === "card") {
     const intent = await getPaymentProvider().createIntent({
       orderId: order.id,
       amount: order.depositAmount,
@@ -143,6 +149,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       contact_name: order.contactName,
       contact_phone: order.contactPhone,
       kitchen_note: order.kitchenNote,
+      manual_trx_id: order.manualTrxId,
       created_at: order.createdAt,
     });
     if (orderError) throw orderError;

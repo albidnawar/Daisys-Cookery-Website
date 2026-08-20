@@ -23,9 +23,11 @@ function filterFromParams(params: URLSearchParams): FilterValue {
 export function BrowsePageClient({
   flavors,
   initialCakes,
+  shopPhone,
 }: {
   flavors: Flavor[];
   initialCakes: CakeSummary[];
+  shopPhone: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,7 +66,7 @@ export function BrowsePageClient({
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-8 md:grid-cols-[240px_1fr]">
-      <FilterSidebar flavors={flavors} value={filters} onChange={setFilters} />
+      <FilterSidebar flavors={flavors} value={filters} onChange={setFilters} shopPhone={shopPhone} />
 
       <div>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

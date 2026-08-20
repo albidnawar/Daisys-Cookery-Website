@@ -5,16 +5,18 @@ export function DepositSummary({
   price,
   draftId,
   canContinue,
+  depositRate,
 }: {
   price: PriceBreakdown | null;
   draftId: string;
   canContinue: boolean;
+  depositRate: number;
 }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="font-body text-sm leading-relaxed text-brand-chocolate/75">
-        A 30% deposit holds your date and pays for the ingredients we buy
-        in for you. The balance is due at collection or on delivery.
+        A {Math.round(depositRate * 100)}% deposit holds your date and pays for the ingredients we
+        buy in for you. The balance is due at collection or on delivery.
       </p>
       <div className="flex items-baseline justify-between border-t border-brand-chocolate/10 pt-3">
         <span className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">

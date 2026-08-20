@@ -2,6 +2,7 @@ import Link from "next/link";
 import { OrderSummaryCard } from "@/components/confirmation/OrderSummaryCard";
 import { getOrder } from "@/lib/orders/store";
 import { resolveCake } from "@/lib/draftOrders/store";
+import { getStoreSettings } from "@/lib/settings/store";
 
 export default async function ConfirmationPage({
   params,
@@ -24,12 +25,20 @@ export default async function ConfirmationPage({
     );
   }
 
-  const cake = order.cakeSnapshot.slug ? await resolveCake(order.cakeSnapshot.slug) : null;
+  const [cake, settings] = await Promise.all([
+    order.cakeSnapshot.slug ? resolveCake(order.cakeSnapshot.slug) : null,
+    getStoreSettings(),
+  ]);
   const groupsByCode = Object.fromEntries((cake?.optionGroups ?? []).map((g) => [g.code, g]));
 
   return (
     <div className="mx-auto grid max-w-6xl gap-16 px-4 py-14 sm:px-8 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
-      <OrderSummaryCard order={order} groupsByCode={groupsByCode} />
+      <OrderSummaryCard
+        order={order}
+        groupsByCode={groupsByCode}
+        shopAddress={settings.shopAddress}
+        shopPhone={settings.shopPhone}
+      />
       <div className="aspect-4/3 w-full rounded-3xl border-2 border-brand-chocolate/10 bg-white" />
     </div>
   );

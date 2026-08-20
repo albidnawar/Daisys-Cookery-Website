@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export function SiteFooter() {
+export function SiteFooter({ shopAddress, shopPhone }: { shopAddress: string; shopPhone: string }) {
   return (
     <footer className="border-t border-brand-chocolate/10 bg-white/60">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
@@ -12,7 +12,7 @@ export function SiteFooter() {
               Daisy&apos;s Cookery
             </p>
             <p className="mt-1 font-body text-sm text-brand-chocolate/70">
-              Baked to order &middot; Sanmar Santino, Devpahar, College Road, Chattogram &middot; 01814438989
+              Baked to order &middot; {shopAddress} &middot; {shopPhone}
             </p>
           </div>
         </div>

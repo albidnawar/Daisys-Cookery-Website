@@ -3,10 +3,10 @@
 import { useState } from "react";
 import type { CustomQuoteStatus } from "@/lib/types/domain";
 
-function buildQuoteMessage(cakeTitle: string, price: number, url: string): string {
+function buildQuoteMessage(cakeTitle: string, price: number, url: string, depositRate: number): string {
   return [
     `Hi! Here's your quote from Daisy's Cookery for: ${cakeTitle}`,
-    `Price: ৳${price.toLocaleString("en-BD")} (30% deposit to book)`,
+    `Price: ৳${price.toLocaleString("en-BD")} (${Math.round(depositRate * 100)}% deposit to book)`,
     `Book it here: ${url}`,
   ].join("\n");
 }
@@ -17,12 +17,14 @@ export function QuoteLinkPanel({
   quotedPrice,
   contactPhone,
   cakeTitle,
+  depositRate,
 }: {
   quoteId: string;
   status: CustomQuoteStatus;
   quotedPrice: number | null;
   contactPhone: string;
   cakeTitle: string;
+  depositRate: number;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -36,7 +38,7 @@ export function QuoteLinkPanel({
   }
 
   const quoteUrl = `${window.location.origin}/quote/${quoteId}`;
-  const message = buildQuoteMessage(cakeTitle || "your custom cake", quotedPrice, quoteUrl);
+  const message = buildQuoteMessage(cakeTitle || "your custom cake", quotedPrice, quoteUrl, depositRate);
   const waLink = `https://wa.me/${contactPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
 
   return (

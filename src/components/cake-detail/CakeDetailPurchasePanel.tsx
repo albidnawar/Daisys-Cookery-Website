@@ -10,10 +10,14 @@ export function CakeDetailPurchasePanel({
   slug,
   name,
   basePrice,
+  depositRate,
+  shopPhone,
 }: {
   slug: string;
   name: string;
   basePrice: number;
+  depositRate: number;
+  shopPhone: string;
 }) {
   const router = useRouter();
   const [size, setSize] = useState("1");
@@ -31,7 +35,7 @@ export function CakeDetailPurchasePanel({
         </span>
       </div>
 
-      <SizeSelector value={size} onChange={setSize} />
+      <SizeSelector value={size} onChange={setSize} shopPhone={shopPhone} />
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <LinkButton
@@ -56,8 +60,8 @@ export function CakeDetailPurchasePanel({
       />
 
       <p className="font-body text-xs text-brand-chocolate/60">
-        Over 5 pounds we quote by phone — 01814438989. A 30% deposit holds
-        the date.
+        Over 5 pounds we quote by phone — {shopPhone}. A {Math.round(depositRate * 100)}% deposit
+        holds the date.
       </p>
     </div>
   );

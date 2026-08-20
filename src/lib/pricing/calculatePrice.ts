@@ -1,10 +1,5 @@
 import type { CakeDetail, DraftOrderSpec, OptionValue, PriceBreakdown } from "@/lib/types/domain";
 
-// Deposit % is a placeholder pending a real business number (see plan's
-// "Prerequisites" section) — every screen that shows a deposit reads it
-// from here, so it only needs updating in one place.
-const DEPOSIT_RATE = 0.3;
-
 function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
   const byGroupAndCode = new Map<string, OptionValue>();
   for (const group of cake.optionGroups) {
@@ -38,10 +33,14 @@ function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
 /** The single place price math happens — called both for optimistic
  * client-side feedback and as the server-authoritative source on every
  * draft-order update and at checkout. Returns null when the size is
- * "other" (>5lb, quoted by phone) since there's nothing to compute yet. */
+ * "other" (>5lb, quoted by phone) since there's nothing to compute yet.
+ * depositRate is always the caller's responsibility to supply (from
+ * getStoreSettings() — see lib/settings/store.ts) rather than a module
+ * constant, since it's now an admin-editable business number. */
 export function calculatePrice(
   cake: CakeDetail,
   spec: DraftOrderSpec,
+  depositRate: number,
 ): PriceBreakdown | null {
   if (!spec.sizeCode || spec.sizeCode === "other") return null;
   const sizeLb = Number(spec.sizeCode);
@@ -53,7 +52,7 @@ export function calculatePrice(
     0,
   );
   const total = subtotal + extrasTotal;
-  const depositAmount = Math.round(total * DEPOSIT_RATE);
+  const depositAmount = Math.round(total * depositRate);
 
   return {
     subtotal,
@@ -69,8 +68,8 @@ export function calculatePrice(
  * Quote Engine). Returns the same pre-delivery-fee shape calculatePrice()
  * does, so withDeliveryFee() and everything downstream treats a quoted
  * price exactly like a catalog one. */
-export function fixedPrice(amount: number): PriceBreakdown {
-  const depositAmount = Math.round(amount * DEPOSIT_RATE);
+export function fixedPrice(amount: number, depositRate: number): PriceBreakdown {
+  const depositAmount = Math.round(amount * depositRate);
   return {
     subtotal: amount,
     extrasTotal: 0,
@@ -88,9 +87,10 @@ export function fixedPrice(amount: number): PriceBreakdown {
 export function withDeliveryFee(
   price: PriceBreakdown,
   deliveryFee: number,
+  depositRate: number,
 ): PriceBreakdown {
   const total = price.subtotal + price.extrasTotal + deliveryFee;
-  const depositAmount = Math.round(total * DEPOSIT_RATE);
+  const depositAmount = Math.round(total * depositRate);
   return {
     ...price,
     total,

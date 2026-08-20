@@ -11,9 +11,9 @@ export default async function AdminDashboardLayout({
   if (!admin) redirect("/admin/login");
 
   return (
-    <div className="flex min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream lg:flex">
       <AdminSidebar displayName={admin.displayName} />
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );
 }

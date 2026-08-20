@@ -3,9 +3,11 @@ const SIZES = ["1", "2", "3", "4", "5"] as const;
 export function SizeSelector({
   value,
   onChange,
+  shopPhone,
 }: {
   value: string;
   onChange: (next: string) => void;
+  shopPhone: string;
 }) {
   return (
     <div>
@@ -42,7 +44,7 @@ export function SizeSelector({
       {value === "other" && (
         <p className="mt-3 border-l-2 border-brand-orange pl-3 font-body text-xs leading-relaxed text-brand-chocolate/70">
           Cakes over five pounds are quoted by phone — call{" "}
-          <strong>01814438989</strong>, or use the chat button below.
+          <strong>{shopPhone}</strong>, or use the chat button below.
         </p>
       )}
     </div>

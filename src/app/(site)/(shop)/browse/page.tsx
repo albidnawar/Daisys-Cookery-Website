@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { applyCatalogFilters, listCakes, listFlavors } from "@/lib/catalog/queries";
 import { FIXTURE_CAKES, FIXTURE_FLAVORS } from "@/lib/catalog/fixtures";
 import { EVENT_OPTIONS, type EventCode } from "@/lib/catalog/events";
+import { getStoreSettings } from "@/lib/settings/store";
 import type { CatalogFilters, DietaryTag } from "@/lib/types/domain";
 
 const EVENT_CODES: EventCode[] = EVENT_OPTIONS.map((o) => o.code);
@@ -23,19 +24,22 @@ export default async function BrowsePage({
     event: EVENT_CODES.find((code) => code === params.event),
   };
 
-  const { flavors, cakes } = isSupabaseConfigured()
-    ? await (async () => {
-        const supabase = await createServerSupabaseClient();
-        const [flavors, cakes] = await Promise.all([
-          listFlavors(supabase),
-          listCakes(supabase, filters),
-        ]);
-        return { flavors, cakes };
-      })()
-    : {
-        flavors: FIXTURE_FLAVORS,
-        cakes: applyCatalogFilters(FIXTURE_CAKES, filters),
-      };
+  const [{ flavors, cakes }, settings] = await Promise.all([
+    isSupabaseConfigured()
+      ? (async () => {
+          const supabase = await createServerSupabaseClient();
+          const [flavors, cakes] = await Promise.all([
+            listFlavors(supabase),
+            listCakes(supabase, filters),
+          ]);
+          return { flavors, cakes };
+        })()
+      : Promise.resolve({
+          flavors: FIXTURE_FLAVORS,
+          cakes: applyCatalogFilters(FIXTURE_CAKES, filters),
+        }),
+    getStoreSettings(),
+  ]);
 
-  return <BrowsePageClient flavors={flavors} initialCakes={cakes} />;
+  return <BrowsePageClient flavors={flavors} initialCakes={cakes} shopPhone={settings.shopPhone} />;
 }

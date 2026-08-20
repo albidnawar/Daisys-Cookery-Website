@@ -7,12 +7,16 @@ export function FulfilmentTypeCards({
   deliveryZones,
   zoneId,
   onZoneSelect,
+  shopAddress,
+  shopHours,
 }: {
   fulfilmentType: "pickup" | "delivery" | null;
   onSelect: (type: "pickup" | "delivery") => void;
   deliveryZones: DeliveryZone[];
   zoneId: string | null;
   onZoneSelect: (zoneId: string) => void;
+  shopAddress: string;
+  shopHours: string;
 }) {
   return (
     <div className="grid gap-6 sm:grid-cols-2">
@@ -27,9 +31,7 @@ export function FulfilmentTypeCards({
           Collect from the shop
         </h3>
         <p className="mt-2 font-body text-sm leading-relaxed text-brand-chocolate/75">
-          Flat D3, House - 176, Sanmar Santino, Devpahar, College Road,
-          Chattogram. Open 9am to 9pm, seven days. Boxed cold and ribboned
-          while you wait.
+          {shopAddress}. {shopHours}. Boxed cold and ribboned while you wait.
         </p>
         <div className="mt-4 flex items-baseline justify-between">
           <span className="font-display text-xl text-brand-chocolate">Free</span>

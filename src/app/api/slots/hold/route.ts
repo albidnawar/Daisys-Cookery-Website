@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { holdSlot, SlotFullError } from "@/lib/slots/store";
+import { DailyCapReachedError, DateBlockedError, holdSlot, SlotFullError } from "@/lib/slots/store";
 import { updateDraftOrderFulfilment } from "@/lib/draftOrders/store";
 
 export async function POST(request: NextRequest) {
@@ -24,6 +24,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof SlotFullError) {
       return NextResponse.json({ error: "slot_full" }, { status: 409 });
+    }
+    if (error instanceof DateBlockedError) {
+      return NextResponse.json({ error: "date_blocked" }, { status: 409 });
+    }
+    if (error instanceof DailyCapReachedError) {
+      return NextResponse.json({ error: "daily_cap_reached" }, { status: 409 });
     }
     return NextResponse.json({ error: "Unable to hold slot" }, { status: 400 });
   }

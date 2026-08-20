@@ -55,7 +55,32 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
 
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {
   const supabase = createServiceRoleClient();
-  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+  const update: { status: OrderStatus; payment_status?: "paid_in_full" } = { status };
+
+  // Every order — cash-on-collection or a bKash/Nagad deposit — has its
+  // remaining balance settled in cash at the door under the 30%-deposit
+  // model, so handing over the cake is also the moment the rest gets
+  // paid. Auto-settle it here rather than relying on the admin to
+  // separately remember to do it in the Payments ledger; they can still
+  // override it there afterward if something unusual happened.
+  if (status === "collected" || status === "delivered") {
+    const { data: existing } = await supabase.from("orders").select("payment_status").eq("id", id).single();
+    if (existing && existing.payment_status !== "paid_in_full" && existing.payment_status !== "refunded") {
+      update.payment_status = "paid_in_full";
+    }
+  }
+
+  // Cancelling gives the slot's capacity back — otherwise a cancelled
+  // order keeps looking like a real booking forever, inflating "booked
+  // today" and eventually blocking a date's daily cap for no reason.
+  if (status === "cancelled") {
+    const { data: existing } = await supabase.from("orders").select("slot_id, status").eq("id", id).single();
+    if (existing && existing.status !== "cancelled") {
+      await supabase.rpc("release_slot_capacity", { p_slot_id: existing.slot_id });
+    }
+  }
+
+  const { error } = await supabase.from("orders").update(update).eq("id", id);
   if (error) throw error;
   await supabase.from("order_status_history").insert({ order_id: id, status, changed_by: "admin" });
   await notifyOrderStatusChange(id, status);

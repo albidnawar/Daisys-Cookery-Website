@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { createCustomQuoteDraft } from "@/lib/draftOrders/store";
 import { fixedPrice } from "@/lib/pricing/calculatePrice";
+import { getStoreSettings } from "@/lib/settings/store";
 import type { CustomQuoteDetail, CustomQuoteInput, CustomQuoteSummary } from "@/lib/types/domain";
 
 export async function listCustomQuotes(): Promise<CustomQuoteSummary[]> {
@@ -88,7 +89,8 @@ export async function updateCustomQuote(id: string, input: CustomQuoteInput): Pr
 
   let draftOrderId = existing.draft_order_id as string | null;
   if (input.quotedPrice != null) {
-    const price = fixedPrice(input.quotedPrice);
+    const { depositRate } = await getStoreSettings();
+    const price = fixedPrice(input.quotedPrice, depositRate);
     const spec = {
       instructions: input.themeNotes ?? undefined,
       referenceImageUrl: input.referenceImageUrls[0] ?? undefined,
