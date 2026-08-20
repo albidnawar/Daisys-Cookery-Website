@@ -88,6 +88,7 @@ export type PriceBreakdown = {
 export type DraftOrder = {
   id: string;
   cakeSlug: string | null;
+  customCakeName: string | null;
   spec: DraftOrderSpec;
   computedPrice: PriceBreakdown | null;
   fulfilmentType: "pickup" | "delivery" | null;
@@ -97,6 +98,38 @@ export type DraftOrder = {
   status: "active" | "converted" | "abandoned";
   createdAt: string;
   updatedAt: string;
+};
+
+export type CustomQuoteStatus = "new" | "quoted" | "declined";
+
+export type CustomQuoteSummary = {
+  id: string;
+  contactName: string;
+  contactPhone: string;
+  cakeTitle: string;
+  status: CustomQuoteStatus;
+  quotedPrice: number | null;
+  referenceImageUrls: string[];
+  createdAt: string;
+};
+
+export type CustomQuoteDetail = CustomQuoteSummary & {
+  themeNotes: string | null;
+  icingColors: string | null;
+  quotedSizeNote: string | null;
+  draftOrderId: string | null;
+};
+
+export type CustomQuoteInput = {
+  contactName: string;
+  contactPhone: string;
+  cakeTitle: string;
+  themeNotes: string | null;
+  icingColors: string | null;
+  referenceImageUrls: string[];
+  quotedPrice: number | null;
+  quotedSizeNote: string | null;
+  status: CustomQuoteStatus;
 };
 
 export type DeliveryZone = {
@@ -159,9 +192,34 @@ export type Notification = {
   sentAt: string | null;
 };
 
+export type CustomerProfile = {
+  id: string;
+  email: string;
+  displayName: string | null;
+  phone: string | null;
+  allergenDefaults: string[];
+};
+
+export type CustomerAddress = {
+  id: string;
+  label: string;
+  text: string;
+  isDefault: boolean;
+};
+
+export type SavedCake = {
+  id: string;
+  cakeId: string;
+  cakeName: string;
+  cakeSlug: string;
+  cakeImageUrl: string | null;
+  note: string | null;
+};
+
 export type Order = {
   id: string;
   orderNumber: string;
+  customerId: string | null;
   cakeSnapshot: CakeSnapshot;
   fulfilmentType: "pickup" | "delivery";
   zoneId: string;
@@ -181,5 +239,7 @@ export type Order = {
   contactName: string;
   contactPhone: string;
   kitchenNote: string | null;
+  orderSource: "web" | "manual";
+  manualTrxId: string | null;
   createdAt: string;
 };

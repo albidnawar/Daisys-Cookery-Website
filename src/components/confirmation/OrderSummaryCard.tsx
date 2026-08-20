@@ -69,8 +69,8 @@ export function OrderSummaryCard({
         </tbody>
       </table>
       <div className="mt-2 flex flex-wrap gap-3">
-        <LinkButton href={`/account/orders/${order.id}`} variant="primary">
-          View the order
+        <LinkButton href="/account/orders" variant="primary">
+          View my orders
         </LinkButton>
         <AddToCalendarButton
           orderNumber={order.orderNumber}

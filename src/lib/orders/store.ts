@@ -23,7 +23,7 @@ async function writeOne(order: Order): Promise<void> {
   });
 }
 
-function generateOrderNumber(): string {
+export function generateOrderNumber(): string {
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const randomPart = Math.floor(1000 + Math.random() * 9000);
   return `DC-${datePart}-${randomPart}`;
@@ -35,6 +35,7 @@ export type CreateOrderInput = {
   contactPhone: string;
   kitchenNote?: string;
   paymentMethod: PaymentMethod;
+  customerId?: string | null;
 };
 
 export class OrderValidationError extends Error {}
@@ -42,33 +43,46 @@ export class OrderValidationError extends Error {}
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const draft = await getDraftOrder(input.draftId);
   if (!draft) throw new OrderValidationError("Draft order not found");
-  if (!draft.cakeSlug || !draft.fulfilmentType || !draft.zoneId || !draft.slotId) {
+  // A Module 5 custom-quote draft has no catalog cake at all — its
+  // computedPrice is the admin's fixed quote (see fixedPrice()) rather
+  // than something calculatePrice() can (re-)derive from a slug.
+  const isCustomQuote = !draft.cakeSlug && Boolean(draft.customCakeName);
+  if (!isCustomQuote && !draft.cakeSlug) {
+    throw new OrderValidationError("Draft is missing a cake");
+  }
+  if (!draft.fulfilmentType || !draft.zoneId || !draft.slotId) {
     throw new OrderValidationError("Draft is missing fulfilment details");
   }
   if (draft.status === "converted") {
     throw new OrderValidationError("This draft has already been ordered");
   }
 
-  const cake = await resolveCake(draft.cakeSlug);
-  if (!cake) throw new OrderValidationError("Unknown cake");
-
-  const cakePrice = calculatePrice(cake, draft.spec);
-  if (!cakePrice) {
-    throw new OrderValidationError("Cake size must be set before checkout");
-  }
-
   const zones = await listZones();
   const zone = zones.find((z) => z.id === draft.zoneId);
   if (!zone) throw new OrderValidationError("Unknown delivery zone");
   const deliveryFee = draft.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
-  const price = withDeliveryFee(cakePrice, deliveryFee);
+
+  let price;
+  let cakeSnapshot;
+  if (isCustomQuote) {
+    if (!draft.computedPrice) throw new OrderValidationError("This quote has no price yet");
+    price = withDeliveryFee(draft.computedPrice, deliveryFee);
+    cakeSnapshot = { name: draft.customCakeName!, slug: null, spec: draft.spec };
+  } else {
+    const cake = await resolveCake(draft.cakeSlug!);
+    if (!cake) throw new OrderValidationError("Unknown cake");
+    const cakePrice = calculatePrice(cake, draft.spec);
+    if (!cakePrice) throw new OrderValidationError("Cake size must be set before checkout");
+    price = withDeliveryFee(cakePrice, deliveryFee);
+    cakeSnapshot = { name: cake.name, slug: cake.slug, spec: draft.spec };
+  }
 
   const slotLabel = await getSlotLabel(draft.slotId);
-  const cakeSnapshot = { name: cake.name, slug: cake.slug, spec: draft.spec };
 
   const order: Order = {
     id: randomUUID(),
     orderNumber: generateOrderNumber(),
+    customerId: input.customerId ?? null,
     cakeSnapshot,
     fulfilmentType: draft.fulfilmentType,
     zoneId: draft.zoneId,
@@ -88,6 +102,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     contactName: input.contactName,
     contactPhone: input.contactPhone,
     kitchenNote: input.kitchenNote ?? null,
+    orderSource: "web",
+    manualTrxId: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -108,6 +124,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     const { error: orderError } = await supabase.from("orders").insert({
       id: order.id,
       order_number: order.orderNumber,
+      customer_id: order.customerId,
       draft_order_id: draft.id,
       cake_snapshot: cakeSnapshot,
       fulfilment_type: order.fulfilmentType,
@@ -179,6 +196,7 @@ function rowToOrder(row: any): Order {
   return {
     id: row.id,
     orderNumber: row.order_number,
+    customerId: row.customer_id ?? null,
     cakeSnapshot: row.cake_snapshot,
     fulfilmentType: row.fulfilment_type,
     zoneId: row.zone_id,
@@ -198,6 +216,8 @@ function rowToOrder(row: any): Order {
     contactName: row.contact_name,
     contactPhone: row.contact_phone,
     kitchenNote: row.kitchen_note,
+    orderSource: row.order_source ?? "web",
+    manualTrxId: row.manual_trx_id ?? null,
     createdAt: row.created_at,
   };
 }

@@ -12,8 +12,11 @@ const navLinks = [
   { href: "/about", label: "Our shop" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ customerEmail }: { customerEmail?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const accountLink = customerEmail
+    ? { href: "/account", label: "My account" }
+    : { href: "/account/login", label: "Sign in" };
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-chocolate/10 bg-cream/90 backdrop-blur-md">
@@ -42,6 +45,12 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href={accountLink.href}
+            className="font-body text-sm font-medium text-brand-chocolate hover:text-brand-orange"
+          >
+            {accountLink.label}
+          </Link>
         </nav>
 
         <LinkButton href="/browse" className="ml-auto hidden md:inline-flex">
@@ -77,6 +86,13 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href={accountLink.href}
+            className="rounded-xl px-3 py-2 font-body text-sm font-medium text-brand-chocolate hover:bg-brand-chocolate/5"
+            onClick={() => setMobileOpen(false)}
+          >
+            {accountLink.label}
+          </Link>
           <LinkButton href="/browse" className="mt-2 w-full">
             Order a cake
           </LinkButton>

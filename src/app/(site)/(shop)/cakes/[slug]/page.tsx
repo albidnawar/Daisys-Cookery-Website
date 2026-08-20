@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Gallery } from "@/components/cake-detail/Gallery";
 import { DietaryTagList } from "@/components/cake-detail/DietaryTagList";
 import { CakeDetailPurchasePanel } from "@/components/cake-detail/CakeDetailPurchasePanel";
+import { SaveCakeButton } from "@/components/cake-detail/SaveCakeButton";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { getCakeBySlug } from "@/lib/catalog/queries";
@@ -62,6 +63,7 @@ export default async function CakeDetailPage({
             {cake.description}
           </p>
           <DietaryTagList tags={cake.dietaryTags} />
+          <SaveCakeButton cakeId={cake.id} />
           <hr className="border-brand-chocolate/10" />
           <CakeDetailPurchasePanel
             slug={cake.slug}

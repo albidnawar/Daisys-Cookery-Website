@@ -1,0 +1,31 @@
+import type { CakeSnapshot, OrderStatus } from "@/lib/types/domain";
+
+// Split out from ordersAdmin.ts because that module pulls in the
+// service-role Supabase client (server-only, holds the secret key) —
+// OrdersKanban.tsx is a Client Component and can only safely import this
+// plain constant, not anything from that module.
+export const KANBAN_COLUMNS: { key: string; label: string; statuses: OrderStatus[] }[] = [
+  { key: "pending", label: "Pending Approval", statuses: ["received"] },
+  { key: "deposit_verified", label: "Deposit Verified", statuses: ["confirmed"] },
+  { key: "baking", label: "Baking/Decorating", statuses: ["baking"] },
+  { key: "ready", label: "Ready for Pickup/Delivery", statuses: ["ready", "out_for_delivery"] },
+  { key: "completed", label: "Completed", statuses: ["collected", "delivered"] },
+];
+
+export type KanbanOrder = {
+  id: string;
+  orderNumber: string;
+  cakeName: string;
+  spec: CakeSnapshot["spec"];
+  total: number;
+  depositAmount: number;
+  balanceDue: number;
+  paymentStatus: string;
+  status: OrderStatus;
+  orderSource: "web" | "manual";
+  fulfilmentType: "pickup" | "delivery";
+  slotDate: string | null;
+  slotLabel: string | null;
+  contactName: string;
+  contactPhone: string;
+};

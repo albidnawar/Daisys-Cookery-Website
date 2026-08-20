@@ -1,5 +1,17 @@
-import { ComingSoon } from "@/components/admin/ComingSoon";
+import { getKitchenBatch } from "@/lib/admin/ordersAdmin";
+import { KitchenBatchView } from "@/components/admin/KitchenBatchView";
+import { todayKey } from "@/lib/dates";
 
-export default function AdminKitchenPage() {
-  return <ComingSoon feature="Kitchen Batch Sheet" />;
+export default async function AdminKitchenPage() {
+  const date = todayKey();
+  const batch = await getKitchenBatch(date);
+
+  return (
+    <div>
+      <h1 className="mb-6 font-display text-3xl font-semibold text-brand-chocolate">
+        Kitchen Batch Sheet
+      </h1>
+      <KitchenBatchView initialDate={date} initialBatch={batch} />
+    </div>
+  );
 }

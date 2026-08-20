@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { AdminBanner, BannerInput } from "@/lib/admin/bannersAdmin";
 
 const EMPTY: BannerInput = { message: "", linkUrl: null, isActive: true, sortOrder: 0 };
@@ -10,6 +11,7 @@ export function BannersManager({ initialBanners }: { initialBanners: AdminBanner
   const [banners, setBanners] = useState(initialBanners);
   const [draft, setDraft] = useState<BannerInput>(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const refresh = async () => {
     const res = await fetch("/api/admin/banners");
@@ -46,7 +48,7 @@ export function BannersManager({ initialBanners }: { initialBanners: AdminBanner
   };
 
   const deleteBanner = async (id: string) => {
-    if (!confirm("Delete this banner?")) return;
+    setConfirmingId(null);
     await fetch(`/api/admin/banners/${id}`, { method: "DELETE" });
     await refresh();
   };
@@ -100,7 +102,7 @@ export function BannersManager({ initialBanners }: { initialBanners: AdminBanner
             </label>
             <button
               type="button"
-              onClick={() => deleteBanner(banner.id)}
+              onClick={() => setConfirmingId(banner.id)}
               className="font-body text-sm font-bold text-red-600 hover:text-red-800"
             >
               Delete
@@ -111,6 +113,13 @@ export function BannersManager({ initialBanners }: { initialBanners: AdminBanner
           <p className="font-body text-sm text-brand-chocolate/60">No banners yet.</p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmingId !== null}
+        message="Delete this banner?"
+        onConfirm={() => confirmingId && deleteBanner(confirmingId)}
+        onCancel={() => setConfirmingId(null)}
+      />
     </div>
   );
 }

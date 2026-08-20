@@ -64,6 +64,22 @@ export function calculatePrice(
   };
 }
 
+/** A bespoke cake has no option groups to price from — the admin just
+ * names a number after inspecting the reference photo (Module 5's Custom
+ * Quote Engine). Returns the same pre-delivery-fee shape calculatePrice()
+ * does, so withDeliveryFee() and everything downstream treats a quoted
+ * price exactly like a catalog one. */
+export function fixedPrice(amount: number): PriceBreakdown {
+  const depositAmount = Math.round(amount * DEPOSIT_RATE);
+  return {
+    subtotal: amount,
+    extrasTotal: 0,
+    total: amount,
+    depositAmount,
+    balanceDue: amount - depositAmount,
+  };
+}
+
 /** Folds a delivery fee into the cake+extras price from calculatePrice(),
  * recomputing the deposit/balance off the new grand total. Used once
  * fulfilment (pickup = free, delivery = zone fee) is known — kept separate

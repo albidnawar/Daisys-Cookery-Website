@@ -1,0 +1,82 @@
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import { getOrder } from "@/lib/orders/store";
+import { resolveCake } from "@/lib/draftOrders/store";
+import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { PrintButton } from "@/components/admin/PrintButton";
+
+export default async function OrderSlipPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const order = await getOrder(id);
+  if (!order) notFound();
+
+  const cake = order.cakeSnapshot.slug ? await resolveCake(order.cakeSnapshot.slug) : null;
+  const groupsByCode = Object.fromEntries((cake?.optionGroups ?? []).map((g) => [g.code, g]));
+
+  return (
+    <div className="mx-auto max-w-xl">
+      <div className="mb-4 flex justify-end print:hidden">
+        <PrintButton />
+      </div>
+      <div className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-8">
+        <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-orange">
+          Daisy&apos;s Cookery — Order Slip
+        </p>
+        <h1 className="mb-4 font-display text-3xl font-semibold text-brand-chocolate">
+          {order.orderNumber}
+        </h1>
+
+        <table className="w-full font-body text-sm">
+          <tbody>
+            <Row label="Customer" value={`${order.contactName} · ${order.contactPhone}`} />
+            <Row label="Order source" value={order.orderSource === "manual" ? "FB / Manual" : "Web"} />
+            <Row
+              label={order.fulfilmentType === "pickup" ? "Pickup" : "Delivery"}
+              value={order.slotLabel ?? "To be confirmed"}
+            />
+            <Row label="Cake" value={order.cakeSnapshot.name} />
+            <Row label="Size" value={order.cakeSnapshot.spec.sizeCode ? `${order.cakeSnapshot.spec.sizeCode} lb` : "—"} />
+            <Row
+              label="Flavor / spec"
+              value={summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}
+            />
+            <Row label="Board writing" value={order.cakeSnapshot.spec.message || "—"} />
+            {order.kitchenNote && <Row label="Kitchen note" value={order.kitchenNote} />}
+            <Row label="Total" value={`৳${order.total.toLocaleString("en-BD")}`} />
+            <Row label="Deposit paid" value={`৳${order.depositAmount.toLocaleString("en-BD")} (${order.paymentMethod})`} />
+            <Row label="Balance due" value={`৳${order.balanceDue.toLocaleString("en-BD")}`} />
+          </tbody>
+        </table>
+
+        {order.cakeSnapshot.spec.referenceImageUrl && (
+          <div className="mt-4">
+            <p className="mb-2 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
+              Reference photo
+            </p>
+            <div className="relative h-40 w-40 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10">
+              <Image
+                src={order.cakeSnapshot.spec.referenceImageUrl}
+                alt="Reference"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <tr>
+      <td className="w-2/5 py-1.5 align-top text-brand-chocolate/60">{label}</td>
+      <td className="py-1.5 font-bold text-brand-chocolate">{value}</td>
+    </tr>
+  );
+}

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createOrder, OrderValidationError } from "@/lib/orders/store";
+import { getCurrentCustomer } from "@/lib/customer/auth";
 import type { PaymentMethod } from "@/lib/types/domain";
 
 const PAYMENT_METHODS: PaymentMethod[] = ["bkash", "nagad", "card", "cash_on_collection"];
@@ -19,12 +20,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const customer = await getCurrentCustomer();
     const order = await createOrder({
       draftId,
       contactName,
       contactPhone,
       kitchenNote,
       paymentMethod,
+      customerId: customer?.id ?? null,
     });
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {

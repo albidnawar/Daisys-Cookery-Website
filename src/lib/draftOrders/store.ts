@@ -5,7 +5,7 @@ import { calculatePrice } from "@/lib/pricing/calculatePrice";
 import { getCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
 import { readJson, withFileLock, writeJson } from "@/lib/devStore/fileStore";
-import type { DraftOrder, DraftOrderSpec } from "@/lib/types/domain";
+import type { DraftOrder, DraftOrderSpec, PriceBreakdown } from "@/lib/types/domain";
 
 // Dev fallback so the Customiser works before a Supabase project exists —
 // see src/lib/devStore/fileStore.ts for why this is file-backed rather
@@ -39,6 +39,7 @@ export async function createDraftOrder(cakeSlug: string): Promise<DraftOrder> {
   const draft: DraftOrder = {
     id: randomUUID(),
     cakeSlug,
+    customCakeName: null,
     spec: {},
     computedPrice: null,
     fulfilmentType: null,
@@ -63,6 +64,79 @@ export async function createDraftOrder(cakeSlug: string): Promise<DraftOrder> {
 
   await writeOne(draft);
   return draft;
+}
+
+/** A minimal draft_orders row that exists purely so a manually-entered
+ * admin order (Module 1) has something real for slot_holds.draft_order_id
+ * to reference — that FK is what makes the M4 capacity-locking machinery
+ * work, and manual orders draw from the exact same slot capacity as web
+ * ones. cakeId is null for a fully custom design with no catalog match. */
+export async function createAdminHoldDraft(cakeId: string | null): Promise<string> {
+  const id = randomUUID();
+  if (isSupabaseConfigured()) {
+    const supabase = await createServiceRoleClient();
+    const { error } = await supabase.from("draft_orders").insert({ id, cake_id: cakeId });
+    if (error) throw error;
+    return id;
+  }
+
+  const now = new Date().toISOString();
+  await writeOne({
+    id,
+    cakeSlug: null,
+    customCakeName: null,
+    spec: {},
+    computedPrice: null,
+    fulfilmentType: null,
+    zoneId: null,
+    deliveryAddress: null,
+    slotId: null,
+    status: "active",
+    createdAt: now,
+    updatedAt: now,
+  });
+  return id;
+}
+
+/** The draft a customer lands on when they open their quote link (Module
+ * 5): no catalog cake, a fixed admin-set price standing in for
+ * calculatePrice()'s output, and the reference photo/notes carried into
+ * spec so they still show up on the kitchen slip like any other order. */
+export async function createCustomQuoteDraft(
+  customCakeName: string,
+  spec: DraftOrderSpec,
+  price: PriceBreakdown,
+): Promise<string> {
+  const id = randomUUID();
+  if (isSupabaseConfigured()) {
+    const supabase = await createServiceRoleClient();
+    const { error } = await supabase.from("draft_orders").insert({
+      id,
+      cake_id: null,
+      custom_cake_name: customCakeName,
+      spec,
+      computed_price: price,
+    });
+    if (error) throw error;
+    return id;
+  }
+
+  const now = new Date().toISOString();
+  await writeOne({
+    id,
+    cakeSlug: null,
+    customCakeName,
+    spec,
+    computedPrice: price,
+    fulfilmentType: null,
+    zoneId: null,
+    deliveryAddress: null,
+    slotId: null,
+    status: "active",
+    createdAt: now,
+    updatedAt: now,
+  });
+  return id;
 }
 
 export async function getDraftOrder(id: string): Promise<DraftOrder | null> {
@@ -195,6 +269,7 @@ function rowToDraft(row: any, cakeSlug: string | null): DraftOrder {
   return {
     id: row.id,
     cakeSlug,
+    customCakeName: row.custom_cake_name ?? null,
     spec: row.spec ?? {},
     computedPrice: row.computed_price ?? null,
     fulfilmentType: row.fulfilment_type ?? null,
