@@ -5,21 +5,24 @@ import { readJson, writeJson } from "@/lib/devStore/fileStore";
 import { toDateKey } from "@/lib/dates";
 import type { DeliveryZone, SlotAvailability } from "@/lib/types/domain";
 
-const PICKUP_WINDOWS: [string, string][] = [
+// Exported so lib/slots/generate.ts (the rolling-window generator that
+// keeps this from ever running out — see its own header comment) can reuse
+// the exact same day template instead of duplicating it.
+export const PICKUP_WINDOWS: [string, string][] = [
   ["09:00", "12:00"],
   ["12:00", "15:00"],
   ["15:00", "18:00"],
   ["18:00", "21:00"],
 ];
-const DELIVERY_WINDOWS: [string, string][] = [
+export const DELIVERY_WINDOWS: [string, string][] = [
   ["10:00", "12:00"],
   ["12:00", "14:00"],
   ["16:00", "18:00"],
   ["18:00", "20:00"],
 ];
-const DAYS_AHEAD = 30;
-const PICKUP_CAPACITY = 10;
-const DELIVERY_CAPACITY = 3;
+export const DAYS_AHEAD = 30;
+export const PICKUP_CAPACITY = 10;
+export const DELIVERY_CAPACITY = 3;
 const HOLD_MINUTES = 10;
 
 // Dev fallback mirroring supabase/seed.sql, so Buying Options works before

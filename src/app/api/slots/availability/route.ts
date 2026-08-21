@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { listAvailability } from "@/lib/slots/store";
+import { ensureSlotsGenerated } from "@/lib/slots/generate";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  await ensureSlotsGenerated();
   const slots = await listAvailability(date, fulfilmentType, zoneId);
   return NextResponse.json({ slots });
 }

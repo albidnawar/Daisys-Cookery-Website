@@ -1,9 +1,12 @@
 import { DateCapacityManager } from "@/components/admin/DateCapacityManager";
 import { DeliveryManifest } from "@/components/admin/DeliveryManifest";
 import { listDateCapacityRows, listManifestForDate } from "@/lib/admin/logistics";
+import { ensureSlotsGenerated } from "@/lib/slots/generate";
 import { todayKey, toDateKey } from "@/lib/dates";
 
 export default async function AdminLogisticsPage() {
+  await ensureSlotsGenerated();
+
   const today = todayKey();
   const end = new Date();
   end.setDate(end.getDate() + 29);
