@@ -150,7 +150,7 @@ export function ManualOrderForm({
 
   if (result) {
     const waLink = `https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-      `Daisy's Cookery — Order ${result.order.orderNumber} confirmed!\nTotal: ৳${result.order.total.toLocaleString("en-BD")}\nDeposit: ৳${result.order.depositAmount.toLocaleString("en-BD")}\nBalance: ৳${result.order.balanceDue.toLocaleString("en-BD")}\nThank you!`,
+      `Daisy's Cookery — Order ${result.order.orderNumber} confirmed!\nTotal: ৳${result.order.total.toLocaleString("en-BD")}\nDeposit: ৳${result.order.depositAmount.toLocaleString("en-BD")}\nBalance: ৳${(paymentStatus === "paid_in_full" ? 0 : result.order.balanceDue).toLocaleString("en-BD")}\nThank you!`,
     )}`;
     return (
       <div className="max-w-lg rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6">

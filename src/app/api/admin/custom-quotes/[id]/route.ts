@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { getCustomQuoteForEdit, updateCustomQuote } from "@/lib/admin/customQuotes";
 import type { CustomQuoteInput } from "@/lib/types/domain";
 
 async function guard() {
   try {
-    await requireAdmin();
+    await requireModule("custom_requests");
     return null;
   } catch (error) {
     if (error instanceof AdminAuthError) {

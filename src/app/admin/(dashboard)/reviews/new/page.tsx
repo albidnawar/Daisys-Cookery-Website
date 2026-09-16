@@ -1,7 +1,9 @@
 import { ReviewForm } from "@/components/admin/ReviewForm";
 import { listAllCakesAdmin } from "@/lib/admin/catalogAdmin";
+import { requireModulePage } from "@/lib/admin/auth";
 
 export default async function NewReviewPage() {
+  await requireModulePage("content_media");
   const cakes = await listAllCakesAdmin();
 
   return (

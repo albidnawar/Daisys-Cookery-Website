@@ -12,7 +12,7 @@ export default async function AdminDashboardLayout({
 
   return (
     <div className="min-h-screen bg-cream lg:flex">
-      <AdminSidebar displayName={admin.displayName} />
+      <AdminSidebar admin={admin} />
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );

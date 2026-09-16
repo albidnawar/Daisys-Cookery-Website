@@ -1,8 +1,10 @@
 import { PaymentsLedger } from "@/components/admin/PaymentsLedger";
 import { getDailyFinancialBreakdown, listPaymentLedger, listPendingTrxMatches } from "@/lib/admin/paymentsLedger";
+import { requireModulePage } from "@/lib/admin/auth";
 import { todayKey } from "@/lib/dates";
 
 export default async function AdminPaymentsPage() {
+  await requireModulePage("payments");
   const today = todayKey();
   const [ledger, pendingMatches, breakdown] = await Promise.all([
     listPaymentLedger(today),

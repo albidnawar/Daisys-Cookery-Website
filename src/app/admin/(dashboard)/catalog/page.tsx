@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { listAllCakesAdmin } from "@/lib/admin/catalogAdmin";
+import { requireModulePage } from "@/lib/admin/auth";
 import { LinkButton } from "@/components/ui/Button";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 
 export default async function AdminCatalogPage() {
+  await requireModulePage("content_media");
   const cakes = await listAllCakesAdmin();
 
   return (

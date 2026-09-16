@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { ChatIcon, GlobeIcon } from "@/components/admin/AdminNavIcons";
 import { getSalesSummary, getTopSellerStats, type RankedStat } from "@/lib/admin/analytics";
+import { hasModule, requireModulePage } from "@/lib/admin/auth";
+import type { ModuleKey } from "@/lib/admin/modules";
 
-const QUICK_LINKS = [
-  { href: "/admin/catalog", label: "Product catalog", desc: "Edit cakes, prices, photos, and where they appear on the site." },
-  { href: "/admin/reviews", label: "Reviews", desc: "Add customer reviews and manage the homepage marquee." },
-  { href: "/admin/banners", label: "Banners", desc: "Publish site-wide announcement bars." },
-  { href: "/admin/customers", label: "Customers", desc: "Repeat customers, lifetime spend, and order history." },
+const QUICK_LINKS: { href: string; label: string; desc: string; module: ModuleKey }[] = [
+  { href: "/admin/catalog", label: "Product catalog", desc: "Edit cakes, prices, photos, and where they appear on the site.", module: "content_media" },
+  { href: "/admin/reviews", label: "Reviews", desc: "Add customer reviews and manage the homepage marquee.", module: "content_media" },
+  { href: "/admin/banners", label: "Banners", desc: "Publish site-wide announcement bars.", module: "content_media" },
+  { href: "/admin/customers", label: "Customers", desc: "Repeat customers, lifetime spend, and order history.", module: "customers" },
 ];
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -41,7 +44,9 @@ function RankedList({ title, items, emptyText }: { title: string; items: RankedS
 }
 
 export default async function AdminOverviewPage() {
+  const admin = await requireModulePage("overview");
   const [sales, topSellers] = await Promise.all([getSalesSummary(), getTopSellerStats(30)]);
+  const quickLinks = QUICK_LINKS.filter((link) => hasModule(admin, link.module));
 
   return (
     <div className="flex flex-col gap-10">
@@ -65,11 +70,13 @@ export default async function AdminOverviewPage() {
             Channel breakdown (this month)
           </p>
           <div className="flex flex-wrap gap-6 font-body text-sm text-brand-chocolate">
-            <span>
-              🌐 Web: <strong>{sales.webOrderCount}</strong> orders
+            <span className="flex items-center gap-1.5">
+              <GlobeIcon className="h-4 w-4 text-brand-chocolate/50" /> Web:{" "}
+              <strong>{sales.webOrderCount}</strong> orders
             </span>
-            <span>
-              💬 Manual / FB inbox: <strong>{sales.manualOrderCount}</strong> orders
+            <span className="flex items-center gap-1.5">
+              <ChatIcon className="h-4 w-4 text-brand-chocolate/50" /> Manual / FB inbox:{" "}
+              <strong>{sales.manualOrderCount}</strong> orders
             </span>
           </div>
         </div>
@@ -86,10 +93,11 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
+      {quickLinks.length > 0 && (
       <div>
         <h2 className="mb-4 font-display text-2xl font-semibold text-brand-chocolate">Manage</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {QUICK_LINKS.map((link) => (
+          {quickLinks.map((link) => (
             <Link key={link.href} href={link.href}>
               <Card className="h-full p-5 hover:border-brand-orange/40">
                 <p className="mb-1 font-display text-lg font-semibold text-brand-chocolate">
@@ -101,6 +109,7 @@ export default async function AdminOverviewPage() {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }

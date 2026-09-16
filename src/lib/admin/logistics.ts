@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { pendingCashDue, type PaymentLedgerRow } from "@/lib/admin/paymentsLedger";
+import { toDateKey } from "@/lib/dates";
 import type { CakeSnapshot } from "@/lib/types/domain";
 
 export type DateCapacitySetting = {
@@ -37,7 +38,7 @@ export async function listDateCapacityRows(fromDate: string, toDate: string): Pr
 
   const rows: DateCapacityRow[] = [];
   for (const d = new Date(`${fromDate}T00:00:00`); d <= new Date(`${toDate}T00:00:00`); d.setDate(d.getDate() + 1)) {
-    const dateKey = d.toISOString().slice(0, 10);
+    const dateKey = toDateKey(d);
     const setting = settingsByDate.get(dateKey);
     rows.push({
       date: dateKey,

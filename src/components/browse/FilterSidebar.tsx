@@ -16,6 +16,38 @@ export type FilterValue = {
   event: EventCode | null;
 };
 
+// A single-select filter row: a real radio input (for a11y/keyboard) with
+// the native look stripped and redrawn as a ring + dot, so it reads as a
+// deliberate control instead of the browser's default radio circle.
+function RadioRow({
+  name,
+  label,
+  checked,
+  onSelect,
+}: {
+  name: string;
+  label: string;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <label
+      className={`-mx-2 flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors ${
+        checked ? "font-bold text-brand-orange" : "text-brand-chocolate hover:bg-brand-chocolate/5"
+      }`}
+    >
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onSelect}
+        className="relative h-4 w-4 flex-none appearance-none rounded-full border-2 border-brand-chocolate/25 bg-white transition-colors checked:border-brand-orange after:absolute after:inset-[3px] after:rounded-full after:bg-brand-orange after:opacity-0 after:transition-opacity checked:after:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+      />
+      {label}
+    </label>
+  );
+}
+
 export function FilterSidebar({
   flavors,
   value,
@@ -43,29 +75,21 @@ export function FilterSidebar({
         <h4 className="mb-3 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
           Occasion
         </h4>
-        <div className="flex flex-col gap-2 font-body text-sm">
-          <label className="flex items-center gap-2 text-brand-chocolate">
-            <input
-              type="radio"
-              name="event"
-              checked={value.event === null}
-              onChange={() => onChange({ ...value, event: null })}
-            />
-            All occasions
-          </label>
+        <div className="flex flex-col font-body text-sm">
+          <RadioRow
+            name="event"
+            label="All occasions"
+            checked={value.event === null}
+            onSelect={() => onChange({ ...value, event: null })}
+          />
           {EVENT_OPTIONS.map(({ code, label }) => (
-            <label
+            <RadioRow
               key={code}
-              className="flex items-center gap-2 text-brand-chocolate"
-            >
-              <input
-                type="radio"
-                name="event"
-                checked={value.event === code}
-                onChange={() => onChange({ ...value, event: code })}
-              />
-              {label}
-            </label>
+              name="event"
+              label={label}
+              checked={value.event === code}
+              onSelect={() => onChange({ ...value, event: code })}
+            />
           ))}
         </div>
       </div>
@@ -76,29 +100,21 @@ export function FilterSidebar({
         <h4 className="mb-3 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
           Flavor
         </h4>
-        <div className="flex flex-col gap-2 font-body text-sm">
-          <label className="flex items-center gap-2 text-brand-chocolate">
-            <input
-              type="radio"
-              name="flavor"
-              checked={value.flavorSlug === null}
-              onChange={() => onChange({ ...value, flavorSlug: null })}
-            />
-            All flavors
-          </label>
+        <div className="flex flex-col font-body text-sm">
+          <RadioRow
+            name="flavor"
+            label="All flavors"
+            checked={value.flavorSlug === null}
+            onSelect={() => onChange({ ...value, flavorSlug: null })}
+          />
           {flavors.map((flavor) => (
-            <label
+            <RadioRow
               key={flavor.slug}
-              className="flex items-center gap-2 text-brand-chocolate"
-            >
-              <input
-                type="radio"
-                name="flavor"
-                checked={value.flavorSlug === flavor.slug}
-                onChange={() => onChange({ ...value, flavorSlug: flavor.slug })}
-              />
-              {flavor.name}
-            </label>
+              name="flavor"
+              label={flavor.name}
+              checked={value.flavorSlug === flavor.slug}
+              onSelect={() => onChange({ ...value, flavorSlug: flavor.slug })}
+            />
           ))}
         </div>
       </div>

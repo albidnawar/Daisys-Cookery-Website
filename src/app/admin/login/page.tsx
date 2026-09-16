@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 
@@ -83,6 +84,12 @@ export default function AdminLoginPage() {
         <Button type="submit" variant="primary" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
+        <Link
+          href="/reset-password"
+          className="mt-4 block text-center font-body text-xs text-brand-chocolate/60 hover:text-brand-orange"
+        >
+          Forgot your password?
+        </Link>
       </form>
     </div>
   );

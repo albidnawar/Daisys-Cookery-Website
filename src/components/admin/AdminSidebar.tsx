@@ -4,39 +4,65 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { AdminUser } from "@/lib/admin/auth";
+import { hasModule, type ModuleKey } from "@/lib/admin/modules";
+import {
+  BoardIcon,
+  CardIcon,
+  ChatIcon,
+  ChefHatIcon,
+  FlagIcon,
+  GalleryIcon,
+  GearIcon,
+  LogOutIcon,
+  MegaphoneIcon,
+  NewOrderIcon,
+  OverviewIcon,
+  StarIcon,
+  TruckIcon,
+  UsersIcon,
+} from "@/components/admin/AdminNavIcons";
+import type { ComponentType, SVGProps } from "react";
 
-type NavItem = { label: string; href: string; emoji: string };
-type NavGroup = { label: string; items: NavItem[] };
+type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
+type NavItem = { label: string; href: string; icon: NavIcon };
+type NavGroup = { label: string; items: NavItem[]; module?: ModuleKey };
 
-const NAV: (NavItem | NavGroup)[] = [
-  { label: "New Order", href: "/admin/orders/new", emoji: "➕" },
-  { label: "Overview", href: "/admin", emoji: "📊" },
-  { label: "Live Orders", href: "/admin/orders", emoji: "🎂" },
-  { label: "Kitchen Batch", href: "/admin/kitchen", emoji: "👩‍🍳" },
-  { label: "Custom Requests", href: "/admin/custom-requests", emoji: "💬" },
-  { label: "Payments", href: "/admin/payments", emoji: "💳" },
-  { label: "Customers", href: "/admin/customers", emoji: "👥" },
+// Settings has no `module` — it's always visible (its own page decides how
+// much of itself to show based on role), everything else maps to exactly
+// one module in src/lib/admin/modules.ts.
+const NAV: ((NavItem & { module?: ModuleKey }) | NavGroup)[] = [
+  { label: "New Order", href: "/admin/orders/new", icon: NewOrderIcon, module: "new_order" },
+  { label: "Overview", href: "/admin", icon: OverviewIcon, module: "overview" },
+  { label: "Live Orders", href: "/admin/orders", icon: BoardIcon, module: "live_orders" },
+  { label: "Kitchen Batch", href: "/admin/kitchen", icon: ChefHatIcon, module: "kitchen_batch" },
+  { label: "Custom Requests", href: "/admin/custom-requests", icon: ChatIcon, module: "custom_requests" },
+  { label: "Payments", href: "/admin/payments", icon: CardIcon, module: "payments" },
+  { label: "Customers", href: "/admin/customers", icon: UsersIcon, module: "customers" },
   {
     label: "Content & Media",
+    module: "content_media",
     items: [
-      { label: "Product Catalog", href: "/admin/catalog", emoji: "🖼️" },
-      { label: "Hero Banner", href: "/admin/hero-banner", emoji: "🎯" },
-      { label: "Banners", href: "/admin/banners", emoji: "📣" },
-      { label: "Reviews", href: "/admin/reviews", emoji: "⭐" },
+      { label: "Product Catalog", href: "/admin/catalog", icon: GalleryIcon },
+      { label: "Hero Banner", href: "/admin/hero-banner", icon: FlagIcon },
+      { label: "Banners", href: "/admin/banners", icon: MegaphoneIcon },
+      { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
     ],
   },
-  { label: "Logistics & Capacity", href: "/admin/logistics", emoji: "🚚" },
-  { label: "Settings", href: "/admin/settings", emoji: "⚙️" },
+  { label: "Logistics & Capacity", href: "/admin/logistics", icon: TruckIcon, module: "logistics" },
+  { label: "Settings", href: "/admin/settings", icon: GearIcon },
 ];
 
-function isGroup(item: NavItem | NavGroup): item is NavGroup {
+function isGroup(item: (NavItem & { module?: ModuleKey }) | NavGroup): item is NavGroup {
   return "items" in item;
 }
 
-export function AdminSidebar({ displayName }: { displayName: string }) {
+export function AdminSidebar({ admin }: { admin: AdminUser }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  const visibleNav = NAV.filter((item) => !item.module || hasModule(admin, item.module));
 
   const linkClass = (href: string) => {
     const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
@@ -88,7 +114,7 @@ export function AdminSidebar({ displayName }: { displayName: string }) {
             <p className="font-display text-lg font-semibold text-brand-chocolate">
               Daisy&apos;s Cookery
             </p>
-            <p className="font-body text-xs text-brand-chocolate/60">{displayName}</p>
+            <p className="font-body text-xs text-brand-chocolate/60">{admin.displayName}</p>
           </div>
           <button
             type="button"
@@ -102,7 +128,7 @@ export function AdminSidebar({ displayName }: { displayName: string }) {
           </button>
         </div>
 
-        {NAV.map((item) =>
+        {visibleNav.map((item) =>
           isGroup(item) ? (
             <div key={item.label} className="mt-3">
               <p className="mb-1 px-3 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/40">
@@ -115,7 +141,7 @@ export function AdminSidebar({ displayName }: { displayName: string }) {
                   onClick={() => setOpen(false)}
                   className={linkClass(sub.href)}
                 >
-                  <span>{sub.emoji}</span> {sub.label}
+                  <sub.icon className="h-[18px] w-[18px] flex-none" /> {sub.label}
                 </Link>
               ))}
             </div>
@@ -126,7 +152,7 @@ export function AdminSidebar({ displayName }: { displayName: string }) {
               onClick={() => setOpen(false)}
               className={linkClass(item.href)}
             >
-              <span>{item.emoji}</span> {item.label}
+              <item.icon className="h-[18px] w-[18px] flex-none" /> {item.label}
             </Link>
           ),
         )}
@@ -136,7 +162,7 @@ export function AdminSidebar({ displayName }: { displayName: string }) {
           onClick={handleSignOut}
           className="mt-auto flex items-center gap-2 rounded-xl px-3 py-2 text-left font-body text-sm text-brand-chocolate/70 hover:bg-brand-chocolate/5"
         >
-          <span>🚪</span> Sign out
+          <LogOutIcon className="h-[18px] w-[18px] flex-none" /> Sign out
         </button>
       </aside>
     </>

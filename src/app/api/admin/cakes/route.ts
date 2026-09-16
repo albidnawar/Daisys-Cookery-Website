@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { createCake, listAllCakesAdmin, type CakeInput } from "@/lib/admin/catalogAdmin";
 
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireModule("content_media");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });
@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireModule("content_media");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });

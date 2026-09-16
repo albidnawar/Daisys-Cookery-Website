@@ -1,7 +1,9 @@
 import { CustomQuoteForm } from "@/components/admin/CustomQuoteForm";
 import { getStoreSettings } from "@/lib/settings/store";
+import { requireModulePage } from "@/lib/admin/auth";
 
 export default async function NewCustomQuotePage() {
+  await requireModulePage("custom_requests");
   const settings = await getStoreSettings();
 
   return (

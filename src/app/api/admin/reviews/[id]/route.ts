@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import {
   deleteReview,
   getReviewForEdit,
@@ -9,7 +9,7 @@ import {
 
 async function guard() {
   try {
-    await requireAdmin();
+    await requireModule("content_media");
     return null;
   } catch (error) {
     if (error instanceof AdminAuthError) {

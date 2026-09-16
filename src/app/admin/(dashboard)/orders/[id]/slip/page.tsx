@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getOrder } from "@/lib/orders/store";
 import { resolveCake } from "@/lib/draftOrders/store";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { requireModulePage } from "@/lib/admin/auth";
 import { PrintButton } from "@/components/admin/PrintButton";
 
 export default async function OrderSlipPage({
@@ -10,6 +11,7 @@ export default async function OrderSlipPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireModulePage("live_orders");
   const { id } = await params;
   const order = await getOrder(id);
   if (!order) notFound();
@@ -48,7 +50,10 @@ export default async function OrderSlipPage({
             {order.kitchenNote && <Row label="Kitchen note" value={order.kitchenNote} />}
             <Row label="Total" value={`৳${order.total.toLocaleString("en-BD")}`} />
             <Row label="Deposit paid" value={`৳${order.depositAmount.toLocaleString("en-BD")} (${order.paymentMethod})`} />
-            <Row label="Balance due" value={`৳${order.balanceDue.toLocaleString("en-BD")}`} />
+            <Row
+              label="Balance due"
+              value={`৳${(order.paymentStatus === "paid_in_full" ? 0 : order.balanceDue).toLocaleString("en-BD")}`}
+            />
           </tbody>
         </table>
 

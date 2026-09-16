@@ -87,12 +87,12 @@ export function MonthCalendar({
               type="button"
               disabled={!selectable}
               onClick={() => onSelect(key)}
-              className={`aspect-square bg-white font-body text-sm ${
+              className={`aspect-square font-body text-sm ${
                 isSelected
                   ? "bg-brand-orange font-bold text-white"
                   : selectable
-                    ? "text-brand-chocolate hover:bg-brand-orange/10"
-                    : "text-brand-chocolate/25"
+                    ? "bg-white text-brand-chocolate hover:bg-brand-orange/10"
+                    : "bg-white text-brand-chocolate/25"
               }`}
             >
               {day}

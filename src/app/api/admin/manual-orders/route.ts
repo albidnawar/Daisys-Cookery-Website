@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { createManualOrder, ManualOrderError, type ManualOrderInput } from "@/lib/admin/manualOrders";
 
 export async function POST(request: NextRequest) {
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requireModule("new_order");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });

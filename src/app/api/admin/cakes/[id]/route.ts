@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import {
   CakeInUseError,
   deleteCake,
@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdmin();
+    await requireModule("content_media");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });
@@ -31,7 +31,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdmin();
+    await requireModule("content_media");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });
@@ -49,7 +49,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdmin();
+    await requireModule("content_media");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });

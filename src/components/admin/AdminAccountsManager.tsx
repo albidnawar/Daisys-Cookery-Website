@@ -5,18 +5,23 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { AdminUser } from "@/lib/admin/auth";
+import type { AdminRole } from "@/lib/admin/adminRoles";
 
-const EMPTY = { email: "", displayName: "", role: "staff" as "owner" | "staff", password: "" };
+function emptyDraft(roles: AdminRole[]) {
+  return { email: "", displayName: "", roleId: roles[0]?.id ?? "", password: "" };
+}
 
 export function AdminAccountsManager({
   accounts,
+  roles,
   currentAdminId,
 }: {
   accounts: AdminUser[];
+  roles: AdminRole[];
   currentAdminId: string;
 }) {
   const router = useRouter();
-  const [draft, setDraft] = useState(EMPTY);
+  const [draft, setDraft] = useState(() => emptyDraft(roles));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -34,7 +39,7 @@ export function AdminAccountsManager({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Couldn't create that account");
-      setDraft(EMPTY);
+      setDraft(emptyDraft(roles));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't create that account");
@@ -43,12 +48,12 @@ export function AdminAccountsManager({
     }
   };
 
-  const changeRole = async (id: string, role: "owner" | "staff") => {
+  const changeRole = async (id: string, roleId: string) => {
     setRowError(null);
     const res = await fetch(`/api/admin/accounts/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ roleId }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -100,12 +105,15 @@ export function AdminAccountsManager({
                 <td className="p-3 text-brand-chocolate/70">{account.email}</td>
                 <td className="p-3">
                   <select
-                    value={account.role}
-                    onChange={(e) => changeRole(account.id, e.target.value as "owner" | "staff")}
-                    className="input-field text-xs"
+                    value={account.roleId}
+                    onChange={(e) => changeRole(account.id, e.target.value)}
+                    className="input-field text-xs capitalize"
                   >
-                    <option value="owner">Owner</option>
-                    <option value="staff">Staff</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id} className="capitalize">
+                        {r.name}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td className="p-3 text-right">
@@ -170,12 +178,15 @@ export function AdminAccountsManager({
               Role
             </span>
             <select
-              value={draft.role}
-              onChange={(e) => setDraft({ ...draft, role: e.target.value as "owner" | "staff" })}
-              className="input-field"
+              value={draft.roleId}
+              onChange={(e) => setDraft({ ...draft, roleId: e.target.value })}
+              className="input-field capitalize"
             >
-              <option value="staff">Staff</option>
-              <option value="owner">Owner</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id} className="capitalize">
+                  {r.name}
+                </option>
+              ))}
             </select>
           </label>
         </div>

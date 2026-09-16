@@ -2,11 +2,19 @@ import { randomUUID } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { createAdminHoldDraft, markDraftOrderConverted, resolveCake } from "@/lib/draftOrders/store";
 import { convertHold, getSlotLabel, holdSlot, listZones, SlotFullError } from "@/lib/slots/store";
-import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import { calculatePrice, fixedPrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { getStoreSettings } from "@/lib/settings/store";
 import { generateOrderNumber } from "@/lib/orders/store";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
-import type { CakeSnapshot, DraftOrderSpec, Order, PaymentMethod, PaymentStatus } from "@/lib/types/domain";
+import { normalizePhone } from "@/lib/phone";
+import type {
+  CakeSnapshot,
+  DraftOrderSpec,
+  Order,
+  PaymentMethod,
+  PaymentStatus,
+  PriceBreakdown,
+} from "@/lib/types/domain";
 
 export type CustomerLookupResult = {
   contactName: string;
@@ -29,7 +37,7 @@ export async function searchCustomerByPhone(phone: string): Promise<CustomerLook
   const { data, error } = await supabase
     .from("orders")
     .select("order_number, cake_snapshot, total, status, contact_name, delivery_address, created_at")
-    .eq("contact_phone", phone)
+    .eq("contact_phone", normalizePhone(phone))
     .order("created_at", { ascending: false })
     .limit(10);
   if (error) throw error;
@@ -73,9 +81,6 @@ export class ManualOrderError extends Error {}
 export async function createManualOrder(input: ManualOrderInput): Promise<Order> {
   let cakeName = input.customCakeName;
   let cakeId: string | null = null;
-  let total: number;
-  let subtotal: number;
-  let extrasTotal: number;
 
   const zones = await listZones();
   const zone = zones.find((z) => z.id === input.zoneId);
@@ -83,35 +88,37 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
   const deliveryFee = input.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
   const { depositRate } = await getStoreSettings();
 
+  // A priceOverride replaces the whole cake price (extras included, hence
+  // fixedPrice's extrasTotal: 0) — same shape a Custom Quote gets from
+  // calculatePrice.ts, so it flows through the identical withDeliveryFee
+  // step as every other order type instead of a second hand-rolled copy.
+  let price: PriceBreakdown;
   if (input.cakeSlug) {
     const cake = await resolveCake(input.cakeSlug);
     if (!cake) throw new ManualOrderError("Unknown cake");
     cakeName = cake.name;
     cakeId = cake.id;
-    const cakePrice = calculatePrice(cake, input.spec, depositRate);
     if (input.priceOverride != null) {
-      subtotal = input.priceOverride;
-      extrasTotal = 0;
-      total = input.priceOverride + deliveryFee;
-    } else if (cakePrice) {
-      const withFee = withDeliveryFee(cakePrice, deliveryFee, depositRate);
-      subtotal = withFee.subtotal;
-      extrasTotal = withFee.extrasTotal;
-      total = withFee.total;
+      price = fixedPrice(input.priceOverride, depositRate);
     } else {
-      throw new ManualOrderError("Size must be set, or provide a manual price for a >5lb order");
+      const cakePrice = calculatePrice(cake, input.spec, depositRate);
+      if (!cakePrice) throw new ManualOrderError("Size must be set, or provide a manual price for a >5lb order");
+      price = cakePrice;
     }
   } else {
     if (!cakeName) throw new ManualOrderError("Give the custom cake a name");
     if (input.priceOverride == null) {
       throw new ManualOrderError("A fully custom cake needs a manually entered price");
     }
-    subtotal = input.priceOverride;
-    extrasTotal = 0;
-    total = input.priceOverride + deliveryFee;
+    price = fixedPrice(input.priceOverride, depositRate);
   }
+  const { subtotal, extrasTotal, total, depositAmount: computedDeposit } = withDeliveryFee(
+    price,
+    deliveryFee,
+    depositRate,
+  );
 
-  const depositAmount = input.depositOverride ?? Math.round(total * depositRate);
+  const depositAmount = input.depositOverride ?? computedDeposit;
   const balanceDue = total - depositAmount;
 
   // Manual orders draw from the exact same slot capacity as web orders —
@@ -153,7 +160,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     paymentStatus: input.paymentStatus,
     status: "received",
     contactName: input.contactName,
-    contactPhone: input.contactPhone,
+    contactPhone: normalizePhone(input.contactPhone),
     kitchenNote: input.kitchenNote,
     orderSource: "manual",
     manualTrxId: input.manualTrxId,

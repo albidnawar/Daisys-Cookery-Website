@@ -1,7 +1,9 @@
 import { listAllBannersAdmin } from "@/lib/admin/bannersAdmin";
+import { requireModulePage } from "@/lib/admin/auth";
 import { BannersManager } from "@/components/admin/BannersManager";
 
 export default async function AdminBannersPage() {
+  await requireModulePage("content_media");
   const banners = await listAllBannersAdmin();
 
   return (

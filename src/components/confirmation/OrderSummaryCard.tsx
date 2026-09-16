@@ -65,7 +65,7 @@ export function OrderSummaryCard({
           />
           <Row
             label={order.fulfilmentType === "pickup" ? "Balance at collection" : "Balance on delivery"}
-            value={`৳${order.balanceDue.toLocaleString("en-BD")}`}
+            value={`৳${(order.paymentStatus === "paid_in_full" ? 0 : order.balanceDue).toLocaleString("en-BD")}`}
           />
         </tbody>
       </table>

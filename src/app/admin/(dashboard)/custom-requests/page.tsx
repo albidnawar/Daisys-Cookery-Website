@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listCustomQuotes } from "@/lib/admin/customQuotes";
+import { requireModulePage } from "@/lib/admin/auth";
 import { LinkButton } from "@/components/ui/Button";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -9,6 +10,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default async function AdminCustomRequestsPage() {
+  await requireModulePage("custom_requests");
   const quotes = await listCustomQuotes();
 
   return (

@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { createCustomQuote, listCustomQuotes } from "@/lib/admin/customQuotes";
 import type { CustomQuoteInput } from "@/lib/types/domain";
 
 async function guard() {
   try {
-    await requireAdmin();
+    await requireModule("custom_requests");
     return null;
   } catch (error) {
     if (error instanceof AdminAuthError) {
@@ -24,7 +24,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireModule("custom_requests");
     const input = (await request.json()) as CustomQuoteInput;
     const id = await createCustomQuote(input, admin.id);
     return NextResponse.json({ id }, { status: 201 });

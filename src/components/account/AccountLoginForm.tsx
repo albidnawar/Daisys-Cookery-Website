@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -135,6 +136,14 @@ export function AccountLoginForm({ next }: { next: string }) {
         <Button type="submit" disabled={pending} className="w-full">
           {pending ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
         </Button>
+        {mode === "signin" && (
+          <Link
+            href="/reset-password"
+            className="text-center font-body text-sm text-brand-chocolate/60 hover:text-brand-orange"
+          >
+            Forgot your password?
+          </Link>
+        )}
       </form>
 
       <div className="flex items-center gap-3">

@@ -1,7 +1,9 @@
 import { CustomersCrm } from "@/components/admin/CustomersCrm";
 import { listCustomerSummaries } from "@/lib/admin/customersCrm";
+import { requireModulePage } from "@/lib/admin/auth";
 
 export default async function AdminCustomersPage() {
+  await requireModulePage("customers");
   const customers = await listCustomerSummaries();
 
   return (

@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { buildManifestCsv, listManifestForDate } from "@/lib/admin/logistics";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireModule("logistics");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });

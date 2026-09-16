@@ -12,6 +12,18 @@ export const KANBAN_COLUMNS: { key: string; label: string; statuses: OrderStatus
   { key: "completed", label: "Completed", statuses: ["collected", "delivered"] },
 ];
 
+// Also used by the order-detail page's status dropdown, not just Kanban.
+export const ALL_ORDER_STATUSES: { value: OrderStatus; label: string }[] = [
+  { value: "received", label: "Received (pending approval)" },
+  { value: "confirmed", label: "Confirmed (deposit verified)" },
+  { value: "baking", label: "Baking/decorating" },
+  { value: "ready", label: "Ready for pickup" },
+  { value: "out_for_delivery", label: "Out for delivery" },
+  { value: "collected", label: "Collected" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 export type KanbanOrder = {
   id: string;
   orderNumber: string;

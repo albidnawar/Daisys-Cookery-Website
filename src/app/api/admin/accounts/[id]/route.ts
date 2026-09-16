@@ -9,8 +9,8 @@ export async function PATCH(
   try {
     await requireOwner();
     const { id } = await params;
-    const { role } = await request.json();
-    await updateAdminRole(id, role);
+    const { roleId } = await request.json();
+    await updateAdminRole(id, roleId);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof AdminAuthError) {

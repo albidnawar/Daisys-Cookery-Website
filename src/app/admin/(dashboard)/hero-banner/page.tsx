@@ -1,7 +1,9 @@
 import { getHeroBannerForEdit } from "@/lib/admin/heroBannerAdmin";
+import { requireModulePage } from "@/lib/admin/auth";
 import { HeroBannerForm } from "@/components/admin/HeroBannerForm";
 
 export default async function AdminHeroBannerPage() {
+  await requireModulePage("content_media");
   const heroBanner = await getHeroBannerForEdit();
 
   return (

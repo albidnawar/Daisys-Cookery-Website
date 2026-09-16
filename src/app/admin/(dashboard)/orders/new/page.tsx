@@ -1,9 +1,11 @@
 import { listAllCakesAdmin } from "@/lib/admin/catalogAdmin";
 import { listZones } from "@/lib/slots/store";
 import { getStoreSettings } from "@/lib/settings/store";
+import { requireModulePage } from "@/lib/admin/auth";
 import { ManualOrderForm } from "@/components/admin/ManualOrderForm";
 
 export default async function NewManualOrderPage() {
+  await requireModulePage("new_order");
   const [cakes, zones, settings] = await Promise.all([listAllCakesAdmin(), listZones(), getStoreSettings()]);
   const activeCakes = cakes.filter((c) => c.isActive);
 

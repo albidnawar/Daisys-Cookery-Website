@@ -2,6 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { createCustomQuoteDraft } from "@/lib/draftOrders/store";
 import { fixedPrice } from "@/lib/pricing/calculatePrice";
 import { getStoreSettings } from "@/lib/settings/store";
+import { normalizePhone } from "@/lib/phone";
 import type { CustomQuoteDetail, CustomQuoteInput, CustomQuoteSummary } from "@/lib/types/domain";
 
 export async function listCustomQuotes(): Promise<CustomQuoteSummary[]> {
@@ -58,7 +59,7 @@ export async function createCustomQuote(input: CustomQuoteInput, createdByAdminI
     .from("custom_quotes")
     .insert({
       contact_name: input.contactName,
-      contact_phone: input.contactPhone,
+      contact_phone: normalizePhone(input.contactPhone),
       cake_title: input.cakeTitle,
       theme_notes: input.themeNotes,
       icing_colors: input.icingColors,
@@ -109,7 +110,7 @@ export async function updateCustomQuote(id: string, input: CustomQuoteInput): Pr
     .from("custom_quotes")
     .update({
       contact_name: input.contactName,
-      contact_phone: input.contactPhone,
+      contact_phone: normalizePhone(input.contactPhone),
       cake_title: input.cakeTitle,
       theme_notes: input.themeNotes,
       icing_colors: input.icingColors,

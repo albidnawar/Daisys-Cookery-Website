@@ -8,6 +8,7 @@ import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { getStoreSettings } from "@/lib/settings/store";
 import { getPaymentProvider } from "@/lib/payments";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
+import { normalizePhone } from "@/lib/phone";
 import type { Order, PaymentMethod } from "@/lib/types/domain";
 
 const STORE_NAME = "orders";
@@ -103,7 +104,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     paymentStatus: "pending",
     status: "received",
     contactName: input.contactName,
-    contactPhone: input.contactPhone,
+    contactPhone: normalizePhone(input.contactPhone),
     kitchenNote: input.kitchenNote ?? null,
     orderSource: "web",
     manualTrxId: input.manualTrxId ?? null,

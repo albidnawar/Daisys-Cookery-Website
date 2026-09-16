@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { updateOrderStatus } from "@/lib/admin/ordersAdmin";
 import type { OrderStatus } from "@/lib/types/domain";
 
@@ -19,7 +19,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdmin();
+    await requireModule("live_orders");
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 });

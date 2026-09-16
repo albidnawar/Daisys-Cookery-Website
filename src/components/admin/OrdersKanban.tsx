@@ -2,25 +2,24 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { KANBAN_COLUMNS, type KanbanOrder } from "@/lib/admin/kanbanColumns";
+import { ALL_ORDER_STATUSES, KANBAN_COLUMNS, type KanbanOrder } from "@/lib/admin/kanbanColumns";
 import { todayKey } from "@/lib/dates";
 import type { OrderStatus } from "@/lib/types/domain";
 
-const ALL_STATUSES: { value: OrderStatus; label: string }[] = [
-  { value: "received", label: "Received (pending approval)" },
-  { value: "confirmed", label: "Confirmed (deposit verified)" },
-  { value: "baking", label: "Baking/decorating" },
-  { value: "ready", label: "Ready for pickup" },
-  { value: "out_for_delivery", label: "Out for delivery" },
-  { value: "collected", label: "Collected" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-];
+// A column can cover more than one status (e.g. "Ready" spans ready/out_for_delivery).
+// Dropping a card into such a column resolves the exact status from the order's fulfilment type.
+function resolveDropStatus(columnKey: string, order: KanbanOrder): OrderStatus {
+  if (columnKey === "ready") return order.fulfilmentType === "delivery" ? "out_for_delivery" : "ready";
+  if (columnKey === "completed") return order.fulfilmentType === "delivery" ? "delivered" : "collected";
+  return KANBAN_COLUMNS.find((c) => c.key === columnKey)!.statuses[0];
+}
 
 export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }) {
   const [orders, setOrders] = useState(initialOrders);
   const [dateFilter, setDateFilter] = useState<string>("");
   const [loading, startLoading] = useTransition();
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const refresh = (date: string) => {
     startLoading(async () => {
@@ -36,12 +35,24 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
   }, [dateFilter]);
 
   const changeStatus = async (id: string, status: OrderStatus) => {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
     await fetch(`/api/admin/orders/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
     refresh(dateFilter);
+  };
+
+  const handleDrop = (columnKey: string) => {
+    setDragOverCol(null);
+    if (!draggingId) return;
+    const order = orders.find((o) => o.id === draggingId);
+    setDraggingId(null);
+    if (!order) return;
+    const nextStatus = resolveDropStatus(columnKey, order);
+    if (nextStatus === order.status) return;
+    changeStatus(order.id, nextStatus);
   };
 
   return (
@@ -79,7 +90,21 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
         {KANBAN_COLUMNS.map((col) => {
           const columnOrders = orders.filter((o) => col.statuses.includes(o.status));
           return (
-            <div key={col.key} className="flex min-w-[220px] flex-col gap-3">
+            <div
+              key={col.key}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (dragOverCol !== col.key) setDragOverCol(col.key);
+              }}
+              onDragLeave={() => setDragOverCol((c) => (c === col.key ? null : c))}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDrop(col.key);
+              }}
+              className={`flex min-w-[220px] flex-col gap-3 rounded-2xl p-2 transition-colors ${
+                dragOverCol === col.key ? "bg-brand-orange/10 ring-2 ring-brand-orange/40" : ""
+              }`}
+            >
               <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
                 {col.label} ({columnOrders.length})
               </p>
@@ -87,12 +112,28 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                 {columnOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="flex flex-col gap-2 rounded-2xl border-2 border-brand-chocolate/10 bg-white p-3"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggingId(order.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", order.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggingId(null);
+                      setDragOverCol(null);
+                    }}
+                    className={`flex cursor-grab select-none flex-col gap-2 rounded-2xl border-2 border-brand-chocolate/10 bg-white p-3 active:cursor-grabbing ${
+                      draggingId === order.id ? "opacity-40" : ""
+                    }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-body text-xs font-bold text-brand-chocolate">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        draggable={false}
+                        className="font-body text-xs font-bold text-brand-chocolate hover:text-brand-orange"
+                      >
                         {order.orderNumber}
-                      </span>
+                      </Link>
                       <span
                         className={`rounded-full px-2 py-0.5 font-body text-[10px] font-bold ${
                           order.orderSource === "manual"
@@ -118,9 +159,11 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                     <select
                       value={order.status}
                       onChange={(e) => changeStatus(order.id, e.target.value as OrderStatus)}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      draggable={false}
                       className="input-field text-xs"
                     >
-                      {ALL_STATUSES.map((s) => (
+                      {ALL_ORDER_STATUSES.map((s) => (
                         <option key={s.value} value={s.value}>
                           {s.label}
                         </option>
@@ -129,6 +172,7 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                     <Link
                       href={`/admin/orders/${order.id}/slip`}
                       target="_blank"
+                      draggable={false}
                       className="font-body text-xs font-bold text-brand-orange hover:text-brand-chocolate"
                     >
                       Print slip

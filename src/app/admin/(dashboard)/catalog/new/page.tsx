@@ -1,8 +1,10 @@
 import { CakeForm } from "@/components/admin/CakeForm";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { listFlavors } from "@/lib/catalog/queries";
+import { requireModulePage } from "@/lib/admin/auth";
 
 export default async function NewCakePage() {
+  await requireModulePage("content_media");
   const flavors = await listFlavors(createServiceRoleClient());
 
   return (

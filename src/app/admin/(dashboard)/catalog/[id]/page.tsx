@@ -3,12 +3,14 @@ import { CakeForm } from "@/components/admin/CakeForm";
 import { getCakeForEdit } from "@/lib/admin/catalogAdmin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { listFlavors } from "@/lib/catalog/queries";
+import { requireModulePage } from "@/lib/admin/auth";
 
 export default async function EditCakePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireModulePage("content_media");
   const { id } = await params;
   const [cake, flavors] = await Promise.all([
     getCakeForEdit(id),

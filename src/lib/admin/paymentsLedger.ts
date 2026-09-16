@@ -55,7 +55,9 @@ export async function listPendingTrxMatches(): Promise<PaymentLedgerRow[]> {
  * handed over in cash at pickup/delivery (see updateOrderStatus's
  * auto-settle-on-collection). These three buckets are mutually exclusive
  * and sum to the day's full order value: collected digitally + collected
- * in cash + still outstanding. */
+ * in cash + still outstanding. The one exception is a refunded order —
+ * the money's gone back to the customer, so it's excluded from all three
+ * (0 + 0 + 0), not left sitting in "still outstanding". */
 function collectedViaMfs(row: PaymentLedgerRow): number {
   if (row.paymentMethod !== "bkash" && row.paymentMethod !== "nagad") return 0;
   if (row.paymentStatus === "paid_in_full" || row.paymentStatus === "deposit_paid") {
@@ -70,7 +72,7 @@ function collectedInCash(row: PaymentLedgerRow): number {
 }
 
 export function pendingCashDue(row: PaymentLedgerRow): number {
-  if (row.paymentStatus === "paid_in_full") return 0;
+  if (row.paymentStatus === "paid_in_full" || row.paymentStatus === "refunded") return 0;
   if (row.paymentStatus === "deposit_paid") return row.balanceDue;
   return row.total;
 }

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { listAllReviewsAdmin } from "@/lib/admin/reviewsAdmin";
+import { requireModulePage } from "@/lib/admin/auth";
 import { LinkButton } from "@/components/ui/Button";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 
 export default async function AdminReviewsPage() {
+  await requireModulePage("content_media");
   const reviews = await listAllReviewsAdmin();
 
   return (

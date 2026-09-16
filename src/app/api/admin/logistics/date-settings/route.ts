@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
+import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { listDateCapacityRows, upsertDateCapacitySetting } from "@/lib/admin/logistics";
 import type { DateCapacitySetting } from "@/lib/admin/logistics";
 
 async function guard() {
   try {
-    await requireAdmin();
+    await requireModule("logistics");
     return null;
   } catch (error) {
     if (error instanceof AdminAuthError) {

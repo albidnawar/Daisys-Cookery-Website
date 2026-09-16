@@ -192,7 +192,9 @@ export function PaymentsLedger({
                   <td className="p-3 text-brand-chocolate/70">{row.manualTrxId ?? "—"}</td>
                   <td className="p-3 text-brand-chocolate/70">৳{row.total.toLocaleString("en-BD")}</td>
                   <td className="p-3 text-brand-chocolate/70">৳{row.depositAmount.toLocaleString("en-BD")}</td>
-                  <td className="p-3 text-brand-chocolate/70">৳{row.balanceDue.toLocaleString("en-BD")}</td>
+                  <td className="p-3 text-brand-chocolate/70">
+                    ৳{(row.paymentStatus === "paid_in_full" ? 0 : row.balanceDue).toLocaleString("en-BD")}
+                  </td>
                   <td className="p-3">
                     <select
                       value={row.paymentStatus}
