@@ -40,6 +40,11 @@ yarn-error.log*
 # tables before a project is connected; never meant to be committed
 /.dev-data/
 
+# manual database exports (real customer PII — orders, contacts,
+# addresses) taken as a stopgap since the Supabase free tier has no
+# automated backups. Never meant to be committed.
+/backups/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
