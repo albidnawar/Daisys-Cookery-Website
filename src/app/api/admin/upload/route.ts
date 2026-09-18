@@ -1,10 +1,16 @@
 import { randomUUID } from "node:crypto";
+import sharp from "sharp";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin, AdminAuthError } from "@/lib/admin/auth";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const ACCEPTED = ["image/png", "image/jpeg", "image/webp"];
+// Every upload here (cake photos, banners, review images) is served to
+// every visitor on a hot page — re-encoding to webp and capping the width
+// keeps per-visitor bandwidth down regardless of how large the admin's
+// original phone photo was (see the surge-readiness plan).
+const MAX_WIDTH = 1600;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,12 +37,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Image is too large (max 8MB)" }, { status: 400 });
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  const original = new Uint8Array(await file.arrayBuffer());
+  let bytes: Uint8Array;
+  try {
+    bytes = await sharp(original)
+      .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch {
+    return NextResponse.json({ error: "Couldn't process that image" }, { status: 400 });
+  }
+
   const supabase = createServiceRoleClient();
-  const path = `${randomUUID()}-${file.name}`;
+  const baseName = file.name.replace(/\.[^.]+$/, "");
+  const path = `${randomUUID()}-${baseName}.webp`;
   const { error } = await supabase.storage
     .from("media")
-    .upload(path, bytes, { contentType: file.type, upsert: true });
+    .upload(path, bytes, { contentType: "image/webp", upsert: true });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

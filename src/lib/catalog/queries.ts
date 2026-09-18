@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { EventCode } from "@/lib/catalog/events";
 import type {
   CakeDetail,
@@ -246,3 +248,40 @@ export async function getCakeBySlug(
     optionGroups,
   };
 }
+
+// Cached variants of the reads above, for the public-facing hot paths
+// (home, browse, cake detail, /api/catalog*) — every table these touch is
+// public-read RLS (`for select using (true)`, see 0001_catalog.sql), so
+// there's no per-visitor scoping to lose by building a fresh service-role
+// client inside the cache instead of accepting one from the caller. A
+// request-scoped, cookie-bound client (from createServerSupabaseClient())
+// must never be closed over here — unstable_cache's result is shared
+// across requests, not just the one that happened to populate it.
+//
+// Admin routes that write cakes/flavors must call
+// revalidateTag("catalog") (see src/app/api/admin/cakes/route.ts and
+// src/app/api/admin/cakes/[id]/route.ts) so an edit isn't stuck behind
+// the TTL below.
+export const getCachedFlavors = unstable_cache(
+  () => listFlavors(createServiceRoleClient()),
+  ["flavors"],
+  { revalidate: 120, tags: ["catalog"] },
+);
+
+export const getCachedFeaturedCakes = unstable_cache(
+  (limit: number) => listFeaturedCakes(createServiceRoleClient(), limit),
+  ["featured-cakes"],
+  { revalidate: 60, tags: ["catalog"] },
+);
+
+export const getCachedCakes = unstable_cache(
+  (filters: CatalogFilters) => listCakes(createServiceRoleClient(), filters),
+  ["cakes-list"],
+  { revalidate: 60, tags: ["catalog"] },
+);
+
+export const getCachedCakeBySlug = unstable_cache(
+  (slug: string) => getCakeBySlug(createServiceRoleClient(), slug),
+  ["cake-detail"],
+  { revalidate: 120, tags: ["catalog"] },
+);

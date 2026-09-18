@@ -3,13 +3,12 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { listFeaturedCakes, listFlavors } from "@/lib/catalog/queries";
+import { getCachedFeaturedCakes, getCachedFlavors } from "@/lib/catalog/queries";
 import { FIXTURE_CAKES, FIXTURE_FLAVORS } from "@/lib/catalog/fixtures";
-import { listReviews } from "@/lib/reviews/queries";
+import { getCachedReviews } from "@/lib/reviews/queries";
 import { FIXTURE_REVIEWS } from "@/lib/reviews/fixtures";
-import { getActiveHeroBanner } from "@/lib/home/heroBanner";
+import { getCachedActiveHeroBanner } from "@/lib/home/heroBanner";
 import { ReviewsMarquee } from "@/components/home/ReviewsMarquee";
 import { HeroBanner } from "@/components/home/HeroBanner";
 import { getStoreSettings } from "@/lib/settings/store";
@@ -38,12 +37,11 @@ async function getHomeData() {
       heroBanner: null,
     };
   }
-  const supabase = await createServerSupabaseClient();
   const [flavors, cakes, reviews, heroBanner] = await Promise.all([
-    listFlavors(supabase),
-    listFeaturedCakes(supabase, 4),
-    listReviews(supabase),
-    getActiveHeroBanner(supabase),
+    getCachedFlavors(),
+    getCachedFeaturedCakes(4),
+    getCachedReviews(),
+    getCachedActiveHeroBanner(),
   ]);
   return { flavors, cakes, reviews, heroBanner };
 }

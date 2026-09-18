@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 
@@ -17,7 +18,14 @@ const FALLBACK: StoreSettings = {
   shopPhone: "01814438989",
 };
 
-export async function getStoreSettings(): Promise<StoreSettings> {
+// Called independently by the home, browse, and cake-detail pages — cached
+// so a traffic surge collapses that into one Supabase round-trip every 5
+// minutes instead of three per page load. Safe to cache: store_settings is
+// global (not per-visitor) and an admin edits it a few times a year at
+// most. Admin writes must call revalidateTag("store-settings") (see
+// src/app/api/admin/settings/route.ts) so an edit isn't stuck behind the
+// TTL.
+async function fetchStoreSettings(): Promise<StoreSettings> {
   if (!isSupabaseConfigured()) return FALLBACK;
 
   const supabase = createServiceRoleClient();
@@ -31,3 +39,8 @@ export async function getStoreSettings(): Promise<StoreSettings> {
     shopPhone: data.shop_phone,
   };
 }
+
+export const getStoreSettings = unstable_cache(fetchStoreSettings, ["store-settings"], {
+  revalidate: 300,
+  tags: ["store-settings"],
+});

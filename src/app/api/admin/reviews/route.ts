@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { createReview, listAllReviewsAdmin, type ReviewInput } from "@/lib/admin/reviewsAdmin";
@@ -26,5 +27,6 @@ export async function POST(request: NextRequest) {
   if (denied) return denied;
   const input = (await request.json()) as ReviewInput;
   const id = await createReview(input);
+  revalidateTag("reviews", { expire: 0 });
   return NextResponse.json({ id }, { status: 201 });
 }

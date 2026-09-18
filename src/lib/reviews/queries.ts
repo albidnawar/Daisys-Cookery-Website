@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Review } from "@/lib/types/domain";
 
 // Untyped for the same reason as catalog/queries.ts's Client — see that
@@ -21,3 +23,12 @@ export async function listReviews(supabase: Client): Promise<Review[]> {
     reviewDate: row.review_date,
   }));
 }
+
+// Cached for the homepage's hot path — public-read RLS table (0007_reviews.sql),
+// same reasoning as catalog/queries.ts's cached variants. Admin review writes
+// must call revalidateTag("reviews").
+export const getCachedReviews = unstable_cache(
+  () => listReviews(createServiceRoleClient()),
+  ["reviews"],
+  { revalidate: 300, tags: ["reviews"] },
+);

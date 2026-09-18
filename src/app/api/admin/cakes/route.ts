@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { createCake, listAllCakesAdmin, type CakeInput } from "@/lib/admin/catalogAdmin";
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
   const input = (await request.json()) as CakeInput;
   try {
     const id = await createCake(input);
+    revalidateTag("catalog", { expire: 0 });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message.includes("cakes_slug_key")) {

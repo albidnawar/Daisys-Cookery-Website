@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import {
@@ -41,6 +42,7 @@ export async function PATCH(
   const { id } = await params;
   const input = (await request.json()) as CakeInput;
   await updateCake(id, input);
+  revalidateTag("catalog", { expire: 0 });
   return NextResponse.json({ ok: true });
 }
 
@@ -59,6 +61,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteCake(id);
+    revalidateTag("catalog", { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof CakeInUseError) {

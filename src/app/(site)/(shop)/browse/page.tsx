@@ -1,7 +1,6 @@
 import { BrowsePageClient } from "@/components/browse/BrowsePageClient";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { applyCatalogFilters, listCakes, listFlavors } from "@/lib/catalog/queries";
+import { applyCatalogFilters, getCachedCakes, getCachedFlavors } from "@/lib/catalog/queries";
 import { FIXTURE_CAKES, FIXTURE_FLAVORS } from "@/lib/catalog/fixtures";
 import { EVENT_OPTIONS, type EventCode } from "@/lib/catalog/events";
 import { getStoreSettings } from "@/lib/settings/store";
@@ -27,10 +26,9 @@ export default async function BrowsePage({
   const [{ flavors, cakes }, settings] = await Promise.all([
     isSupabaseConfigured()
       ? (async () => {
-          const supabase = await createServerSupabaseClient();
           const [flavors, cakes] = await Promise.all([
-            listFlavors(supabase),
-            listCakes(supabase, filters),
+            getCachedFlavors(),
+            getCachedCakes(filters),
           ]);
           return { flavors, cakes };
         })()

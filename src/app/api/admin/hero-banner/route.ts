@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import {
@@ -30,5 +31,6 @@ export async function PUT(request: NextRequest) {
   if (denied) return denied;
   const input = (await request.json()) as HeroBannerInput;
   await saveHeroBanner(input);
+  revalidateTag("hero-banner", { expire: 0 });
   return NextResponse.json({ ok: true });
 }

@@ -4,9 +4,8 @@ import { Gallery } from "@/components/cake-detail/Gallery";
 import { DietaryTagList } from "@/components/cake-detail/DietaryTagList";
 import { CakeDetailPurchasePanel } from "@/components/cake-detail/CakeDetailPurchasePanel";
 import { SaveCakeButton } from "@/components/cake-detail/SaveCakeButton";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { getCakeBySlug } from "@/lib/catalog/queries";
+import { getCachedCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
 import { getStoreSettings } from "@/lib/settings/store";
 
@@ -18,7 +17,7 @@ export default async function CakeDetailPage({
   const { slug } = await params;
 
   const cake = isSupabaseConfigured()
-    ? await getCakeBySlug(await createServerSupabaseClient(), slug)
+    ? await getCachedCakeBySlug(slug)
     : getFixtureCakeDetail(slug);
 
   if (!cake) notFound();

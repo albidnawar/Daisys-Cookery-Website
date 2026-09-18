@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
   images: {
@@ -15,4 +16,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// org/project/authToken read from SENTRY_ORG / SENTRY_PROJECT /
+// SENTRY_AUTH_TOKEN — unset until the Sentry account exists, in which case
+// the plugin skips source-map upload with a warning rather than failing
+// the build (same "fail open" posture as sentry.*.config.ts's dsn).
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  widenClientFileUpload: true,
+});

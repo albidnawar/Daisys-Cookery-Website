@@ -153,7 +153,19 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       manual_trx_id: order.manualTrxId,
       created_at: order.createdAt,
     });
-    if (orderError) throw orderError;
+    if (orderError) {
+      // 23505 = unique_violation on orders_draft_order_id_key (see
+      // 0019_orders_draft_order_id_unique.sql) — a concurrent/retried
+      // request for the same draft already won the race and inserted its
+      // order first. Return that order instead of a 500, so a double-click
+      // during a slow moment (exactly what a traffic surge causes) reads
+      // as "same order twice," not an error.
+      if (orderError.code === "23505") {
+        const existing = await getOrderByDraftId(draft.id);
+        if (existing) return existing;
+      }
+      throw orderError;
+    }
 
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
@@ -196,6 +208,28 @@ export async function getOrder(id: string): Promise<Order | null> {
   }
   const all = await readAll();
   return all[id] ?? null;
+}
+
+/** Used by createOrder()'s duplicate-race handling — see 0019_orders_draft_order_id_unique.sql. */
+export async function getOrderByDraftId(draftId: string): Promise<Order | null> {
+  if (isSupabaseConfigured()) {
+    const supabase = await createServiceRoleClient();
+    const { data, error } = await supabase
+      .from("orders")
+      .select(
+        "*, delivery_zones ( name ), delivery_slots ( date, start_time, end_time )",
+      )
+      .eq("draft_order_id", draftId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return rowToOrder(data);
+  }
+  // The dev file-store's Order records don't track their originating
+  // draftId, and this path is only ever reached from the DB unique-
+  // constraint race handler above, which is Supabase-only — nothing to
+  // look up here.
+  return null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

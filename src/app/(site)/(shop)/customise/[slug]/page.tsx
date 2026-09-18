@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import { WizardShell } from "@/components/customiser/WizardShell";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { getCakeBySlug } from "@/lib/catalog/queries";
+import { getCachedCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
 import { getStoreSettings } from "@/lib/settings/store";
 
@@ -21,7 +20,7 @@ export default async function CustomisePage({
   const effectiveSlug = slug === "new" ? DEFAULT_FROM_SCRATCH_SLUG : slug;
 
   const cake = isSupabaseConfigured()
-    ? await getCakeBySlug(await createServerSupabaseClient(), effectiveSlug)
+    ? await getCachedCakeBySlug(effectiveSlug)
     : getFixtureCakeDetail(effectiveSlug);
 
   if (!cake || !cake.isCustomisable) notFound();

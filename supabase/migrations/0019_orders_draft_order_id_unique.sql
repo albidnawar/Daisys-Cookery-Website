@@ -1,0 +1,11 @@
+-- Module: surge readiness. createOrder() (src/lib/orders/store.ts) checks
+-- draft.status === "converted" at the top of the function but only sets
+-- that flag at the very end, after pricing and a payment-intent call —
+-- two concurrent/retried POSTs to /api/orders for the same draftId can
+-- both pass the check and both insert a full order. A traffic surge (slow
+-- responses -> impatient double-clicks, or a client retry) makes this
+-- more likely to actually happen, not less. This constraint makes a
+-- duplicate impossible at the database level regardless of app-layer
+-- timing; createOrder() catches the resulting 23505 and returns the
+-- already-created order instead of erroring.
+alter table orders add constraint orders_draft_order_id_key unique (draft_order_id);

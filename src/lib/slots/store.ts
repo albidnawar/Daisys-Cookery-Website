@@ -179,7 +179,10 @@ export async function listAvailability(
 ): Promise<SlotAvailability[]> {
   if (isSupabaseConfigured()) {
     const supabase = await createServiceRoleClient();
-    await supabase.rpc("release_expired_holds");
+    // release_expired_holds() runs on a 2-minute pg_cron schedule instead
+    // of inline here — this used to re-run the same table-wide cleanup
+    // scan on every single availability check, which piles up fast under
+    // a browsing surge (see 0020_scheduled_expired_hold_cleanup.sql).
 
     const { data: dateSetting } = await supabase
       .from("date_capacity_settings")

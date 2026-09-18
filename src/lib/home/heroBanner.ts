@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 
 type Client = SupabaseClient;
 
@@ -21,3 +23,12 @@ export async function getActiveHeroBanner(supabase: Client): Promise<HeroBanner 
   if (!data || !data.image_url) return null;
   return { imageUrl: data.image_url, linkUrl: data.link_url };
 }
+
+// Cached for the homepage's hot path — public-read RLS table (0009_hero_banner.sql),
+// same reasoning as catalog/queries.ts's cached variants. Admin hero-banner
+// writes must call revalidateTag("hero-banner").
+export const getCachedActiveHeroBanner = unstable_cache(
+  () => getActiveHeroBanner(createServiceRoleClient()),
+  ["hero-banner"],
+  { revalidate: 120, tags: ["hero-banner"] },
+);

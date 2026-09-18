@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { applyCatalogFilters, listCakes } from "@/lib/catalog/queries";
+import { applyCatalogFilters, getCachedCakes } from "@/lib/catalog/queries";
 import { FIXTURE_CAKES } from "@/lib/catalog/fixtures";
 import { EVENT_OPTIONS, type EventCode } from "@/lib/catalog/events";
 import type { CatalogFilters, DietaryTag } from "@/lib/types/domain";
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest) {
   };
 
   const cakes = isSupabaseConfigured()
-    ? await listCakes(await createServerSupabaseClient(), filters)
+    ? await getCachedCakes(filters)
     : applyCatalogFilters(FIXTURE_CAKES, filters);
 
   return NextResponse.json({ cakes });

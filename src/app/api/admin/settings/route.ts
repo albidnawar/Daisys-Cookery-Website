@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireOwner, AdminAuthError } from "@/lib/admin/auth";
 import { updateStoreSettings } from "@/lib/admin/storeSettings";
@@ -8,6 +9,7 @@ export async function PUT(request: NextRequest) {
     await requireOwner();
     const input = (await request.json()) as StoreSettings;
     await updateStoreSettings(input);
+    revalidateTag("store-settings", { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof AdminAuthError) {

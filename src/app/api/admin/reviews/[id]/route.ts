@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import {
@@ -40,6 +41,7 @@ export async function PATCH(
   const { id } = await params;
   const input = (await request.json()) as ReviewInput;
   await updateReview(id, input);
+  revalidateTag("reviews", { expire: 0 });
   return NextResponse.json({ ok: true });
 }
 
@@ -51,5 +53,6 @@ export async function DELETE(
   if (denied) return denied;
   const { id } = await params;
   await deleteReview(id);
+  revalidateTag("reviews", { expire: 0 });
   return NextResponse.json({ ok: true });
 }
