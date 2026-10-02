@@ -29,7 +29,7 @@ function UploadSlot({
       const urls: string[] = data.draft.spec.referenceImageUrls ?? [];
       onUploaded(urls[urls.length - 1]);
     } catch {
-      onError("Couldn't upload that image — try a PNG, JPEG, or WebP under 8MB.");
+      onError("Couldn't upload that image. Try a PNG, JPEG, or WebP under 8MB.");
     } finally {
       setUploading(false);
     }
@@ -113,7 +113,7 @@ export function ReferenceImageDropzone({
       <textarea
         value={instructions ?? ""}
         onChange={(e) => onInstructionsChange(e.target.value)}
-        placeholder="Tell us what to change — e.g. write 'Happy Anniversary' on the board, add fresh flowers on top…"
+        placeholder="Tell us what to change, e.g. write 'Happy Anniversary' on the board, add fresh flowers on top…"
         rows={3}
         className="w-full rounded-2xl border-2 border-brand-chocolate/10 bg-white px-3 py-2 font-body text-sm text-brand-chocolate outline-none focus:border-brand-orange"
       />

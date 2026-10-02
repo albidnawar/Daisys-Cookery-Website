@@ -115,7 +115,7 @@ export default async function CheckoutPage({
         optionGroups={optionGroups}
         price={price}
         fulfilmentLabel={
-          draft.fulfilmentType === "pickup" ? `Collection — ${zone.name}` : `Delivery — ${zone.name}`
+          draft.fulfilmentType === "pickup" ? `Collection: ${zone.name}` : `Delivery: ${zone.name}`
         }
       />
     </div>

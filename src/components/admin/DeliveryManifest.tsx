@@ -72,7 +72,7 @@ export function DeliveryManifest({ initialDate, initialRows }: { initialDate: st
                   >
                     <div>
                       <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-orange">
-                        {row.orderNumber} &middot; {row.slotLabel ?? "—"}
+                        {row.orderNumber} &middot; {row.slotLabel ?? "-"}
                       </p>
                       <p className="font-display text-base font-semibold text-brand-chocolate">
                         {row.contactName} &middot; {row.contactPhone}

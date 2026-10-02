@@ -10,8 +10,8 @@ import type { CustomQuoteInput, CustomQuoteStatus } from "@/lib/types/domain";
 const MAX_REFERENCE_IMAGES = 3;
 
 const STATUS_OPTIONS: { value: CustomQuoteStatus; label: string }[] = [
-  { value: "new", label: "New — not priced yet" },
-  { value: "quoted", label: "Quoted — waiting on customer" },
+  { value: "new", label: "New: not priced yet" },
+  { value: "quoted", label: "Quoted: waiting on customer" },
   { value: "declined", label: "Declined" },
 ];
 

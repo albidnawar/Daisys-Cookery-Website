@@ -204,7 +204,7 @@ export async function deleteCake(id: string): Promise<void> {
   if (error) {
     if (error.code === "23503") {
       throw new CakeInUseError(
-        "This cake has existing orders and can't be deleted — hide it instead by turning off \"Visible on the site\".",
+        "This cake has existing orders and can't be deleted. Hide it instead by turning off \"Visible on the site\".",
       );
     }
     throw error;

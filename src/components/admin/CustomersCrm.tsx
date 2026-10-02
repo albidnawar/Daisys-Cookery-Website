@@ -82,7 +82,7 @@ export function CustomersCrm({ customers }: { customers: CustomerSummary[] }) {
                   })}
                 </td>
                 <td className="p-3 text-brand-chocolate/70">{customer.customerId ? "Registered" : "Guest"}</td>
-                <td className="p-3 text-brand-chocolate/70">{customer.savedAddressCount || "—"}</td>
+                <td className="p-3 text-brand-chocolate/70">{customer.savedAddressCount || "-"}</td>
               </tr>
             ))}
           </tbody>

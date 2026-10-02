@@ -22,7 +22,7 @@ export default function SiteError({
         Something went wrong
       </h1>
       <p className="max-w-md font-body text-sm leading-relaxed text-brand-chocolate/70">
-        That&apos;s on us, not you — give it another try, or head back to the homepage.
+        That&apos;s on us, not you. Give it another try, or head back to the homepage.
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
         <Button onClick={reset}>Try again</Button>

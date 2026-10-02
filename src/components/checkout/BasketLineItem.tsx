@@ -25,7 +25,7 @@ export function BasketLineItem({
       <div className="aspect-4/3 w-36 flex-none rounded-2xl border-2 border-brand-chocolate/10 bg-cream" />
       <div className="flex-1">
         <p className="font-display text-2xl text-brand-chocolate">
-          {cakeName} {sizeLabel && `— ${sizeLabel}`}
+          {cakeName} {sizeLabel && `· ${sizeLabel}`}
         </p>
         <p className="mt-1 font-body text-sm leading-relaxed text-brand-chocolate/70">
           {summarizeSpec(groupsByCode, spec)}

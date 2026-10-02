@@ -62,8 +62,8 @@ export default async function Home() {
           </h1>
           <p className="max-w-md font-body text-lg leading-relaxed text-brand-chocolate/80">
             Eleven flavors, sponge baked the morning you collect it. Tell us
-            the size, the filling and what to write on top — we will do the
-            rest by hand.
+            the size, the filling and what to write on top, and we will do
+            the rest by hand.
           </p>
           <div className="flex flex-wrap gap-3">
             <LinkButton href="/customise/new" variant="primary">
@@ -74,7 +74,7 @@ export default async function Home() {
             </LinkButton>
           </div>
           <p className="font-body text-sm text-brand-chocolate/60">
-            Cakes over five pounds are quoted by phone — call {settings.shopPhone}.
+            Cakes over five pounds are quoted by phone: call {settings.shopPhone}.
           </p>
         </div>
         <HeroBanner banner={heroBanner} />

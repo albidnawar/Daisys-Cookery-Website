@@ -75,7 +75,7 @@ export function ProfileForm({ profile }: { profile: CustomerProfile }) {
           className="input-field"
           placeholder="no nuts, no eggs"
         />
-        <span className="font-body text-xs text-brand-chocolate/50">Comma-separated — shown to us as a default note on new orders.</span>
+        <span className="font-body text-xs text-brand-chocolate/50">Comma-separated, shown to us as a default note on new orders.</span>
       </label>
       {error && <p className="font-body text-sm text-red-600">{error}</p>}
       {saved && <p className="font-body text-sm text-emerald-700">Saved.</p>}

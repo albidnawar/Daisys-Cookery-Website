@@ -24,7 +24,7 @@ export function TimeSlotPicker({
   if (slots.length === 0) {
     return (
       <p className="font-body text-sm text-brand-chocolate/60">
-        No slots for that date yet — try another day.
+        No slots for that date yet. Try another day.
       </p>
     );
   }

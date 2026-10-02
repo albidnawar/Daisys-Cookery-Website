@@ -11,7 +11,7 @@ import { toObjectPosition, type FocalPoint } from "@/lib/image/focal";
 import type { DraftOrderSpec, OptionGroup, PriceBreakdown } from "@/lib/types/domain";
 
 function labelFor(groupsByCode: Record<string, OptionGroup>, code: string, valueCode?: string) {
-  if (!valueCode) return "—";
+  if (!valueCode) return "-";
   return (
     groupsByCode[code]?.values.find((v) => v.valueCode === valueCode)?.label ??
     valueCode
@@ -43,7 +43,7 @@ export function SummaryPanel({
 }) {
   const sizeLabel = spec.sizeCode
     ? labelFor(groupsByCode, "size_lb", spec.sizeCode)
-    : "—";
+    : "-";
   const extrasLabels = (spec.extras ?? [])
     .map((code) => labelFor(groupsByCode, "extras", code))
     .join(", ");
@@ -78,7 +78,7 @@ export function SummaryPanel({
       />
 
       <h3 className="font-display text-2xl font-semibold text-brand-chocolate">
-        {sizeLabel !== "—" ? `${sizeLabel} ` : ""}
+        {sizeLabel !== "-" ? `${sizeLabel} ` : ""}
         {cakeName}
       </h3>
 
@@ -90,8 +90,8 @@ export function SummaryPanel({
             label="Finish"
             value={labelFor(groupsByCode, "frosting_finish", spec.frostingFinish)}
           />
-          <Row label="Message" value={spec.message || "—"} />
-          <Row label="Extras" value={extrasLabels || "—"} />
+          <Row label="Message" value={spec.message || "-"} />
+          <Row label="Extras" value={extrasLabels || "-"} />
         </tbody>
       </table>
 

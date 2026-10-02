@@ -13,8 +13,8 @@ export default async function AboutPage() {
         Baked in Chattogram since 2022.
       </h1>
       <p className="mb-10 max-w-2xl font-body text-base leading-relaxed text-brand-chocolate/80">
-        Every cake is baked to order the morning it&apos;s collected or delivered
-        — nothing sits pre-made in a case. Drop by to pick up an order, ask
+        Every cake is baked to order the morning it&apos;s collected or delivered;
+        nothing sits pre-made in a case. Drop by to pick up an order, ask
         about a custom design in person, or just say hello.
       </p>
 

@@ -57,7 +57,7 @@ export function OrderSummaryCard({
           <Row label={order.fulfilmentType === "pickup" ? "From" : "To"} value={fromOrTo} />
           <Row
             label="Cake"
-            value={`${order.cakeSnapshot.name} — ${order.cakeSnapshot.spec.sizeCode ?? "?"} lb, ${summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}`}
+            value={`${order.cakeSnapshot.name}, ${order.cakeSnapshot.spec.sizeCode ?? "?"} lb, ${summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}`}
           />
           <Row
             label="Deposit paid"
@@ -75,7 +75,7 @@ export function OrderSummaryCard({
         </LinkButton>
         <AddToCalendarButton
           orderNumber={order.orderNumber}
-          summary={`Daisy's Cookery — ${order.cakeSnapshot.name}`}
+          summary={`Daisy's Cookery: ${order.cakeSnapshot.name}`}
           location={fromOrTo}
           slotLabel={order.slotLabel}
         />

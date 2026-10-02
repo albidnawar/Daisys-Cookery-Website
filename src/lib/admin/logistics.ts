@@ -117,7 +117,7 @@ export async function listManifestForDate(date: string): Promise<ManifestRow[]> 
       contactPhone: row.contact_phone,
       cakeName: (row.cake_snapshot as CakeSnapshot).name,
       fulfilmentType: row.fulfilment_type,
-      zoneName: row.delivery_zones?.name ?? "—",
+      zoneName: row.delivery_zones?.name ?? "-",
       addressText: (row.delivery_address as { text?: string } | null)?.text ?? null,
       codAmount: pendingCashDue(ledgerRow),
       slotLabel: slot ? `${slot.start_time.slice(0, 5)}-${slot.end_time.slice(0, 5)}` : null,

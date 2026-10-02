@@ -43,7 +43,7 @@ export function SizeSelector({
       </div>
       {value === "other" && (
         <p className="mt-3 border-l-2 border-brand-orange pl-3 font-body text-xs leading-relaxed text-brand-chocolate/70">
-          Cakes over five pounds are quoted by phone — call{" "}
+          Cakes over five pounds are quoted by phone, call{" "}
           <strong>{shopPhone}</strong>, or use the chat button below.
         </p>
       )}

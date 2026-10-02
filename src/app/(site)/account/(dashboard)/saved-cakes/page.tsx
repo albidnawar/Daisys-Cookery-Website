@@ -14,7 +14,7 @@ export default async function SavedCakesPage() {
   if (savedCakes.length === 0) {
     return (
       <p className="font-body text-sm text-brand-chocolate/60">
-        No saved cakes yet — tap &ldquo;Save&rdquo; on any cake&apos;s page to keep it here.
+        No saved cakes yet. Tap &ldquo;Save&rdquo; on any cake&apos;s page to keep it here.
       </p>
     );
   }

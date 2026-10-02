@@ -131,7 +131,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     await holdSlot(input.slotId, holdDraftId);
   } catch (error) {
     if (error instanceof SlotFullError) {
-      throw new ManualOrderError("That slot is full — pick another one.");
+      throw new ManualOrderError("That slot is full. Pick another one.");
     }
     throw error;
   }
@@ -222,7 +222,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
  * chat, or opened as a pre-filled wa.me link, to confirm the order. */
 export function buildOrderSlipText(order: Order): string {
   const lines = [
-    `Daisy's Cookery — Order ${order.orderNumber}`,
+    `Daisy's Cookery: Order ${order.orderNumber}`,
     `Cake: ${order.cakeSnapshot.name}`,
     order.slotLabel ? `Collection/Delivery: ${order.slotLabel}` : null,
     `Total: ৳${order.total.toLocaleString("en-BD")}`,

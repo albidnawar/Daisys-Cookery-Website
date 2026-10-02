@@ -49,7 +49,7 @@ export function AccountLoginForm({ next }: { next: string }) {
       if (signInError) {
         setError(
           signInError.message.toLowerCase().includes("email not confirmed")
-            ? "Please verify your email first — check your inbox for the confirmation link."
+            ? "Please verify your email first. Check your inbox for the confirmation link."
             : signInError.message,
         );
         return;

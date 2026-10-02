@@ -12,7 +12,7 @@ export default async function AccountOrdersPage() {
   if (orders.length === 0) {
     return (
       <p className="font-body text-sm text-brand-chocolate/60">
-        No orders yet —{" "}
+        No orders yet,{" "}
         <Link href="/browse" className="font-bold text-brand-orange hover:text-brand-chocolate">
           browse the cakes
         </Link>{" "}

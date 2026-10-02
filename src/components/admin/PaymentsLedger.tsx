@@ -115,7 +115,7 @@ export function PaymentsLedger({
             Needs verification ({pendingMatches.length})
           </h2>
           <p className="mb-3 font-body text-xs text-brand-chocolate/60">
-            Customer says they&apos;ve paid — check your bKash/Nagad app for a matching transaction ID
+            Customer says they&apos;ve paid. Check your bKash/Nagad app for a matching transaction ID
             before marking these.
           </p>
           <div className="flex flex-col gap-3">
@@ -132,7 +132,7 @@ export function PaymentsLedger({
                     {row.contactName} &middot; {row.contactPhone}
                   </p>
                   <p className="font-body text-sm text-brand-chocolate/70">
-                    Claimed TrxID: <span className="font-bold">{row.manualTrxId ?? "—"}</span> &middot; ৳
+                    Claimed TrxID: <span className="font-bold">{row.manualTrxId ?? "-"}</span> &middot; ৳
                     {row.depositAmount.toLocaleString("en-BD")} deposit
                   </p>
                 </div>
@@ -189,7 +189,7 @@ export function PaymentsLedger({
                     <span className="text-xs">{row.contactPhone}</span>
                   </td>
                   <td className="p-3 text-brand-chocolate/70">{METHOD_LABELS[row.paymentMethod]}</td>
-                  <td className="p-3 text-brand-chocolate/70">{row.manualTrxId ?? "—"}</td>
+                  <td className="p-3 text-brand-chocolate/70">{row.manualTrxId ?? "-"}</td>
                   <td className="p-3 text-brand-chocolate/70">৳{row.total.toLocaleString("en-BD")}</td>
                   <td className="p-3 text-brand-chocolate/70">৳{row.depositAmount.toLocaleString("en-BD")}</td>
                   <td className="p-3 text-brand-chocolate/70">

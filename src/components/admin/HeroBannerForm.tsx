@@ -42,7 +42,7 @@ export function HeroBannerForm({ initial }: { initial: HeroBannerInput }) {
     <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-6">
       <p className="font-body text-sm text-brand-chocolate/60">
         One large image shown at the top of the homepage. No cake name or
-        text is overlaid on it — it&apos;s shown exactly as uploaded.
+        text is overlaid on it. It&apos;s shown exactly as uploaded.
       </p>
 
       <ImageUploadField
@@ -71,7 +71,7 @@ export function HeroBannerForm({ initial }: { initial: HeroBannerInput }) {
           />
         ) : (
           <p className="font-body text-xs text-brand-chocolate/50">
-            Static image — visitors can&apos;t click through anywhere.
+            Static image. Visitors can&apos;t click through anywhere.
           </p>
         )}
       </div>

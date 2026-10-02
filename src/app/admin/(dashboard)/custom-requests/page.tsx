@@ -59,7 +59,7 @@ export default async function AdminCustomRequestsPage() {
         ))}
         {quotes.length === 0 && (
           <p className="font-body text-sm text-brand-chocolate/60">
-            No custom requests logged yet — add your first one above.
+            No custom requests logged yet. Add your first one above.
           </p>
         )}
       </div>

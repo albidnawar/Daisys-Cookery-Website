@@ -82,7 +82,7 @@ export default async function AdminReviewsPage() {
         ))}
         {reviews.length === 0 && (
           <p className="font-body text-sm text-brand-chocolate/60">
-            No reviews yet — add your first one above.
+            No reviews yet. Add your first one above.
           </p>
         )}
       </div>
