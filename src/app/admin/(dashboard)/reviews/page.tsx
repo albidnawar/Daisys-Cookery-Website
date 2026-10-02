@@ -3,6 +3,7 @@ import { listAllReviewsAdmin } from "@/lib/admin/reviewsAdmin";
 import { requireModulePage } from "@/lib/admin/auth";
 import { LinkButton } from "@/components/ui/Button";
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { toObjectPosition } from "@/lib/image/focal";
 
 export default async function AdminReviewsPage() {
   await requireModulePage("content_media");
@@ -26,7 +27,12 @@ export default async function AdminReviewsPage() {
             <div className="h-16 w-16 flex-none overflow-hidden rounded-xl bg-cream">
               {review.cakeImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={review.cakeImageUrl} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={review.cakeImageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  style={{ objectPosition: toObjectPosition(review.cakeImageFocal) }}
+                />
               )}
             </div>
             <div className="flex-1">

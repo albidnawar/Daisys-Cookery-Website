@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { OrderViaChatButton } from "@/components/cake-detail/OrderViaChatButton";
+import { toObjectPosition } from "@/lib/image/focal";
 import type { CakeSummary } from "@/lib/types/domain";
 
 export function CakeCard({ cake }: { cake: CakeSummary }) {
@@ -11,7 +12,13 @@ export function CakeCard({ cake }: { cake: CakeSummary }) {
       <Link href={`/cakes/${cake.slug}`} className="contents">
         <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-cream">
           {cake.heroImageUrl && (
-            <Image src={cake.heroImageUrl} alt={cake.name} fill className="object-cover" />
+            <Image
+              src={cake.heroImageUrl}
+              alt={cake.name}
+              fill
+              className="object-cover"
+              style={{ objectPosition: toObjectPosition(cake.heroImageFocal) }}
+            />
           )}
         </div>
         <div className="flex items-center gap-2">

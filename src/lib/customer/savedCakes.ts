@@ -7,7 +7,9 @@ export async function listSavedCakes(customerId: string): Promise<SavedCake[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("saved_cakes")
-    .select("id, note, cakes ( id, slug, name, hero_image_url )")
+    .select(
+      "id, note, cakes ( id, slug, name, hero_image_url, hero_image_focal_x, hero_image_focal_y )",
+    )
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -23,6 +25,7 @@ export async function listSavedCakes(customerId: string): Promise<SavedCake[]> {
         cakeName: cake.name,
         cakeSlug: cake.slug,
         cakeImageUrl: cake.hero_image_url,
+        cakeImageFocal: { x: Number(cake.hero_image_focal_x), y: Number(cake.hero_image_focal_y) },
         note: row.note,
       };
     });

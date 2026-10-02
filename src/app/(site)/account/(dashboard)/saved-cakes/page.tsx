@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentCustomer } from "@/lib/customer/auth";
 import { listSavedCakes } from "@/lib/customer/savedCakes";
 import { SavedCakeRemoveButton } from "@/components/account/SavedCakeRemoveButton";
+import { toObjectPosition } from "@/lib/image/focal";
 
 export default async function SavedCakesPage() {
   const customer = await getCurrentCustomer();
@@ -27,7 +28,13 @@ export default async function SavedCakesPage() {
         >
           <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-cream">
             {saved.cakeImageUrl && (
-              <Image src={saved.cakeImageUrl} alt={saved.cakeName} fill className="object-cover" />
+              <Image
+                src={saved.cakeImageUrl}
+                alt={saved.cakeName}
+                fill
+                className="object-cover"
+                style={{ objectPosition: toObjectPosition(saved.cakeImageFocal) }}
+              />
             )}
           </div>
           <Link

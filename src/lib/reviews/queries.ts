@@ -10,7 +10,9 @@ type Client = SupabaseClient;
 export async function listReviews(supabase: Client): Promise<Review[]> {
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, customer_name, review_text, cake_image_url, rating, review_date")
+    .select(
+      "id, customer_name, review_text, cake_image_url, cake_image_focal_x, cake_image_focal_y, rating, review_date",
+    )
     .eq("is_active", true)
     .order("sort_order");
   if (error) throw error;
@@ -19,6 +21,7 @@ export async function listReviews(supabase: Client): Promise<Review[]> {
     customerName: row.customer_name,
     reviewText: row.review_text,
     cakeImageUrl: row.cake_image_url,
+    cakeImageFocal: { x: Number(row.cake_image_focal_x), y: Number(row.cake_image_focal_y) },
     rating: row.rating,
     reviewDate: row.review_date,
   }));

@@ -1,15 +1,23 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { FocalPointPicker } from "@/components/admin/FocalPointPicker";
+import type { FocalPoint } from "@/lib/image/focal";
 
 export function ImageUploadField({
   label,
   value,
   onChange,
+  focal,
+  onFocalChange,
 }: {
   label: string;
   value: string | null | undefined;
   onChange: (url: string) => void;
+  /** When provided alongside `onFocalChange`, a drag-to-reposition focal
+   * point picker replaces the plain preview once an image is uploaded. */
+  focal?: FocalPoint | null;
+  onFocalChange?: (point: FocalPoint) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -32,6 +40,40 @@ export function ImageUploadField({
     }
   };
 
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      hidden
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) upload(file);
+        e.target.value = "";
+      }}
+    />
+  );
+
+  if (value && onFocalChange) {
+    return (
+      <div>
+        <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+          {label}
+        </span>
+        <FocalPointPicker src={value} value={focal} onChange={onFocalChange} />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="mt-2 font-body text-xs font-bold text-brand-orange hover:text-brand-chocolate"
+        >
+          {uploading ? "Uploading…" : "Replace photo"}
+        </button>
+        {fileInput}
+        {error && <p className="mt-1 font-body text-xs text-red-600">{error}</p>}
+      </div>
+    );
+  }
+
   return (
     <div>
       <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
@@ -51,17 +93,7 @@ export function ImageUploadField({
           </span>
         )}
       </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        hidden
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) upload(file);
-          e.target.value = "";
-        }}
-      />
+      {fileInput}
       {error && <p className="mt-1 font-body text-xs text-red-600">{error}</p>}
     </div>
   );
