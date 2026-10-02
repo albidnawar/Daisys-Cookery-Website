@@ -3,6 +3,7 @@
 // looks the same either way; delete nothing here when Supabase comes
 // online — queries.ts is simply preferred whenever it's configured.
 import type { CakeDetail, CakeSummary, Flavor, OptionGroup } from "@/lib/types/domain";
+import { DEFAULT_FOCAL } from "@/lib/image/focal";
 
 function group(
   code: string,
@@ -127,6 +128,7 @@ export const FIXTURE_CAKES: CakeSummary[] = [
     shortDescription: "Bourbon vanilla sponge, whipped cream, a plain gold band.",
     basePrice: 1150,
     heroImageUrl: null,
+    heroImageFocal: DEFAULT_FOCAL,
     flavor: FIXTURE_FLAVORS[0],
     dietaryTags: [],
     events: ["birthday", "kids_character"],
@@ -138,6 +140,7 @@ export const FIXTURE_CAKES: CakeSummary[] = [
     shortDescription: "Dark sponge, ganache between the layers, cocoa dusted.",
     basePrice: 1250,
     heroImageUrl: null,
+    heroImageFocal: DEFAULT_FOCAL,
     flavor: FIXTURE_FLAVORS[1],
     dietaryTags: [],
     events: ["birthday", "corporate_office"],
@@ -149,6 +152,7 @@ export const FIXTURE_CAKES: CakeSummary[] = [
     shortDescription: "Cherries, cream and shaved chocolate. Two pounds serves eight.",
     basePrice: 1400,
     heroImageUrl: null,
+    heroImageFocal: DEFAULT_FOCAL,
     flavor: FIXTURE_FLAVORS[2],
     dietaryTags: ["eggless", "gluten_free"],
     events: ["birthday", "anniversary_romance"],
@@ -160,6 +164,7 @@ export const FIXTURE_CAKES: CakeSummary[] = [
     shortDescription: "Cream cheese between three layers, crumbed all round.",
     basePrice: 1350,
     heroImageUrl: null,
+    heroImageFocal: DEFAULT_FOCAL,
     flavor: FIXTURE_FLAVORS[3],
     dietaryTags: ["eggless"],
     events: ["anniversary_romance", "valentines_mothers_fathers_day"],
@@ -173,6 +178,7 @@ export function getFixtureCakeDetail(slug: string): CakeDetail | null {
     ...summary,
     description: `${summary.shortDescription} Kept cold until you collect it; best eaten the same day.`,
     galleryImageUrls: [],
+    galleryImageFocals: [],
     isCustomisable: true,
     optionGroups: FIXTURE_OPTION_GROUPS,
   };

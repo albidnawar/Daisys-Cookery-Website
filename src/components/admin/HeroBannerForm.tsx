@@ -49,6 +49,8 @@ export function HeroBannerForm({ initial }: { initial: HeroBannerInput }) {
         label="Hero image"
         value={values.imageUrl}
         onChange={(url) => set("imageUrl", url)}
+        focal={values.imageFocal}
+        onFocalChange={(point) => set("imageFocal", point)}
       />
 
       <div>

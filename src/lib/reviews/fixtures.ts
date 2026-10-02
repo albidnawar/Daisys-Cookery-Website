@@ -1,4 +1,5 @@
 import type { Review } from "@/lib/types/domain";
+import { DEFAULT_FOCAL } from "@/lib/image/focal";
 
 // Dev-only stand-in for the Supabase `reviews` table — see
 // lib/catalog/fixtures.ts for why this pattern exists.
@@ -9,6 +10,7 @@ export const FIXTURE_REVIEWS: Review[] = [
     reviewText:
       "Ordered the Black Forest for my daughter's birthday and it was gone in minutes. Every layer was fresh and the message piping was so neat.",
     cakeImageUrl: null,
+    cakeImageFocal: DEFAULT_FOCAL,
     rating: 5,
     reviewDate: "2026-08-15",
   },
@@ -18,6 +20,7 @@ export const FIXTURE_REVIEWS: Review[] = [
     reviewText:
       "Best red velvet in Chattogram, hands down. I have tried a lot of bakeries around College Road and Daisy's is the only one I keep going back to.",
     cakeImageUrl: null,
+    cakeImageFocal: DEFAULT_FOCAL,
     rating: 5,
     reviewDate: "2026-08-09",
   },
@@ -27,6 +30,7 @@ export const FIXTURE_REVIEWS: Review[] = [
     reviewText:
       "We customised a two-tier cake for our Gaye Holud and they nailed the floral design from just one reference photo. Guests kept asking where we got it.",
     cakeImageUrl: null,
+    cakeImageFocal: DEFAULT_FOCAL,
     rating: 5,
     reviewDate: "2026-08-02",
   },
@@ -36,6 +40,7 @@ export const FIXTURE_REVIEWS: Review[] = [
     reviewText:
       "Delivery was right on time and the box was still cold when it arrived. The pistachio cake tastes like it is worth every taka.",
     cakeImageUrl: null,
+    cakeImageFocal: DEFAULT_FOCAL,
     rating: 5,
     reviewDate: "2026-07-25",
   },
@@ -45,6 +50,7 @@ export const FIXTURE_REVIEWS: Review[] = [
     reviewText:
       "Ordered a last-minute eggless cake for a baby shower and they sorted it out over WhatsApp within the hour. Incredibly kind and responsive.",
     cakeImageUrl: null,
+    cakeImageFocal: DEFAULT_FOCAL,
     rating: 5,
     reviewDate: "2026-07-17",
   },
@@ -54,6 +60,7 @@ export const FIXTURE_REVIEWS: Review[] = [
     reviewText:
       "The mango cream cake was the highlight of our office anniversary party. Clean design, not too sweet, and beautifully boxed.",
     cakeImageUrl: null,
+    cakeImageFocal: DEFAULT_FOCAL,
     rating: 4,
     reviewDate: "2026-07-04",
   },

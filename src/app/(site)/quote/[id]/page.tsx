@@ -26,7 +26,7 @@ export default async function PublicQuotePage({
 
       <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         {quote.referenceImageUrls.length > 0 ? (
-          <Gallery images={quote.referenceImageUrls} />
+          <Gallery images={quote.referenceImageUrls.map((url) => ({ url }))} />
         ) : (
           <div className="aspect-4/3 w-full rounded-3xl border-2 border-brand-chocolate/10 bg-white" />
         )}

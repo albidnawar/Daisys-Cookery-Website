@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Review } from "@/lib/types/domain";
+import { toObjectPosition } from "@/lib/image/focal";
 
 function Star({ filled }: { filled: boolean }) {
   return (
@@ -26,6 +27,7 @@ export function ReviewCard({ review }: { review: Review }) {
             alt={`Cake ordered by ${review.customerName}`}
             fill
             className="object-cover"
+            style={{ objectPosition: toObjectPosition(review.cakeImageFocal) }}
           />
         )}
       </div>

@@ -47,8 +47,13 @@ export default async function CakeDetailPage({
       <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <Gallery
           images={[
-            ...(cake.heroImageUrl ? [cake.heroImageUrl] : []),
-            ...cake.galleryImageUrls,
+            ...(cake.heroImageUrl
+              ? [{ url: cake.heroImageUrl, focal: cake.heroImageFocal }]
+              : []),
+            ...cake.galleryImageUrls.map((url, i) => ({
+              url,
+              focal: cake.galleryImageFocals[i],
+            })),
           ]}
         />
 

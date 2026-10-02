@@ -1,4 +1,5 @@
 import type { EventCode } from "@/lib/catalog/events";
+import type { FocalPoint } from "@/lib/image/focal";
 
 export type DietaryTag = "eggless" | "gluten_free" | "vegan" | "sugar_free";
 
@@ -13,6 +14,7 @@ export type Review = {
   customerName: string;
   reviewText: string;
   cakeImageUrl: string | null;
+  cakeImageFocal: FocalPoint;
   rating: number;
   reviewDate: string;
 };
@@ -24,6 +26,7 @@ export type CakeSummary = {
   shortDescription: string;
   basePrice: number;
   heroImageUrl: string | null;
+  heroImageFocal: FocalPoint;
   flavor: Flavor | null;
   dietaryTags: DietaryTag[];
   events: EventCode[];
@@ -50,6 +53,8 @@ export type OptionGroup = {
 export type CakeDetail = CakeSummary & {
   description: string;
   galleryImageUrls: string[];
+  // Aligned by index with galleryImageUrls.
+  galleryImageFocals: FocalPoint[];
   isCustomisable: boolean;
   optionGroups: OptionGroup[];
 };
@@ -213,6 +218,7 @@ export type SavedCake = {
   cakeName: string;
   cakeSlug: string;
   cakeImageUrl: string | null;
+  cakeImageFocal: FocalPoint;
   note: string | null;
 };
 

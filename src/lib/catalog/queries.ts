@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { EventCode } from "@/lib/catalog/events";
+import { DEFAULT_FOCAL, type FocalPoint } from "@/lib/image/focal";
 import type {
   CakeDetail,
   CakeSummary,
@@ -20,6 +21,7 @@ type Client = SupabaseClient;
 
 const CAKE_SUMMARY_SELECT = `
   id, slug, name, short_description, base_price, hero_image_url,
+  hero_image_focal_x, hero_image_focal_y,
   flavor:flavors ( id, name, slug ),
   cake_dietary_tags ( tag ),
   cake_events ( event_code )
@@ -32,6 +34,8 @@ type CakeSummaryRow = {
   short_description: string;
   base_price: number;
   hero_image_url: string | null;
+  hero_image_focal_x: number;
+  hero_image_focal_y: number;
   flavor: { id: string; name: string; slug: string } | null;
   cake_dietary_tags: { tag: DietaryTag }[];
   cake_events: { event_code: EventCode }[];
@@ -45,10 +49,24 @@ function toCakeSummary(row: CakeSummaryRow): CakeSummary {
     shortDescription: row.short_description,
     basePrice: Number(row.base_price),
     heroImageUrl: row.hero_image_url,
+    heroImageFocal: { x: Number(row.hero_image_focal_x), y: Number(row.hero_image_focal_y) },
     flavor: row.flavor,
     dietaryTags: row.cake_dietary_tags.map((t) => t.tag),
     events: row.cake_events.map((e) => e.event_code),
   };
+}
+
+/** Aligns a gallery_image_focals jsonb array to the gallery URL list
+ * length — pads with the default (center) focal point for photos added
+ * before this column existed. */
+function alignGalleryFocals(urls: string[], focals: unknown): FocalPoint[] {
+  const list = Array.isArray(focals) ? (focals as Partial<FocalPoint>[]) : [];
+  return urls.map((_, i) => {
+    const f = list[i];
+    return f && typeof f.x === "number" && typeof f.y === "number"
+      ? { x: f.x, y: f.y }
+      : DEFAULT_FOCAL;
+  });
 }
 
 /** Pure in-memory filter/sort, shared by the Supabase-backed fixture
@@ -177,7 +195,8 @@ export async function getCakeBySlug(
     .select(
       `
       id, slug, name, description, short_description, base_price,
-      hero_image_url, gallery_image_urls, is_customisable,
+      hero_image_url, hero_image_focal_x, hero_image_focal_y,
+      gallery_image_urls, gallery_image_focals, is_customisable,
       flavor:flavors ( id, name, slug ),
       cake_dietary_tags ( tag ),
       cake_events ( event_code ),
@@ -199,6 +218,7 @@ export async function getCakeBySlug(
   const r = row as unknown as CakeSummaryRow & {
     description: string;
     gallery_image_urls: string[];
+    gallery_image_focals: unknown;
     is_customisable: boolean;
     cake_option_groups: {
       option_groups: {
@@ -244,6 +264,7 @@ export async function getCakeBySlug(
     ...toCakeSummary(r),
     description: r.description,
     galleryImageUrls: r.gallery_image_urls,
+    galleryImageFocals: alignGalleryFocals(r.gallery_image_urls, r.gallery_image_focals),
     isCustomisable: r.is_customisable,
     optionGroups,
   };

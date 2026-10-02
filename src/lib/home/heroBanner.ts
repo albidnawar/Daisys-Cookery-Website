@@ -1,11 +1,13 @@
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import type { FocalPoint } from "@/lib/image/focal";
 
 type Client = SupabaseClient;
 
 export type HeroBanner = {
   imageUrl: string | null;
+  imageFocal: FocalPoint;
   linkUrl: string | null;
 };
 
@@ -14,14 +16,18 @@ export type HeroBanner = {
 export async function getActiveHeroBanner(supabase: Client): Promise<HeroBanner | null> {
   const { data, error } = await supabase
     .from("hero_banner")
-    .select("image_url, link_url")
+    .select("image_url, image_focal_x, image_focal_y, link_url")
     .eq("is_active", true)
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
   if (!data || !data.image_url) return null;
-  return { imageUrl: data.image_url, linkUrl: data.link_url };
+  return {
+    imageUrl: data.image_url,
+    imageFocal: { x: Number(data.image_focal_x), y: Number(data.image_focal_y) },
+    linkUrl: data.link_url,
+  };
 }
 
 // Cached for the homepage's hot path — public-read RLS table (0009_hero_banner.sql),

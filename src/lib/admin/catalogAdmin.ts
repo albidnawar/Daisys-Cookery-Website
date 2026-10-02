@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { DietaryTag } from "@/lib/types/domain";
 import type { EventCode } from "@/lib/catalog/events";
+import { DEFAULT_FOCAL, type FocalPoint } from "@/lib/image/focal";
 
 export type AdminCakeSummary = {
   id: string;
@@ -22,7 +23,10 @@ export type AdminCakeDetail = {
   basePrice: number;
   primaryFlavorId: string | null;
   heroImageUrl: string | null;
+  heroImageFocal: FocalPoint;
   galleryImageUrls: string[];
+  // Aligned by index with galleryImageUrls.
+  galleryImageFocals: FocalPoint[];
   isCustomisable: boolean;
   isActive: boolean;
   availability: "in_stock" | "sold_out" | "pre_order";
@@ -54,13 +58,27 @@ export async function listAllCakesAdmin(): Promise<AdminCakeSummary[]> {
   }));
 }
 
+/** Aligns a gallery_image_focals jsonb array to the current gallery URL
+ * list length — pads with the default (center) focal point for any photo
+ * added before this column existed, or if the two ever drift apart. */
+function alignGalleryFocals(urls: string[], focals: unknown): FocalPoint[] {
+  const list = Array.isArray(focals) ? (focals as Partial<FocalPoint>[]) : [];
+  return urls.map((_, i) => {
+    const f = list[i];
+    return f && typeof f.x === "number" && typeof f.y === "number"
+      ? { x: f.x, y: f.y }
+      : DEFAULT_FOCAL;
+  });
+}
+
 export async function getCakeForEdit(id: string): Promise<AdminCakeDetail | null> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cakes")
     .select(
       `id, slug, name, description, short_description, base_price, primary_flavor_id,
-       hero_image_url, gallery_image_urls, is_customisable, is_active, availability,
+       hero_image_url, hero_image_focal_x, hero_image_focal_y,
+       gallery_image_urls, gallery_image_focals, is_customisable, is_active, availability,
        is_featured_home, featured_sort_order,
        cake_dietary_tags ( tag ), cake_events ( event_code )`,
     )
@@ -71,6 +89,7 @@ export async function getCakeForEdit(id: string): Promise<AdminCakeDetail | null
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row = data as any;
+  const galleryImageUrls: string[] = row.gallery_image_urls ?? [];
   return {
     id: row.id,
     slug: row.slug,
@@ -80,7 +99,9 @@ export async function getCakeForEdit(id: string): Promise<AdminCakeDetail | null
     basePrice: Number(row.base_price),
     primaryFlavorId: row.primary_flavor_id,
     heroImageUrl: row.hero_image_url,
-    galleryImageUrls: row.gallery_image_urls ?? [],
+    heroImageFocal: { x: Number(row.hero_image_focal_x), y: Number(row.hero_image_focal_y) },
+    galleryImageUrls,
+    galleryImageFocals: alignGalleryFocals(galleryImageUrls, row.gallery_image_focals),
     isCustomisable: row.is_customisable,
     isActive: row.is_active,
     availability: row.availability,
@@ -99,7 +120,10 @@ export type CakeInput = {
   basePrice: number;
   primaryFlavorId: string | null;
   heroImageUrl: string | null;
+  heroImageFocal: FocalPoint;
   galleryImageUrls: string[];
+  // Aligned by index with galleryImageUrls.
+  galleryImageFocals: FocalPoint[];
   isCustomisable: boolean;
   isActive: boolean;
   availability: "in_stock" | "sold_out" | "pre_order";
@@ -118,7 +142,12 @@ function toRow(input: CakeInput) {
     base_price: input.basePrice,
     primary_flavor_id: input.primaryFlavorId,
     hero_image_url: input.heroImageUrl,
+    hero_image_focal_x: input.heroImageFocal?.x ?? DEFAULT_FOCAL.x,
+    hero_image_focal_y: input.heroImageFocal?.y ?? DEFAULT_FOCAL.y,
     gallery_image_urls: input.galleryImageUrls,
+    gallery_image_focals: input.galleryImageUrls.map(
+      (_, i) => input.galleryImageFocals?.[i] ?? DEFAULT_FOCAL,
+    ),
     is_customisable: input.isCustomisable,
     is_active: input.isActive,
     availability: input.availability,

@@ -1,10 +1,12 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { DEFAULT_FOCAL, type FocalPoint } from "@/lib/image/focal";
 
 export type AdminReview = {
   id: string;
   customerName: string;
   reviewText: string;
   cakeImageUrl: string | null;
+  cakeImageFocal: FocalPoint;
   rating: number;
   reviewDate: string;
   cakeId: string | null;
@@ -17,6 +19,7 @@ export type ReviewInput = {
   customerName: string;
   reviewText: string;
   cakeImageUrl: string | null;
+  cakeImageFocal: FocalPoint;
   rating: number;
   reviewDate: string;
   cakeId: string | null;
@@ -29,7 +32,7 @@ export async function listAllReviewsAdmin(): Promise<AdminReview[]> {
   const { data, error } = await supabase
     .from("reviews")
     .select(
-      "id, customer_name, review_text, cake_image_url, rating, review_date, cake_id, is_active, sort_order, cakes ( name )",
+      "id, customer_name, review_text, cake_image_url, cake_image_focal_x, cake_image_focal_y, rating, review_date, cake_id, is_active, sort_order, cakes ( name )",
     )
     .order("sort_order");
   if (error) throw error;
@@ -39,6 +42,7 @@ export async function listAllReviewsAdmin(): Promise<AdminReview[]> {
     customerName: row.customer_name,
     reviewText: row.review_text,
     cakeImageUrl: row.cake_image_url,
+    cakeImageFocal: { x: Number(row.cake_image_focal_x), y: Number(row.cake_image_focal_y) },
     rating: row.rating,
     reviewDate: row.review_date,
     cakeId: row.cake_id,
@@ -53,7 +57,7 @@ export async function getReviewForEdit(id: string): Promise<ReviewInput & { id: 
   const { data, error } = await supabase
     .from("reviews")
     .select(
-      "id, customer_name, review_text, cake_image_url, rating, review_date, cake_id, is_active, sort_order",
+      "id, customer_name, review_text, cake_image_url, cake_image_focal_x, cake_image_focal_y, rating, review_date, cake_id, is_active, sort_order",
     )
     .eq("id", id)
     .maybeSingle();
@@ -64,6 +68,7 @@ export async function getReviewForEdit(id: string): Promise<ReviewInput & { id: 
     customerName: data.customer_name,
     reviewText: data.review_text,
     cakeImageUrl: data.cake_image_url,
+    cakeImageFocal: { x: Number(data.cake_image_focal_x), y: Number(data.cake_image_focal_y) },
     rating: data.rating,
     reviewDate: data.review_date,
     cakeId: data.cake_id,
@@ -77,6 +82,8 @@ function toRow(input: ReviewInput) {
     customer_name: input.customerName,
     review_text: input.reviewText,
     cake_image_url: input.cakeImageUrl,
+    cake_image_focal_x: input.cakeImageFocal?.x ?? DEFAULT_FOCAL.x,
+    cake_image_focal_y: input.cakeImageFocal?.y ?? DEFAULT_FOCAL.y,
     rating: input.rating,
     review_date: input.reviewDate,
     cake_id: input.cakeId,

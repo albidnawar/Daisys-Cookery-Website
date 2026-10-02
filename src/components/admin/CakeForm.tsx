@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { FocalPointPicker } from "@/components/admin/FocalPointPicker";
 import { EVENT_OPTIONS } from "@/lib/catalog/events";
 import { DIETARY_OPTIONS } from "@/lib/catalog/dietary";
+import { DEFAULT_FOCAL, toObjectPosition } from "@/lib/image/focal";
 import type { AdminCakeDetail, CakeInput } from "@/lib/admin/catalogAdmin";
 import type { Flavor } from "@/lib/types/domain";
 
@@ -42,7 +44,9 @@ export function CakeForm({
       basePrice: 0,
       primaryFlavorId: flavors[0]?.id ?? null,
       heroImageUrl: null,
+      heroImageFocal: DEFAULT_FOCAL,
       galleryImageUrls: [],
+      galleryImageFocals: [],
       isCustomisable: true,
       isActive: true,
       availability: "in_stock",
@@ -55,9 +59,19 @@ export function CakeForm({
   const [slugTouched, setSlugTouched] = useState(Boolean(initial));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adjustingGalleryIndex, setAdjustingGalleryIndex] = useState<number | null>(null);
 
   const set = <K extends keyof CakeInput>(key: K, value: CakeInput[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
+
+  const setGalleryFocal = (index: number, point: { x: number; y: number }) => {
+    set(
+      "galleryImageFocals",
+      values.galleryImageUrls.map((_, i) =>
+        i === index ? point : (values.galleryImageFocals[i] ?? DEFAULT_FOCAL),
+      ),
+    );
+  };
 
   const toggleDietary = (tag: CakeInput["dietaryTags"][number]) => {
     set(
@@ -174,11 +188,19 @@ export function CakeForm({
           label="Hero image (detail page main photo)"
           value={values.heroImageUrl}
           onChange={(url) => set("heroImageUrl", url)}
+          focal={values.heroImageFocal}
+          onFocalChange={(point) => set("heroImageFocal", point)}
         />
         <ImageUploadField
           label="Add a gallery photo"
-          value={values.galleryImageUrls[values.galleryImageUrls.length - 1]}
-          onChange={(url) => set("galleryImageUrls", [...values.galleryImageUrls, url])}
+          value={undefined}
+          onChange={(url) =>
+            setValues((prev) => ({
+              ...prev,
+              galleryImageUrls: [...prev.galleryImageUrls, url],
+              galleryImageFocals: [...prev.galleryImageFocals, DEFAULT_FOCAL],
+            }))
+          }
         />
       </div>
       {values.galleryImageUrls.length > 0 && (
@@ -189,16 +211,39 @@ export function CakeForm({
           <div className="flex flex-wrap gap-2">
             {values.galleryImageUrls.map((url, i) => (
               <div key={url} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-16 w-16 rounded-lg object-cover" />
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => setAdjustingGalleryIndex(adjustingGalleryIndex === i ? null : i)}
+                  className={`block h-16 w-16 overflow-hidden rounded-lg border-2 ${
+                    adjustingGalleryIndex === i
+                      ? "border-brand-orange"
+                      : "border-transparent"
+                  }`}
+                  title="Adjust position"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    style={{
+                      objectPosition: toObjectPosition(values.galleryImageFocals[i]),
+                    }}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     set(
                       "galleryImageUrls",
                       values.galleryImageUrls.filter((_, idx) => idx !== i),
-                    )
-                  }
+                    );
+                    set(
+                      "galleryImageFocals",
+                      values.galleryImageFocals.filter((_, idx) => idx !== i),
+                    );
+                    if (adjustingGalleryIndex === i) setAdjustingGalleryIndex(null);
+                  }}
                   className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-chocolate text-xs text-white"
                 >
                   ×
@@ -206,6 +251,16 @@ export function CakeForm({
               </div>
             ))}
           </div>
+          {adjustingGalleryIndex !== null && values.galleryImageUrls[adjustingGalleryIndex] && (
+            <div className="mt-3">
+              <FocalPointPicker
+                src={values.galleryImageUrls[adjustingGalleryIndex]}
+                value={values.galleryImageFocals[adjustingGalleryIndex]}
+                onChange={(point) => setGalleryFocal(adjustingGalleryIndex, point)}
+                aspectClassName="aspect-square"
+              />
+            </div>
+          )}
         </div>
       )}
 

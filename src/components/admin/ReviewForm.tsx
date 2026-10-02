@@ -22,6 +22,7 @@ export function ReviewForm({
       customerName: "",
       reviewText: "",
       cakeImageUrl: null,
+      cakeImageFocal: { x: 0.5, y: 0.5 },
       rating: 5,
       reviewDate: todayKey(),
       cakeId: null,
@@ -83,6 +84,8 @@ export function ReviewForm({
         label="Cake photo (or chat screenshot)"
         value={values.cakeImageUrl}
         onChange={(url) => set("cakeImageUrl", url)}
+        focal={values.cakeImageFocal}
+        onFocalChange={(point) => set("cakeImageFocal", point)}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
