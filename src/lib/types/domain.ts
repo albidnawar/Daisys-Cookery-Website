@@ -78,7 +78,12 @@ export type DraftOrderSpec = {
   allergenSwap?: string[];
   photoPrint?: boolean;
   message?: string;
+  // Legacy single-image field — still read for historical orders and still
+  // written by the admin's manual-order form. New code reads/writes
+  // referenceImageUrls instead (see getReferenceImages() in
+  // lib/customiser/referenceImages.ts).
   referenceImageUrl?: string | null;
+  referenceImageUrls?: string[];
   instructions?: string;
 };
 

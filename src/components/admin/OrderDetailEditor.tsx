@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { OrderStatusHistoryEntry } from "@/lib/admin/orderDetail";
 import type { Order, OptionGroup, OrderStatus, PaymentStatus } from "@/lib/types/domain";
 
@@ -144,9 +145,16 @@ export function OrderDetailEditor({
                 Instructions: {order.cakeSnapshot.spec.instructions}
               </p>
             )}
-            {order.cakeSnapshot.spec.referenceImageUrl && (
-              <div className="relative mt-3 h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10">
-                <Image src={order.cakeSnapshot.spec.referenceImageUrl} alt="Reference" fill className="object-cover" />
+            {getReferenceImages(order.cakeSnapshot.spec).length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {getReferenceImages(order.cakeSnapshot.spec).map((url) => (
+                  <div
+                    key={url}
+                    className="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10"
+                  >
+                    <Image src={url} alt="Reference" fill className="object-cover" />
+                  </div>
+                ))}
               </div>
             )}
           </section>

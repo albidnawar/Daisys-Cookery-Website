@@ -34,7 +34,12 @@ export default async function CustomisePage({
           {slug === "new" ? "Build your cake" : `Customise ${cake.name}`}
         </p>
       </div>
-      <WizardShell cake={cake} depositRate={settings.depositRate} shopPhone={settings.shopPhone} />
+      <WizardShell
+        cake={cake}
+        depositRate={settings.depositRate}
+        shopPhone={settings.shopPhone}
+        isFromScratch={slug === "new"}
+      />
     </div>
   );
 }
