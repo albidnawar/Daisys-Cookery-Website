@@ -36,12 +36,12 @@ export default async function AdminCatalogPage() {
             {cakes.map((cake) => (
               <tr key={cake.id} className="border-b border-brand-chocolate/5 last:border-0">
                 <td className="p-3 font-bold text-brand-chocolate">{cake.name}</td>
-                <td className="p-3 text-brand-chocolate/70">{cake.flavorName ?? "—"}</td>
+                <td className="p-3 text-brand-chocolate/70">{cake.flavorName ?? "-"}</td>
                 <td className="p-3 text-brand-chocolate/70">
                   ৳{cake.basePrice.toLocaleString("en-BD")}
                 </td>
                 <td className="p-3 text-brand-chocolate/70">{cake.availability}</td>
-                <td className="p-3 text-brand-chocolate/70">{cake.isFeaturedHome ? "Yes" : "—"}</td>
+                <td className="p-3 text-brand-chocolate/70">{cake.isFeaturedHome ? "Yes" : "-"}</td>
                 <td className="p-3">{cake.isActive ? "✅" : "🚫"}</td>
                 <td className="p-3">
                   <div className="flex justify-end gap-4">
@@ -64,7 +64,7 @@ export default async function AdminCatalogPage() {
       </div>
       {cakes.length === 0 && (
         <p className="mt-6 font-body text-sm text-brand-chocolate/60">
-          No cakes yet — add your first one above.
+          No cakes yet. Add your first one above.
         </p>
       )}
     </div>

@@ -128,7 +128,7 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
   return (
     <div className="flex flex-col gap-6">
       <p className="font-body text-sm text-brand-chocolate/60">
-        Owner, Marketing, and Sales are built in — Marketing sees only Content &amp; Media, Sales
+        Owner, Marketing, and Sales are built in. Marketing sees only Content &amp; Media, Sales
         sees everything except it, and Owner sees everything. Add a custom role below for anything
         in between.
       </p>

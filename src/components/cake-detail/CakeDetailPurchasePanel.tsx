@@ -60,7 +60,7 @@ export function CakeDetailPurchasePanel({
       />
 
       <p className="font-body text-xs text-brand-chocolate/60">
-        Over 5 pounds we quote by phone — {shopPhone}. A {Math.round(depositRate * 100)}% deposit
+        Over 5 pounds we quote by phone: {shopPhone}. A {Math.round(depositRate * 100)}% deposit
         holds the date.
       </p>
     </div>

@@ -9,7 +9,7 @@ export default function SiteNotFound() {
         This page fell off the tray
       </h1>
       <p className="max-w-md font-body text-sm leading-relaxed text-brand-chocolate/70">
-        We couldn&apos;t find what you were looking for — it may have been moved, or the
+        We couldn&apos;t find what you were looking for. It may have been moved, or the
         link might be off.
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">

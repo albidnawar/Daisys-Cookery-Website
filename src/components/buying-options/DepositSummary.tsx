@@ -23,7 +23,7 @@ export function DepositSummary({
           Due now
         </span>
         <span className="font-display text-3xl font-semibold text-brand-orange">
-          {price ? `৳${price.depositAmount.toLocaleString("en-BD")}` : "—"}
+          {price ? `৳${price.depositAmount.toLocaleString("en-BD")}` : "-"}
         </span>
       </div>
       {price && (

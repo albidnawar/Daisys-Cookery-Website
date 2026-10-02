@@ -93,7 +93,7 @@ export function BrowsePageClient({
           ))}
           {cakes.length === 0 && (
             <p className="col-span-full font-body text-sm text-brand-chocolate/60">
-              No cakes match those filters yet — try clearing one, or chat
+              No cakes match those filters yet. Try clearing one, or chat
               with us and we&apos;ll bake it specially.
             </p>
           )}

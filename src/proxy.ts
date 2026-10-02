@@ -69,7 +69,7 @@ export async function proxy(request: NextRequest) {
     const { success, limit, remaining, reset } = await limiter.limit(ip);
     if (!success) {
       return NextResponse.json(
-        { error: "Too many requests — please slow down and try again shortly." },
+        { error: "Too many requests. Please slow down and try again shortly." },
         {
           status: 429,
           headers: {

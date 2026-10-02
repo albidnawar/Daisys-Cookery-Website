@@ -43,7 +43,7 @@ export function KitchenBatchView({ initialDate, initialBatch }: { initialDate: s
 
       <div className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6">
         <p className="mb-4 font-display text-xl font-semibold text-brand-chocolate">
-          Today&apos;s batch — {totalCakes} cake{totalCakes === 1 ? "" : "s"}
+          Today&apos;s batch: {totalCakes} cake{totalCakes === 1 ? "" : "s"}
         </p>
         {batch.length === 0 ? (
           <p className="font-body text-sm text-brand-chocolate/60">

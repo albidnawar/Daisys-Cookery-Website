@@ -27,7 +27,7 @@ export default async function OrderSlipPage({
       </div>
       <div className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-8">
         <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-orange">
-          Daisy&apos;s Cookery — Order Slip
+          Daisy&apos;s Cookery &middot; Order Slip
         </p>
         <h1 className="mb-4 font-display text-3xl font-semibold text-brand-chocolate">
           {order.orderNumber}
@@ -42,12 +42,12 @@ export default async function OrderSlipPage({
               value={order.slotLabel ?? "To be confirmed"}
             />
             <Row label="Cake" value={order.cakeSnapshot.name} />
-            <Row label="Size" value={order.cakeSnapshot.spec.sizeCode ? `${order.cakeSnapshot.spec.sizeCode} lb` : "—"} />
+            <Row label="Size" value={order.cakeSnapshot.spec.sizeCode ? `${order.cakeSnapshot.spec.sizeCode} lb` : "-"} />
             <Row
               label="Flavor / spec"
               value={summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}
             />
-            <Row label="Board writing" value={order.cakeSnapshot.spec.message || "—"} />
+            <Row label="Board writing" value={order.cakeSnapshot.spec.message || "-"} />
             {order.kitchenNote && <Row label="Kitchen note" value={order.kitchenNote} />}
             <Row label="Total" value={`৳${order.total.toLocaleString("en-BD")}`} />
             <Row label="Deposit paid" value={`৳${order.depositAmount.toLocaleString("en-BD")} (${order.paymentMethod})`} />

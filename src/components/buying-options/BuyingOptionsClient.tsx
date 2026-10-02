@@ -70,17 +70,17 @@ export function BuyingOptionsClient({
     if (res.status === 409) {
       const data = await res.json().catch(() => ({}));
       const messages: Record<string, string> = {
-        date_blocked: "That date isn't available for orders — please pick another date.",
-        daily_cap_reached: "We've reached our production limit for that date — please pick another date.",
+        date_blocked: "That date isn't available for orders. Please pick another date.",
+        daily_cap_reached: "We've reached our production limit for that date. Please pick another date.",
       };
-      setError(messages[data.error] ?? "That slot just filled up — pick another one.");
+      setError(messages[data.error] ?? "That slot just filled up. Pick another one.");
       const params = new URLSearchParams({ date, fulfilmentType: fulfilmentType!, zoneId: effectiveZoneId! });
       const refreshed = await fetch(`/api/slots/availability?${params}`).then((r) => r.json());
       setSlots(refreshed.slots ?? []);
       return;
     }
     if (!res.ok) {
-      setError("Couldn't hold that slot — try again.");
+      setError("Couldn't hold that slot. Try again.");
       return;
     }
     setSelectedSlotId(slot.slotId);

@@ -31,7 +31,7 @@ export function QuoteLinkPanel({
   if (status !== "quoted" || quotedPrice == null) {
     return (
       <div className="w-full max-w-sm rounded-3xl border-2 border-dashed border-brand-chocolate/15 p-6 font-body text-sm text-brand-chocolate/60">
-        Set a price and switch status to &ldquo;Quoted&rdquo;, then save — a shareable
+        Set a price and switch status to &ldquo;Quoted&rdquo;, then save, and a shareable
         checkout link will appear here.
       </div>
     );

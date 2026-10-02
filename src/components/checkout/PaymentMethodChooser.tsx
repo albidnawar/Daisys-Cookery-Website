@@ -75,7 +75,7 @@ export function PaymentMethodChooser({
 
       {value === "card" && (
         <p className="mt-3 font-body text-xs text-brand-chocolate/60">
-          Card payment is in test mode — this will simulate a successful payment for now.
+          Card payment is in test mode. This will simulate a successful payment for now.
         </p>
       )}
     </div>

@@ -58,13 +58,13 @@ export function CheckoutClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't place the order — try again.");
+        setError(data.error ?? "Couldn't place the order. Try again.");
         setSubmitting(false);
         return;
       }
       router.push(`/confirmation/${data.order.id}`);
     } catch {
-      setError("Couldn't place the order — try again.");
+      setError("Couldn't place the order. Try again.");
       setSubmitting(false);
     }
   };

@@ -61,7 +61,7 @@ export default async function PublicQuotePage({
 
           {quote.status === "declined" ? (
             <p className="font-body text-sm text-brand-chocolate/70">
-              This quote is no longer available — message us on WhatsApp if you&apos;d like a new one.
+              This quote is no longer available. Message us on WhatsApp if you&apos;d like a new one.
             </p>
           ) : quote.status === "quoted" && quote.quotedPrice != null && quote.draftOrderId ? (
             <>
@@ -79,7 +79,7 @@ export default async function PublicQuotePage({
             </>
           ) : (
             <p className="font-body text-sm text-brand-chocolate/70">
-              We&apos;re still working out a price for this one — we&apos;ll send you a message
+              We&apos;re still working out a price for this one. We&apos;ll send you a message
               as soon as it&apos;s ready.
             </p>
           )}

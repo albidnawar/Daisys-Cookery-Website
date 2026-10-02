@@ -87,7 +87,7 @@ export async function updateAdminRole(id: string, roleId: string): Promise<void>
   if (fetchError) throw fetchError;
 
   if (existing.role_id === owner && roleId !== owner && (await ownerCount(supabase, owner)) <= 1) {
-    throw new AdminAccountError("Can't demote the last owner — promote someone else first.");
+    throw new AdminAccountError("Can't demote the last owner. Promote someone else first.");
   }
 
   const { error } = await supabase.from("admin_users").update({ role_id: roleId }).eq("id", id);

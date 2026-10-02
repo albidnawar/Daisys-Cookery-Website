@@ -69,7 +69,7 @@ export async function createReorderDraft(customerId: string, orderId: string): P
 
   const snapshot = order.cake_snapshot as { slug: string | null; spec: Record<string, unknown> };
   if (!snapshot.slug) {
-    throw new ReorderError("This was a fully custom cake — message us on WhatsApp to reorder it");
+    throw new ReorderError("This was a fully custom cake. Message us on WhatsApp to reorder it");
   }
 
   const draft = await createDraftOrder(snapshot.slug);
