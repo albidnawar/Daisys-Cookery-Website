@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getOrder } from "@/lib/orders/store";
 import { resolveCake } from "@/lib/draftOrders/store";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import { requireModulePage } from "@/lib/admin/auth";
 import { PrintButton } from "@/components/admin/PrintButton";
 
@@ -57,18 +58,20 @@ export default async function OrderSlipPage({
           </tbody>
         </table>
 
-        {order.cakeSnapshot.spec.referenceImageUrl && (
+        {getReferenceImages(order.cakeSnapshot.spec).length > 0 && (
           <div className="mt-4">
             <p className="mb-2 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
-              Reference photo
+              Reference photo{getReferenceImages(order.cakeSnapshot.spec).length > 1 ? "s" : ""}
             </p>
-            <div className="relative h-40 w-40 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10">
-              <Image
-                src={order.cakeSnapshot.spec.referenceImageUrl}
-                alt="Reference"
-                fill
-                className="object-cover"
-              />
+            <div className="flex flex-wrap gap-2">
+              {getReferenceImages(order.cakeSnapshot.spec).map((url) => (
+                <div
+                  key={url}
+                  className="relative h-40 w-40 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10"
+                >
+                  <Image src={url} alt="Reference" fill className="object-cover" />
+                </div>
+              ))}
             </div>
           </div>
         )}

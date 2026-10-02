@@ -75,6 +75,43 @@ export async function createCustomQuote(input: CustomQuoteInput, createdByAdminI
   return data.id;
 }
 
+export type CustomQuoteRequestInput = {
+  contactName: string;
+  contactPhone: string;
+  cakeTitle: string;
+  themeNotes: string | null;
+  quotedSizeNote: string | null;
+  referenceImageUrls: string[];
+};
+
+/** Customer self-serve counterpart to createCustomQuote() — same insert,
+ * but with no admin staff involved yet: status is always "new", no price,
+ * created_by_admin_id left null (the column is nullable for exactly this
+ * case, see 0013_custom_quotes.sql). Used by the "picture-based design"
+ * path on the from-scratch customiser (WizardShell's isFromScratch mode). */
+export async function createCustomQuoteFromCustomer(
+  input: CustomQuoteRequestInput,
+): Promise<string> {
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase
+    .from("custom_quotes")
+    .insert({
+      contact_name: input.contactName,
+      contact_phone: normalizePhone(input.contactPhone),
+      cake_title: input.cakeTitle,
+      theme_notes: input.themeNotes,
+      icing_colors: null,
+      reference_image_urls: input.referenceImageUrls,
+      quoted_price: null,
+      quoted_size_note: input.quotedSizeNote,
+      status: "new",
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
 /** Updates the quote's own fields, and keeps its linked draft_order in
  * sync: creates one the first time a price is set (this is what turns a
  * quote into an actual clickable checkout link), or just refreshes the

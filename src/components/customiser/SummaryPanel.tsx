@@ -1,6 +1,13 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { LinkButton } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { ReferenceImageDropzone } from "@/components/customiser/ReferenceImageDropzone";
+import { getReferenceImages } from "@/lib/customiser/referenceImages";
+import { toObjectPosition, type FocalPoint } from "@/lib/image/focal";
 import type { DraftOrderSpec, OptionGroup, PriceBreakdown } from "@/lib/types/domain";
 
 function labelFor(groupsByCode: Record<string, OptionGroup>, code: string, valueCode?: string) {
@@ -13,19 +20,25 @@ function labelFor(groupsByCode: Record<string, OptionGroup>, code: string, value
 
 export function SummaryPanel({
   cakeName,
+  cakeImageUrl,
+  cakeImageFocal,
   draftId,
   spec,
   price,
   groupsByCode,
-  onUploaded,
+  isFromScratch,
+  onReferenceImagesChange,
   onInstructionsChange,
 }: {
   cakeName: string;
+  cakeImageUrl: string | null;
+  cakeImageFocal: FocalPoint | undefined;
   draftId: string | null;
   spec: DraftOrderSpec;
   price: PriceBreakdown | null;
   groupsByCode: Record<string, OptionGroup>;
-  onUploaded: (url: string) => void;
+  isFromScratch: boolean;
+  onReferenceImagesChange: (urls: string[]) => void;
   onInstructionsChange: (value: string) => void;
 }) {
   const sizeLabel = spec.sizeCode
@@ -34,6 +47,8 @@ export function SummaryPanel({
   const extrasLabels = (spec.extras ?? [])
     .map((code) => labelFor(groupsByCode, "extras", code))
     .join(", ");
+  const referenceImages = getReferenceImages(spec);
+  const wantsCustomQuote = isFromScratch && referenceImages.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,11 +56,24 @@ export function SummaryPanel({
         Your cake so far
       </span>
 
+      {cakeImageUrl && (
+        <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border-2 border-brand-chocolate/10 bg-cream">
+          <Image
+            src={cakeImageUrl}
+            alt={cakeName}
+            fill
+            className="object-cover"
+            style={{ objectPosition: toObjectPosition(cakeImageFocal) }}
+          />
+        </div>
+      )}
+
       <ReferenceImageDropzone
         draftId={draftId}
-        imageUrl={spec.referenceImageUrl}
+        imageUrls={referenceImages}
+        maxImages={isFromScratch ? 6 : 3}
         instructions={spec.instructions}
-        onUploaded={onUploaded}
+        onChange={onReferenceImagesChange}
         onInstructionsChange={onInstructionsChange}
       />
 
@@ -67,31 +95,118 @@ export function SummaryPanel({
         </tbody>
       </table>
 
-      <div className="flex items-baseline justify-between border-t border-brand-chocolate/10 pt-3">
-        <span className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
-          Total
-        </span>
-        <span className="font-display text-3xl font-semibold text-brand-chocolate">
-          {price ? `৳${price.total.toLocaleString("en-BD")}` : "Call for a quote"}
-        </span>
-      </div>
-
-      {draftId ? (
-        <LinkButton
-          href={`/buying-options?draft=${draftId}`}
-          variant="primary"
-          className="w-full"
-        >
-          Choose pickup or delivery
-        </LinkButton>
+      {wantsCustomQuote ? (
+        <>
+          <div className="border-t border-brand-chocolate/10 pt-3">
+            <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+              Designing from your own photo? We&apos;ll quote you directly.
+            </p>
+          </div>
+          <CustomQuoteSubmit draftId={draftId} spec={spec} referenceImages={referenceImages} />
+        </>
       ) : (
-        <Link
-          href="#"
-          className="pointer-events-none w-full rounded-full bg-brand-chocolate/20 px-6 py-3 text-center font-body font-bold text-white"
-        >
-          Choose pickup or delivery
-        </Link>
+        <>
+          <div className="flex items-baseline justify-between border-t border-brand-chocolate/10 pt-3">
+            <span className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+              Total
+            </span>
+            <span className="font-display text-3xl font-semibold text-brand-chocolate">
+              {price ? `৳${price.total.toLocaleString("en-BD")}` : "Call for a quote"}
+            </span>
+          </div>
+
+          {draftId ? (
+            <LinkButton
+              href={`/buying-options?draft=${draftId}`}
+              variant="primary"
+              className="w-full"
+            >
+              Choose pickup or delivery
+            </LinkButton>
+          ) : (
+            <Link
+              href="#"
+              className="pointer-events-none w-full rounded-full bg-brand-chocolate/20 px-6 py-3 text-center font-body font-bold text-white"
+            >
+              Choose pickup or delivery
+            </Link>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+function CustomQuoteSubmit({
+  draftId,
+  spec,
+  referenceImages,
+}: {
+  draftId: string | null;
+  spec: DraftOrderSpec;
+  referenceImages: string[];
+}) {
+  const router = useRouter();
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    setError(null);
+    if (!contactName.trim() || !contactPhone.trim()) {
+      setError("Please add your name and phone number.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/custom-quote-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactName,
+          contactPhone,
+          cakeTitle: spec.message || "Custom cake design",
+          themeNotes: spec.instructions ?? null,
+          quotedSizeNote:
+            spec.sizeCode && spec.sizeCode !== "other" ? `approx ${spec.sizeCode} lb` : null,
+          referenceImageUrls: referenceImages,
+          draftOrderId: draftId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't submit your request");
+      router.push(`/quote/${data.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't submit your request");
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input
+        value={contactName}
+        onChange={(e) => setContactName(e.target.value)}
+        placeholder="Your name"
+        className="w-full rounded-full border-2 border-brand-chocolate/10 bg-white px-4 py-2 font-body text-sm text-brand-chocolate outline-none focus:border-brand-orange"
+      />
+      <input
+        value={contactPhone}
+        onChange={(e) => setContactPhone(e.target.value)}
+        placeholder="Phone / WhatsApp number"
+        className="w-full rounded-full border-2 border-brand-chocolate/10 bg-white px-4 py-2 font-body text-sm text-brand-chocolate outline-none focus:border-brand-orange"
+      />
+      {error && <p className="font-body text-xs text-red-600">{error}</p>}
+      <Button
+        type="button"
+        variant="primary"
+        className="w-full"
+        disabled={submitting || !draftId}
+        onClick={submit}
+      >
+        {submitting ? "Sending…" : "Get a custom quote"}
+      </Button>
     </div>
   );
 }

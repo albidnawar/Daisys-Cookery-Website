@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SummaryPanel } from "@/components/customiser/SummaryPanel";
+import { QuickOrderPanel } from "@/components/customiser/QuickOrderPanel";
 import { StepSizeShapeTiers } from "@/components/customiser/steps/StepSizeShapeTiers";
 import { StepSponge } from "@/components/customiser/steps/StepSponge";
 import { StepFillingFinish } from "@/components/customiser/steps/StepFillingFinish";
 import { StepMessageExtras } from "@/components/customiser/steps/StepMessageExtras";
 import { Button } from "@/components/ui/Button";
 import { calculatePrice } from "@/lib/pricing/calculatePrice";
+import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { CakeDetail, DraftOrderSpec } from "@/lib/types/domain";
 
 const STEP_TITLES = [
@@ -22,23 +24,30 @@ export function WizardShell({
   cake,
   depositRate,
   shopPhone,
+  isFromScratch,
 }: {
   cake: CakeDetail;
   depositRate: number;
   shopPhone: string;
+  isFromScratch: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isQuick = searchParams.get("mode") === "quick";
 
   const groupsByCode = Object.fromEntries(cake.optionGroups.map((g) => [g.code, g]));
 
   const [draftId, setDraftId] = useState<string | null>(searchParams.get("draft"));
   const [step, setStep] = useState(1);
-  const [spec, setSpec] = useState<DraftOrderSpec>({
-    sizeCode: searchParams.get("size") ?? "1",
-    shape: "round",
-    tiers: "single",
-  });
+  const [spec, setSpec] = useState<DraftOrderSpec>(
+    isQuick
+      ? { sizeCode: searchParams.get("size") ?? "1" }
+      : {
+          sizeCode: searchParams.get("size") ?? "1",
+          shape: "round",
+          tiers: "single",
+        },
+  );
   // calculatePrice is the exact same pure function the server runs (see
   // lib/pricing/calculatePrice.ts), so computing it here is already
   // "authoritative" for any given spec — no need to round-trip for a
@@ -79,16 +88,32 @@ export function WizardShell({
 
   const patch = (p: Partial<DraftOrderSpec>) => setSpec((prev) => ({ ...prev, ...p }));
 
+  if (isQuick) {
+    return (
+      <QuickOrderPanel
+        cake={cake}
+        draftId={draftId}
+        spec={spec}
+        price={price}
+        shopPhone={shopPhone}
+        onChange={patch}
+      />
+    );
+  }
+
   return (
     <div className="grid gap-0 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="border-b-2 border-brand-chocolate/10 bg-white p-8 lg:border-b-0 lg:border-r-2">
         <SummaryPanel
           cakeName={cake.name}
+          cakeImageUrl={cake.heroImageUrl}
+          cakeImageFocal={cake.heroImageFocal}
           draftId={draftId}
           spec={spec}
           price={price}
           groupsByCode={groupsByCode}
-          onUploaded={(referenceImageUrl) => patch({ referenceImageUrl })}
+          isFromScratch={isFromScratch}
+          onReferenceImagesChange={(referenceImageUrls) => patch({ referenceImageUrls })}
           onInstructionsChange={(instructions) => patch({ instructions })}
         />
       </div>
@@ -117,7 +142,7 @@ export function WizardShell({
             groupsByCode={groupsByCode}
             spec={spec}
             onChange={patch}
-            hasReferenceImage={Boolean(spec.referenceImageUrl)}
+            hasReferenceImage={getReferenceImages(spec).length > 0}
           />
         )}
 

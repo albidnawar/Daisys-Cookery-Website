@@ -2,27 +2,21 @@
 
 import { useRef, useState } from "react";
 
-export function ReferenceImageDropzone({
+function UploadSlot({
   draftId,
-  imageUrl,
-  instructions,
   onUploaded,
-  onInstructionsChange,
+  onError,
 }: {
   draftId: string | null;
-  imageUrl: string | null | undefined;
-  instructions: string | undefined;
   onUploaded: (url: string) => void;
-  onInstructionsChange: (value: string) => void;
+  onError: (message: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const upload = async (file: File) => {
     if (!draftId) return;
     setUploading(true);
-    setError(null);
     try {
       const form = new FormData();
       form.set("file", file);
@@ -30,38 +24,32 @@ export function ReferenceImageDropzone({
         method: "POST",
         body: form,
       });
-      if (!res.ok) throw new Error("Upload failed");
-      const { draft } = await res.json();
-      onUploaded(draft.spec.referenceImageUrl);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+      const urls: string[] = data.draft.spec.referenceImageUrls ?? [];
+      onUploaded(urls[urls.length - 1]);
     } catch {
-      setError("Couldn't upload that image — try a PNG, JPEG, or WebP under 8MB.");
+      onError("Couldn't upload that image — try a PNG, JPEG, or WebP under 8MB.");
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          const file = e.dataTransfer.files?.[0];
-          if (file) upload(file);
-        }}
-        className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand-chocolate/25 bg-cream text-center"
-      >
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="Reference cake" className="h-full w-full object-cover" />
-        ) : (
-          <span className="px-4 font-body text-sm text-brand-chocolate/60">
-            {uploading ? "Uploading…" : "Drop a photo of a cake from our gallery, or click to browse"}
-          </span>
-        )}
-      </button>
+    <button
+      type="button"
+      onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files?.[0];
+        if (file) upload(file);
+      }}
+      className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand-chocolate/25 bg-cream text-center"
+    >
+      <span className="px-4 font-body text-sm text-brand-chocolate/60">
+        {uploading ? "Uploading…" : "Drop a reference photo, or click to browse"}
+      </span>
       <input
         ref={inputRef}
         type="file"
@@ -73,6 +61,54 @@ export function ReferenceImageDropzone({
           e.target.value = "";
         }}
       />
+    </button>
+  );
+}
+
+export function ReferenceImageDropzone({
+  draftId,
+  imageUrls,
+  maxImages = 3,
+  instructions,
+  onChange,
+  onInstructionsChange,
+}: {
+  draftId: string | null;
+  imageUrls: string[];
+  maxImages?: number;
+  instructions: string | undefined;
+  onChange: (urls: string[]) => void;
+  onInstructionsChange: (value: string) => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {imageUrls.map((url, i) => (
+          <div key={url} className="relative aspect-4/3 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt="Reference" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => onChange(imageUrls.filter((_, idx) => idx !== i))}
+              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 font-body text-sm font-bold text-red-600"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {imageUrls.length < maxImages && (
+          <UploadSlot
+            draftId={draftId}
+            onUploaded={(url) => {
+              setError(null);
+              onChange([...imageUrls, url]);
+            }}
+            onError={setError}
+          />
+        )}
+      </div>
       {error && <p className="font-body text-xs text-red-600">{error}</p>}
       <textarea
         value={instructions ?? ""}
