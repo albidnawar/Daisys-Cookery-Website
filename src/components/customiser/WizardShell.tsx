@@ -23,12 +23,10 @@ const STEP_TITLES = [
 export function WizardShell({
   cake,
   depositRate,
-  shopPhone,
   isFromScratch,
 }: {
   cake: CakeDetail;
   depositRate: number;
-  shopPhone: string;
   isFromScratch: boolean;
 }) {
   const router = useRouter();
@@ -95,7 +93,6 @@ export function WizardShell({
         draftId={draftId}
         spec={spec}
         price={price}
-        shopPhone={shopPhone}
         onChange={patch}
       />
     );
@@ -129,7 +126,7 @@ export function WizardShell({
         </div>
 
         {step === 1 && (
-          <StepSizeShapeTiers groupsByCode={groupsByCode} spec={spec} onChange={patch} shopPhone={shopPhone} />
+          <StepSizeShapeTiers groupsByCode={groupsByCode} spec={spec} onChange={patch} />
         )}
         {step === 2 && (
           <StepSponge groupsByCode={groupsByCode} spec={spec} onChange={patch} />

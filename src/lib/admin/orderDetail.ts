@@ -32,6 +32,8 @@ export type OrderEditableFields = {
   deliveryAddressText: string | null;
   kitchenNote: string | null;
   manualTrxId: string | null;
+  needsRiderPickup: boolean;
+  riderPickupAt: string | null;
 };
 
 export async function updateOrderDetails(orderId: string, patch: OrderEditableFields): Promise<void> {
@@ -44,6 +46,8 @@ export async function updateOrderDetails(orderId: string, patch: OrderEditableFi
       delivery_address: patch.deliveryAddressText ? { text: patch.deliveryAddressText } : null,
       kitchen_note: patch.kitchenNote,
       manual_trx_id: patch.manualTrxId,
+      needs_rider_pickup: patch.needsRiderPickup,
+      rider_pickup_at: patch.riderPickupAt,
     })
     .eq("id", orderId);
   if (error) throw error;

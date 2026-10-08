@@ -33,8 +33,9 @@ function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
 /** The single place price math happens — called both for optimistic
  * client-side feedback and as the server-authoritative source on every
  * draft-order update and at checkout. Returns null when the size is
- * "other" (>5lb, quoted by phone) since there's nothing to compute yet.
- * depositRate is always the caller's responsibility to supply (from
+ * unset or still the literal "other" sentinel (the customer has clicked
+ * "Other" but not yet typed a weight) since there's nothing to compute
+ * yet. depositRate is always the caller's responsibility to supply (from
  * getStoreSettings() — see lib/settings/store.ts) rather than a module
  * constant, since it's now an admin-editable business number. */
 export function calculatePrice(

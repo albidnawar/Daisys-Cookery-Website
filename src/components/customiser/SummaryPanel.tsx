@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { ReferenceImageDropzone } from "@/components/customiser/ReferenceImageDropzone";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
+import { buildChatLink } from "@/lib/chat/buildChatLink";
 import { toObjectPosition, type FocalPoint } from "@/lib/image/focal";
 import type { DraftOrderSpec, OptionGroup, PriceBreakdown } from "@/lib/types/domain";
 
@@ -78,8 +78,11 @@ export function SummaryPanel({
       />
 
       <h3 className="font-display text-2xl font-semibold text-brand-chocolate">
-        {sizeLabel !== "-" ? `${sizeLabel} ` : ""}
-        {cakeName}
+        {isFromScratch
+          ? sizeLabel !== "-"
+            ? `${sizeLabel} custom cake`
+            : "Your custom cake"
+          : `${sizeLabel !== "-" ? `${sizeLabel} ` : ""}${cakeName}`}
       </h3>
 
       <table className="w-full font-body text-sm">
@@ -96,14 +99,9 @@ export function SummaryPanel({
       </table>
 
       {wantsCustomQuote ? (
-        <>
-          <div className="border-t border-brand-chocolate/10 pt-3">
-            <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
-              Designing from your own photo? We&apos;ll quote you directly.
-            </p>
-          </div>
+        <div className="border-t border-brand-chocolate/10 pt-3">
           <CustomQuoteSubmit draftId={draftId} spec={spec} referenceImages={referenceImages} />
-        </>
+        </div>
       ) : (
         <>
           <div className="flex items-baseline justify-between border-t border-brand-chocolate/10 pt-3">
@@ -146,11 +144,12 @@ function CustomQuoteSubmit({
   spec: DraftOrderSpec;
   referenceImages: string[];
 }) {
-  const router = useRouter();
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<"form" | "submitted" | "ready-to-send">("form");
+  const [requestId, setRequestId] = useState<string | null>(null);
 
   const submit = async () => {
     setError(null);
@@ -176,12 +175,56 @@ function CustomQuoteSubmit({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't submit your request");
-      router.push(`/quote/${data.id}`);
+      setRequestId(data.id);
+      setStep("submitted");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't submit your request");
+    } finally {
       setSubmitting(false);
     }
   };
+
+  if (step === "submitted" && requestId) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+          Request sent
+        </p>
+        <p className="font-body text-sm text-brand-chocolate/80">
+          Your request ID is{" "}
+          <span className="font-bold text-brand-chocolate">{requestId}</span>. Keep it handy —
+          it&apos;s how we&apos;ll find your design.
+        </p>
+        <Button type="button" variant="primary" className="w-full" onClick={() => setStep("ready-to-send")}>
+          Continue
+        </Button>
+      </div>
+    );
+  }
+
+  if (step === "ready-to-send" && requestId) {
+    return (
+      <div className="flex flex-col gap-3">
+        <a
+          href={buildChatLink("whatsapp", {
+            cakeName: spec.message || "Custom cake design",
+            requestId,
+          })}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-orange px-5 py-3 text-center font-body text-sm font-bold text-white shadow-md shadow-brand-orange/20 hover:bg-brand-chocolate"
+        >
+          Send via WhatsApp
+        </a>
+        <Link
+          href={`/quote/${requestId}`}
+          className="text-center font-body text-xs text-brand-chocolate/50 hover:text-brand-orange"
+        >
+          Check your quote status later
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -205,7 +248,7 @@ function CustomQuoteSubmit({
         disabled={submitting || !draftId}
         onClick={submit}
       >
-        {submitting ? "Sending…" : "Get a custom quote"}
+        {submitting ? "Sending…" : "Get quotation"}
       </Button>
     </div>
   );

@@ -5,7 +5,7 @@ import { DietaryTagList } from "@/components/cake-detail/DietaryTagList";
 import { CakeDetailPurchasePanel } from "@/components/cake-detail/CakeDetailPurchasePanel";
 import { SaveCakeButton } from "@/components/cake-detail/SaveCakeButton";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { getCachedCakeBySlug } from "@/lib/catalog/queries";
+import { getCachedCakeBySlug, getCachedDietaryTagOptions } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
 import { getStoreSettings } from "@/lib/settings/store";
 
@@ -22,7 +22,11 @@ export default async function CakeDetailPage({
 
   if (!cake) notFound();
 
-  const settings = await getStoreSettings();
+  const [settings, dietaryOptions] = await Promise.all([
+    getStoreSettings(),
+    isSupabaseConfigured() ? getCachedDietaryTagOptions() : Promise.resolve([]),
+  ]);
+  const dietaryLabels = Object.fromEntries(dietaryOptions.map((o) => [o.code, o.label]));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
@@ -69,7 +73,7 @@ export default async function CakeDetailPage({
           <p className="font-body text-base leading-relaxed text-brand-chocolate/80">
             {cake.description}
           </p>
-          <DietaryTagList tags={cake.dietaryTags} />
+          <DietaryTagList tags={cake.dietaryTags} labels={dietaryLabels} />
           <SaveCakeButton cakeId={cake.id} />
           <hr className="border-brand-chocolate/10" />
           <CakeDetailPurchasePanel
@@ -77,7 +81,6 @@ export default async function CakeDetailPage({
             name={cake.name}
             basePrice={cake.basePrice}
             depositRate={settings.depositRate}
-            shopPhone={settings.shopPhone}
           />
         </div>
       </div>

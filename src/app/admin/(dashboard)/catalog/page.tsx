@@ -14,9 +14,14 @@ export default async function AdminCatalogPage() {
         <h1 className="font-display text-3xl font-semibold text-brand-chocolate">
           Product catalog
         </h1>
-        <LinkButton href="/admin/catalog/new" variant="primary">
-          + Add cake
-        </LinkButton>
+        <div className="flex gap-3">
+          <LinkButton href="/admin/catalog/taxonomy" variant="ghost">
+            Flavors &amp; tags
+          </LinkButton>
+          <LinkButton href="/admin/catalog/new" variant="primary">
+            + Add cake
+          </LinkButton>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border-2 border-brand-chocolate/10 bg-white">

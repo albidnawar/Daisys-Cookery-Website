@@ -19,6 +19,7 @@ import {
   NewOrderIcon,
   OverviewIcon,
   StarIcon,
+  TagIcon,
   TruckIcon,
   UsersIcon,
 } from "@/components/admin/AdminNavIcons";
@@ -44,6 +45,7 @@ const NAV: ((NavItem & { module?: ModuleKey }) | NavGroup)[] = [
     module: "content_media",
     items: [
       { label: "Product Catalog", href: "/admin/catalog", icon: GalleryIcon },
+      { label: "Flavors & Tags", href: "/admin/catalog/taxonomy", icon: TagIcon },
       { label: "Hero Banner", href: "/admin/hero-banner", icon: FlagIcon },
       { label: "Banners", href: "/admin/banners", icon: MegaphoneIcon },
       { label: "Reviews", href: "/admin/reviews", icon: StarIcon },

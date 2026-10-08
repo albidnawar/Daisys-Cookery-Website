@@ -3,12 +3,12 @@ const SIZES = ["1", "2", "3", "4", "5"] as const;
 export function SizeSelector({
   value,
   onChange,
-  shopPhone,
 }: {
   value: string;
   onChange: (next: string) => void;
-  shopPhone: string;
 }) {
+  const isCustom = value !== "" && !(SIZES as readonly string[]).includes(value);
+
   return (
     <div>
       <h4 className="mb-2 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
@@ -33,7 +33,7 @@ export function SizeSelector({
           type="button"
           onClick={() => onChange("other")}
           className={`rounded-full px-3 py-1.5 font-body text-sm font-bold ${
-            value === "other"
+            isCustom
               ? "bg-brand-orange text-white"
               : "text-brand-chocolate hover:bg-brand-chocolate/5"
           }`}
@@ -41,11 +41,22 @@ export function SizeSelector({
           Other
         </button>
       </div>
-      {value === "other" && (
-        <p className="mt-3 border-l-2 border-brand-orange pl-3 font-body text-xs leading-relaxed text-brand-chocolate/70">
-          Cakes over five pounds are quoted by phone, call{" "}
-          <strong>{shopPhone}</strong>, or use the chat button below.
-        </p>
+      {isCustom && (
+        <div className="mt-3">
+          <label className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+            Weight, in pounds
+          </label>
+          <input
+            type="number"
+            min={0.5}
+            step={0.5}
+            autoFocus
+            placeholder="e.g. 7"
+            value={value === "other" ? "" : value}
+            onChange={(e) => onChange(e.target.value)}
+            className="input-field w-32"
+          />
+        </div>
       )}
     </div>
   );

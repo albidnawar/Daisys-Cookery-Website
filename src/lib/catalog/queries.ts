@@ -113,6 +113,20 @@ export async function listFlavors(supabase: Client): Promise<Flavor[]> {
   return data;
 }
 
+export type TaxonomyOption = { code: string; label: string };
+
+export async function listDietaryTagOptions(supabase: Client): Promise<TaxonomyOption[]> {
+  const { data, error } = await supabase.from("dietary_tags").select("code, label").order("sort_order");
+  if (error) throw error;
+  return data;
+}
+
+export async function listOccasionOptions(supabase: Client): Promise<TaxonomyOption[]> {
+  const { data, error } = await supabase.from("occasions").select("code, label").order("sort_order");
+  if (error) throw error;
+  return data;
+}
+
 export async function listCakes(
   supabase: Client,
   filters: CatalogFilters = {},
@@ -286,6 +300,18 @@ export async function getCakeBySlug(
 export const getCachedFlavors = unstable_cache(
   () => listFlavors(createServiceRoleClient()),
   ["flavors"],
+  { revalidate: 120, tags: ["catalog"] },
+);
+
+export const getCachedDietaryTagOptions = unstable_cache(
+  () => listDietaryTagOptions(createServiceRoleClient()),
+  ["dietary-tag-options"],
+  { revalidate: 120, tags: ["catalog"] },
+);
+
+export const getCachedOccasionOptions = unstable_cache(
+  () => listOccasionOptions(createServiceRoleClient()),
+  ["occasion-options"],
   { revalidate: 120, tags: ["catalog"] },
 );
 

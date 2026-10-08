@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { formatSlotLabel } from "@/lib/slots/store";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
+import { getCachedCakeBySlug } from "@/lib/catalog/queries";
 import type { KanbanOrder } from "@/lib/admin/kanbanColumns";
 import type { CakeSnapshot, OrderStatus } from "@/lib/types/domain";
 
@@ -31,12 +32,30 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
     rows = rows.filter((row) => row.delivery_slots?.date === date);
   }
 
+  const uniqueSlugs = [
+    ...new Set(
+      rows
+        .map((row) => (row.cake_snapshot as CakeSnapshot).slug)
+        .filter((slug): slug is string => Boolean(slug)),
+    ),
+  ];
+  const imageBySlug = new Map<string, string | null>(
+    await Promise.all(
+      uniqueSlugs.map(
+        async (slug) => [slug, (await getCachedCakeBySlug(slug))?.heroImageUrl ?? null] as const,
+      ),
+    ),
+  );
+
   return rows.map((row) => {
     const slot = row.delivery_slots;
+    const cakeSlug = (row.cake_snapshot as CakeSnapshot).slug;
     return {
       id: row.id,
       orderNumber: row.order_number,
       cakeName: (row.cake_snapshot as CakeSnapshot).name,
+      cakeSlug,
+      cakeImageUrl: cakeSlug ? imageBySlug.get(cakeSlug) ?? null : null,
       spec: (row.cake_snapshot as CakeSnapshot).spec,
       total: Number(row.total),
       depositAmount: Number(row.deposit_amount),

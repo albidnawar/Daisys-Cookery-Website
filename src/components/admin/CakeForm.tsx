@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { FocalPointPicker } from "@/components/admin/FocalPointPicker";
-import { EVENT_OPTIONS } from "@/lib/catalog/events";
-import { DIETARY_OPTIONS } from "@/lib/catalog/dietary";
 import { DEFAULT_FOCAL, toObjectPosition } from "@/lib/image/focal";
 import type { AdminCakeDetail, CakeInput } from "@/lib/admin/catalogAdmin";
+import type { DietaryTagOption, OccasionOption } from "@/lib/admin/taxonomyAdmin";
 import type { Flavor } from "@/lib/types/domain";
 
 function slugify(name: string): string {
@@ -27,10 +26,14 @@ const AVAILABILITY_OPTIONS: { value: CakeInput["availability"]; label: string }[
 
 export function CakeForm({
   flavors,
+  dietaryOptions,
+  occasionOptions,
   initial,
   cakeId,
 }: {
   flavors: Flavor[];
+  dietaryOptions: DietaryTagOption[];
+  occasionOptions: OccasionOption[];
   initial: AdminCakeDetail | null;
   cakeId: string | null;
 }) {
@@ -269,11 +272,11 @@ export function CakeForm({
           Dietary tags
         </span>
         <div className="flex flex-wrap gap-2">
-          {DIETARY_OPTIONS.map(({ tag, label }) => (
+          {dietaryOptions.map(({ code, label }) => (
             <Chip
-              key={tag}
-              active={values.dietaryTags.includes(tag)}
-              onClick={() => toggleDietary(tag)}
+              key={code}
+              active={values.dietaryTags.includes(code)}
+              onClick={() => toggleDietary(code)}
             >
               {label}
             </Chip>
@@ -286,7 +289,7 @@ export function CakeForm({
           Occasions
         </span>
         <div className="flex flex-wrap gap-2">
-          {EVENT_OPTIONS.map(({ code, label }) => (
+          {occasionOptions.map(({ code, label }) => (
             <Chip key={code} active={values.events.includes(code)} onClick={() => toggleEvent(code)}>
               {label}
             </Chip>

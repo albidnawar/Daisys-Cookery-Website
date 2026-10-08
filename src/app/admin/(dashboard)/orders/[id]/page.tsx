@@ -21,5 +21,12 @@ export default async function AdminOrderDetailPage({
   ]);
   const groupsByCode = Object.fromEntries((cake?.optionGroups ?? []).map((g) => [g.code, g]));
 
-  return <OrderDetailEditor order={order} groupsByCode={groupsByCode} history={history} />;
+  return (
+    <OrderDetailEditor
+      order={order}
+      groupsByCode={groupsByCode}
+      history={history}
+      cakeImageUrl={cake?.heroImageUrl ?? null}
+    />
+  );
 }

@@ -39,7 +39,7 @@ export const FIXTURE_OPTION_GROUPS: OptionGroup[] = [
     ["3", "3 lb", 0],
     ["4", "4 lb", 0],
     ["5", "5 lb", 0],
-    ["other", "Other (call 01814438989)", 0],
+    ["other", "Other", 0],
   ], 1, 1),
   group("shape", "Shape", "radio", [
     ["round", "Round", 0],
@@ -105,6 +105,29 @@ function FIXTURE_FLAVORS_SPONGE_VALUES(): [string, string, number][] {
     ["pistachio", "Pistachio", 150],
   ];
 }
+
+// Dev-only stand-ins for the admin-managed `occasions`/`dietary_tags`
+// tables (see taxonomyAdmin.ts) — used only when Supabase isn't
+// configured, so there's no lookup table to read these from.
+export const FIXTURE_EVENT_OPTIONS = [
+  { code: "birthday", label: "Birthday (Kids & Adults)" },
+  { code: "anniversary_romance", label: "Anniversary & Romance" },
+  { code: "wedding_gaye_holud", label: "Wedding & Gaye Holud" },
+  { code: "engagement_ring", label: "Engagement & Ring Ceremony" },
+  { code: "baby_shower_sadh", label: "Baby Shower & Sadh" },
+  { code: "graduation_success", label: "Graduation & Success" },
+  { code: "eid_festive", label: "Eid & Festive Specials" },
+  { code: "valentines_mothers_fathers_day", label: "Valentine's & Mother's/Father's Day" },
+  { code: "corporate_office", label: "Corporate & Office Parties" },
+  { code: "kids_character", label: "Kids & Character Themes" },
+];
+
+export const FIXTURE_DIETARY_OPTIONS = [
+  { code: "eggless", label: "Eggless" },
+  { code: "gluten_free", label: "Gluten-free" },
+  { code: "vegan", label: "Vegan" },
+  { code: "sugar_free", label: "Sugar-free" },
+];
 
 export const FIXTURE_FLAVORS: Flavor[] = [
   { id: "vanilla", name: "Vanilla", slug: "vanilla" },

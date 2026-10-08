@@ -28,6 +28,8 @@ export type KanbanOrder = {
   id: string;
   orderNumber: string;
   cakeName: string;
+  cakeSlug: string | null;
+  cakeImageUrl: string | null;
   spec: CakeSnapshot["spec"];
   total: number;
   depositAmount: number;

@@ -11,7 +11,6 @@ import { FIXTURE_REVIEWS } from "@/lib/reviews/fixtures";
 import { getCachedActiveHeroBanner } from "@/lib/home/heroBanner";
 import { ReviewsMarquee } from "@/components/home/ReviewsMarquee";
 import { HeroBanner } from "@/components/home/HeroBanner";
-import { getStoreSettings } from "@/lib/settings/store";
 
 const VALUE_PROPS = [
   {
@@ -24,7 +23,7 @@ const VALUE_PROPS = [
   },
   {
     title: "Custom & tiered",
-    body: "A deposit holds the date. Anything above five pounds we quote on the phone first.",
+    body: "A deposit holds the date. Any weight from one to two hundred pounds, priced instantly.",
   },
 ];
 
@@ -47,10 +46,7 @@ async function getHomeData() {
 }
 
 export default async function Home() {
-  const [{ flavors, cakes, reviews, heroBanner }, settings] = await Promise.all([
-    getHomeData(),
-    getStoreSettings(),
-  ]);
+  const { flavors, cakes, reviews, heroBanner } = await getHomeData();
 
   return (
     <div className="flex flex-col gap-16 pb-24">
@@ -73,9 +69,6 @@ export default async function Home() {
               Browse the flavors
             </LinkButton>
           </div>
-          <p className="font-body text-sm text-brand-chocolate/60">
-            Cakes over five pounds are quoted by phone: call {settings.shopPhone}.
-          </p>
         </div>
         <HeroBanner banner={heroBanner} />
       </section>

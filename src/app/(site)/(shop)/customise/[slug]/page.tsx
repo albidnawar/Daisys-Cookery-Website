@@ -37,7 +37,6 @@ export default async function CustomisePage({
       <WizardShell
         cake={cake}
         depositRate={settings.depositRate}
-        shopPhone={settings.shopPhone}
         isFromScratch={slug === "new"}
       />
     </div>

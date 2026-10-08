@@ -17,14 +17,12 @@ export function QuickOrderPanel({
   draftId,
   spec,
   price,
-  shopPhone,
   onChange,
 }: {
   cake: CakeDetail;
   draftId: string | null;
   spec: DraftOrderSpec;
   price: PriceBreakdown | null;
-  shopPhone: string;
   onChange: (patch: Partial<DraftOrderSpec>) => void;
 }) {
   return (
@@ -46,7 +44,6 @@ export function QuickOrderPanel({
       <SizeSelector
         value={spec.sizeCode ?? "1"}
         onChange={(sizeCode) => onChange({ sizeCode })}
-        shopPhone={shopPhone}
       />
 
       <label className="block">
@@ -66,7 +63,7 @@ export function QuickOrderPanel({
           Total
         </span>
         <span className="font-display text-3xl font-semibold text-brand-chocolate">
-          {price ? `৳${price.total.toLocaleString("en-BD")}` : "Call for a quote"}
+          {price ? `৳${price.total.toLocaleString("en-BD")}` : "Enter a weight"}
         </span>
       </div>
 
