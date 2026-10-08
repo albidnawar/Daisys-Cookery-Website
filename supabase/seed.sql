@@ -93,7 +93,7 @@ join (values
   ('size_lb', '3 lb', '3', 0, 3, '{"lb": 3}'),
   ('size_lb', '4 lb', '4', 0, 4, '{"lb": 4}'),
   ('size_lb', '5 lb', '5', 0, 5, '{"lb": 5}'),
-  ('size_lb', 'Other (call 01814438989)', 'other', 0, 6, '{"lb": null}'),
+  ('size_lb', 'Other', 'other', 0, 6, '{"lb": null}'),
 
   ('shape', 'Round', 'round', 0, 1, '{}'),
   ('shape', 'Square', 'square', 0, 2, '{}'),

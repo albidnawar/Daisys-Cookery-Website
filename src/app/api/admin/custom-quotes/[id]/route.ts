@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
-import { getCustomQuoteForEdit, updateCustomQuote } from "@/lib/admin/customQuotes";
+import { deleteCustomQuote, getCustomQuoteForEdit, updateCustomQuote } from "@/lib/admin/customQuotes";
 import type { CustomQuoteInput } from "@/lib/types/domain";
 
 async function guard() {
@@ -36,5 +36,16 @@ export async function PATCH(
   const { id } = await params;
   const input = (await request.json()) as CustomQuoteInput;
   await updateCustomQuote(id, input);
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const denied = await guard();
+  if (denied) return denied;
+  const { id } = await params;
+  await deleteCustomQuote(id);
   return NextResponse.json({ ok: true });
 }

@@ -5,6 +5,7 @@ export type ChatContext = {
   weightLb?: number | string;
   price?: number;
   dateLabel?: string;
+  requestId?: string;
 };
 
 // Placeholders until real business identifiers are set in .env.local — see
@@ -15,15 +16,20 @@ const FACEBOOK_PAGE_USERNAME =
   process.env.NEXT_PUBLIC_FACEBOOK_PAGE_USERNAME || "daisyscookery";
 
 function buildMessage(context: ChatContext): string {
+  let message: string;
   if (!context.cakeName) {
-    return "Hi Daisy's Cookery! I have a question about a cake.";
+    message = "Hi Daisy's Cookery! I have a question about a cake.";
+  } else {
+    const parts = [`Hi Daisy's Cookery! I'm interested in: ${context.cakeName}`];
+    if (context.weightLb) parts.push(`${context.weightLb} lb`);
+    if (context.price) parts.push(`~৳${context.price.toLocaleString("en-BD")}`);
+    message = parts.join(", ") + ".";
+    if (context.dateLabel) {
+      message += ` Preferred date: ${context.dateLabel}.`;
+    }
   }
-  const parts = [`Hi Daisy's Cookery! I'm interested in: ${context.cakeName}`];
-  if (context.weightLb) parts.push(`${context.weightLb} lb`);
-  if (context.price) parts.push(`~৳${context.price.toLocaleString("en-BD")}`);
-  let message = parts.join(", ") + ".";
-  if (context.dateLabel) {
-    message += ` Preferred date: ${context.dateLabel}.`;
+  if (context.requestId) {
+    message += ` My request ID is ${context.requestId}.`;
   }
   return message;
 }

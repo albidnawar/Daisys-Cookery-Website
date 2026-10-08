@@ -3,14 +3,31 @@ import { createCustomQuoteDraft } from "@/lib/draftOrders/store";
 import { fixedPrice } from "@/lib/pricing/calculatePrice";
 import { getStoreSettings } from "@/lib/settings/store";
 import { normalizePhone } from "@/lib/phone";
-import type { CustomQuoteDetail, CustomQuoteInput, CustomQuoteSummary } from "@/lib/types/domain";
+import type { CustomQuoteDetail, CustomQuoteInput, CustomQuoteStatus, CustomQuoteSummary } from "@/lib/types/domain";
 
-export async function listCustomQuotes(): Promise<CustomQuoteSummary[]> {
+export type CustomQuoteFilters = {
+  status?: CustomQuoteStatus;
+  search?: string;
+};
+
+export async function listCustomQuotes(filters: CustomQuoteFilters = {}): Promise<CustomQuoteSummary[]> {
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("custom_quotes")
     .select("id, contact_name, contact_phone, cake_title, status, quoted_price, reference_image_urls, created_at")
     .order("created_at", { ascending: false });
+
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+  if (filters.search?.trim()) {
+    const term = filters.search.trim();
+    query = query.or(
+      `id.ilike.%${term}%,contact_name.ilike.%${term}%,contact_phone.ilike.%${term}%,cake_title.ilike.%${term}%`,
+    );
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   return (data ?? []).map((row) => ({
@@ -160,4 +177,24 @@ export async function updateCustomQuote(id: string, input: CustomQuoteInput): Pr
     })
     .eq("id", id);
   if (error) throw error;
+}
+
+/** Permanently removes a custom quote request. Also cleans up its linked
+ * draft_orders row (if a price was ever set, see updateCustomQuote()) —
+ * best-effort, since custom_quotes has no FK pointing at it, so nothing
+ * actually blocks the delete either way. */
+export async function deleteCustomQuote(id: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: existing } = await supabase
+    .from("custom_quotes")
+    .select("draft_order_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase.from("custom_quotes").delete().eq("id", id);
+  if (error) throw error;
+
+  if (existing?.draft_order_id) {
+    await supabase.from("draft_orders").delete().eq("id", existing.draft_order_id);
+  }
 }

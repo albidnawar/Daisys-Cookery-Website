@@ -5,35 +5,35 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FilterSidebar, type FilterValue } from "@/components/browse/FilterSidebar";
 import { SortControl, type SortValue } from "@/components/browse/SortControl";
 import { CakeCard } from "@/components/browse/CakeCard";
-import { EVENT_OPTIONS, type EventCode } from "@/lib/catalog/events";
+import type { TaxonomyOption } from "@/lib/catalog/queries";
 import type { CakeSummary, Flavor } from "@/lib/types/domain";
 
-const EVENT_CODES: EventCode[] = EVENT_OPTIONS.map((o) => o.code);
-
-function filterFromParams(params: URLSearchParams): FilterValue {
+function filterFromParams(params: URLSearchParams, occasions: TaxonomyOption[]): FilterValue {
   const event = params.get("event");
   return {
     flavorSlug: params.get("flavor"),
     sizeLb: params.get("size"),
     dietary: (params.get("dietary")?.split(",").filter(Boolean) ?? []) as FilterValue["dietary"],
-    event: EVENT_CODES.find((code) => code === event) ?? null,
+    event: occasions.find((o) => o.code === event)?.code ?? null,
   };
 }
 
 export function BrowsePageClient({
   flavors,
+  occasions,
+  dietaryTagOptions,
   initialCakes,
-  shopPhone,
 }: {
   flavors: Flavor[];
+  occasions: TaxonomyOption[];
+  dietaryTagOptions: TaxonomyOption[];
   initialCakes: CakeSummary[];
-  shopPhone: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState<FilterValue>(() =>
-    filterFromParams(searchParams),
+    filterFromParams(searchParams, occasions),
   );
   const [sort, setSort] = useState<SortValue>(
     (searchParams.get("sort") as SortValue) ?? "name",
@@ -66,7 +66,13 @@ export function BrowsePageClient({
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-8 md:grid-cols-[240px_1fr]">
-      <FilterSidebar flavors={flavors} value={filters} onChange={setFilters} shopPhone={shopPhone} />
+      <FilterSidebar
+        flavors={flavors}
+        occasions={occasions}
+        dietaryTagOptions={dietaryTagOptions}
+        value={filters}
+        onChange={setFilters}
+      />
 
       <div>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

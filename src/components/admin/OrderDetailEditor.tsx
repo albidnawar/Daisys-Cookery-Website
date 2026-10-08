@@ -23,10 +23,12 @@ export function OrderDetailEditor({
   order,
   groupsByCode,
   history,
+  cakeImageUrl,
 }: {
   order: Order;
   groupsByCode: Record<string, OptionGroup>;
   history: OrderStatusHistoryEntry[];
+  cakeImageUrl: string | null;
 }) {
   const router = useRouter();
 
@@ -37,6 +39,10 @@ export function OrderDetailEditor({
   );
   const [kitchenNote, setKitchenNote] = useState(order.kitchenNote ?? "");
   const [manualTrxId, setManualTrxId] = useState(order.manualTrxId ?? "");
+  const [needsRiderPickup, setNeedsRiderPickup] = useState(order.needsRiderPickup);
+  const [riderPickupAt, setRiderPickupAt] = useState(
+    order.riderPickupAt ? order.riderPickupAt.slice(0, 16) : "",
+  );
 
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
@@ -60,6 +66,8 @@ export function OrderDetailEditor({
         deliveryAddressText: order.fulfilmentType === "delivery" ? addressText || null : null,
         kitchenNote: kitchenNote || null,
         manualTrxId: manualTrxId || null,
+        needsRiderPickup,
+        riderPickupAt: riderPickupAt ? new Date(riderPickupAt).toISOString() : null,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -145,8 +153,22 @@ export function OrderDetailEditor({
                 Instructions: {order.cakeSnapshot.spec.instructions}
               </p>
             )}
+            {cakeImageUrl && (
+              <div className="mt-3">
+                <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
+                  Cake photo
+                </p>
+                <div className="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10">
+                  <Image src={cakeImageUrl} alt="" fill className="object-cover" />
+                </div>
+              </div>
+            )}
             {getReferenceImages(order.cakeSnapshot.spec).length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3">
+                <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
+                  Reference photos from customer
+                </p>
+                <div className="flex flex-wrap gap-2">
                 {getReferenceImages(order.cakeSnapshot.spec).map((url) => (
                   <div
                     key={url}
@@ -155,6 +177,7 @@ export function OrderDetailEditor({
                     <Image src={url} alt="Reference" fill className="object-cover" />
                   </div>
                 ))}
+                </div>
               </div>
             )}
           </section>
@@ -187,6 +210,28 @@ export function OrderDetailEditor({
             <Field label="Slot">
               <p className="font-body text-sm text-brand-chocolate/70">{order.slotLabel ?? "To be confirmed"}</p>
             </Field>
+            {order.fulfilmentType === "delivery" && (
+              <div className="rounded-2xl border-2 border-brand-chocolate/10 p-3">
+                <label className="mb-2 flex items-center gap-2 font-body text-sm text-brand-chocolate">
+                  <input
+                    type="checkbox"
+                    checked={needsRiderPickup}
+                    onChange={(e) => setNeedsRiderPickup(e.target.checked)}
+                  />
+                  Needs a rider to pick this up
+                </label>
+                {needsRiderPickup && (
+                  <Field label="Rider pickup time">
+                    <input
+                      type="datetime-local"
+                      value={riderPickupAt}
+                      onChange={(e) => setRiderPickupAt(e.target.value)}
+                      className="input-field"
+                    />
+                  </Field>
+                )}
+              </div>
+            )}
             <Field label="Kitchen note">
               <textarea
                 rows={2}

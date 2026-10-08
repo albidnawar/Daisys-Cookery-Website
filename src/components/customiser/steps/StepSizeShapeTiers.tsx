@@ -5,29 +5,47 @@ export function StepSizeShapeTiers({
   groupsByCode,
   spec,
   onChange,
-  shopPhone,
 }: {
   groupsByCode: Record<string, OptionGroup>;
   spec: DraftOrderSpec;
   onChange: (patch: Partial<DraftOrderSpec>) => void;
-  shopPhone: string;
 }) {
+  const sizeGroup = groupsByCode.size_lb;
+  const sizeCodes = sizeGroup?.values.map((v) => v.valueCode) ?? [];
+  const isCustomSize = Boolean(spec.sizeCode) && !sizeCodes.includes(spec.sizeCode!);
+
   return (
     <div className="flex flex-col gap-8">
-      {groupsByCode.size_lb && (
-        <RadioOptionGroup
-          group={groupsByCode.size_lb}
-          value={spec.sizeCode}
-          onChange={(sizeCode) => onChange({ sizeCode })}
-          columns={4}
-        />
-      )}
-      {spec.sizeCode === "other" && (
-        <p className="border-l-2 border-brand-orange pl-3 font-body text-sm leading-relaxed text-brand-chocolate/70">
-          Cakes can be provided from 1 to 200 pounds. For more than 5
-          pounds, call <strong>{shopPhone}</strong>, or use the chat
-          button to send us the details.
-        </p>
+      {sizeGroup && (
+        <div>
+          <RadioOptionGroup
+            group={sizeGroup}
+            // "Other" stays highlighted for any size the group doesn't
+            // list (the literal "other" sentinel, or an actual typed
+            // weight) — only the number input below ever writes a real
+            // weight into spec.sizeCode.
+            value={isCustomSize ? "other" : spec.sizeCode}
+            onChange={(sizeCode) => onChange({ sizeCode })}
+            columns={4}
+          />
+          {isCustomSize && (
+            <div className="mt-3">
+              <label className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+                Weight, in pounds
+              </label>
+              <input
+                type="number"
+                min={0.5}
+                step={0.5}
+                autoFocus
+                placeholder="e.g. 7"
+                value={spec.sizeCode === "other" ? "" : spec.sizeCode}
+                onChange={(e) => onChange({ sizeCode: e.target.value })}
+                className="input-field w-32"
+              />
+            </div>
+          )}
+        </div>
       )}
       <div className="grid gap-8 sm:grid-cols-2">
         {groupsByCode.shape && (

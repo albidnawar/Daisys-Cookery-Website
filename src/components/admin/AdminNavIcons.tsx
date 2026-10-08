@@ -123,6 +123,15 @@ export function FlagIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function TagIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-.6 1.4l-9 9a2 2 0 0 1-2.8 0l-7-7a2 2 0 0 1 0-2.8l9-9A2 2 0 0 1 12 2Z" />
+      <circle cx="16.5" cy="7.5" r="1.25" fill="currentColor" stroke="none" />
+    </Icon>
+  );
+}
+
 export function MegaphoneIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Icon {...props}>

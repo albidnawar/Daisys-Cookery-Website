@@ -239,12 +239,35 @@ export function ManualOrderForm({
             {cakeDetail && (
               <div className="mt-4 flex flex-col gap-4">
                 {groupsByCode.size_lb && (
-                  <RadioOptionGroup
-                    group={groupsByCode.size_lb}
-                    value={spec.sizeCode}
-                    onChange={(sizeCode) => set({ sizeCode })}
-                    columns={4}
-                  />
+                  <div>
+                    <RadioOptionGroup
+                      group={groupsByCode.size_lb}
+                      value={
+                        spec.sizeCode &&
+                        !groupsByCode.size_lb.values.some((v) => v.valueCode === spec.sizeCode)
+                          ? "other"
+                          : spec.sizeCode
+                      }
+                      onChange={(sizeCode) => set({ sizeCode })}
+                      columns={4}
+                    />
+                    {spec.sizeCode &&
+                      !groupsByCode.size_lb.values.some((v) => v.valueCode === spec.sizeCode) && (
+                        <div className="mt-3">
+                          <label className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+                            Weight, in pounds
+                          </label>
+                          <input
+                            type="number"
+                            min={0.5}
+                            step={0.5}
+                            value={spec.sizeCode === "other" ? "" : spec.sizeCode}
+                            onChange={(e) => set({ sizeCode: e.target.value })}
+                            className="input-field w-32"
+                          />
+                        </div>
+                      )}
+                  </div>
                 )}
                 {groupsByCode.sponge && (
                   <RadioOptionGroup

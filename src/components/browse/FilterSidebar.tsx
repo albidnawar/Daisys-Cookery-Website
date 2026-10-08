@@ -1,13 +1,8 @@
-import { EVENT_OPTIONS, type EventCode } from "@/lib/catalog/events";
+import type { TaxonomyOption } from "@/lib/catalog/queries";
+import type { EventCode } from "@/lib/catalog/events";
 import type { DietaryTag, Flavor } from "@/lib/types/domain";
 
 const SIZES = ["1", "2", "3", "4", "5"] as const;
-const DIETARY_OPTIONS: { tag: DietaryTag; label: string }[] = [
-  { tag: "eggless", label: "Eggless" },
-  { tag: "gluten_free", label: "Gluten-free" },
-  { tag: "vegan", label: "Vegan" },
-  { tag: "sugar_free", label: "Sugar-free" },
-];
 
 export type FilterValue = {
   flavorSlug: string | null;
@@ -50,14 +45,16 @@ function RadioRow({
 
 export function FilterSidebar({
   flavors,
+  occasions,
+  dietaryTagOptions,
   value,
   onChange,
-  shopPhone,
 }: {
   flavors: Flavor[];
+  occasions: TaxonomyOption[];
+  dietaryTagOptions: TaxonomyOption[];
   value: FilterValue;
   onChange: (next: FilterValue) => void;
-  shopPhone: string;
 }) {
   const toggleDietary = (tag: DietaryTag) => {
     const has = value.dietary.includes(tag);
@@ -82,7 +79,7 @@ export function FilterSidebar({
             checked={value.event === null}
             onSelect={() => onChange({ ...value, event: null })}
           />
-          {EVENT_OPTIONS.map(({ code, label }) => (
+          {occasions.map(({ code, label }) => (
             <RadioRow
               key={code}
               name="event"
@@ -164,9 +161,8 @@ export function FilterSidebar({
         </div>
         {value.sizeLb === "other" && (
           <p className="mt-3 border-l-2 border-brand-orange pl-3 font-body text-xs leading-relaxed text-brand-chocolate/70">
-            Cakes can be provided from 1 to 200 pounds. For more than 5
-            pounds, call <strong>{shopPhone}</strong> or use the chat button
-            on any cake.
+            Cakes can be made from 1 to 200 pounds. Pick any cake and enter
+            your exact weight on its page.
           </p>
         )}
       </div>
@@ -178,13 +174,13 @@ export function FilterSidebar({
           Dietary
         </h4>
         <div className="flex flex-wrap gap-2">
-          {DIETARY_OPTIONS.map(({ tag, label }) => (
+          {dietaryTagOptions.map(({ code, label }) => (
             <button
-              key={tag}
+              key={code}
               type="button"
-              onClick={() => toggleDietary(tag)}
+              onClick={() => toggleDietary(code)}
               className={`rounded-full border px-3 py-1 font-body text-xs font-bold ${
-                value.dietary.includes(tag)
+                value.dietary.includes(code)
                   ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
                   : "border-brand-chocolate/20 text-brand-chocolate/70 hover:border-brand-chocolate/40"
               }`}

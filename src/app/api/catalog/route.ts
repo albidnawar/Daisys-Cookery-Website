@@ -1,8 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
-import { applyCatalogFilters, getCachedCakes } from "@/lib/catalog/queries";
-import { FIXTURE_CAKES } from "@/lib/catalog/fixtures";
-import { EVENT_OPTIONS, type EventCode } from "@/lib/catalog/events";
+import {
+  applyCatalogFilters,
+  getCachedCakes,
+  getCachedDietaryTagOptions,
+  getCachedOccasionOptions,
+} from "@/lib/catalog/queries";
+import { FIXTURE_CAKES, FIXTURE_DIETARY_OPTIONS, FIXTURE_EVENT_OPTIONS } from "@/lib/catalog/fixtures";
 import type { CatalogFilters, DietaryTag } from "@/lib/types/domain";
 
 const SORTS: NonNullable<CatalogFilters["sort"]>[] = [
@@ -10,13 +14,6 @@ const SORTS: NonNullable<CatalogFilters["sort"]>[] = [
   "price_desc",
   "name",
 ];
-const DIETARY_TAGS: DietaryTag[] = [
-  "eggless",
-  "gluten_free",
-  "vegan",
-  "sugar_free",
-];
-const EVENT_CODES: EventCode[] = EVENT_OPTIONS.map((o) => o.code);
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -24,15 +21,18 @@ export async function GET(request: NextRequest) {
   const dietary = params.get("dietary");
   const event = params.get("event");
 
+  const [dietaryTagOptions, occasions] = isSupabaseConfigured()
+    ? await Promise.all([getCachedDietaryTagOptions(), getCachedOccasionOptions()])
+    : [FIXTURE_DIETARY_OPTIONS, FIXTURE_EVENT_OPTIONS];
+  const dietaryCodes = new Set(dietaryTagOptions.map((o) => o.code));
+
   const filters: CatalogFilters = {
     flavorSlug: params.get("flavor") ?? undefined,
     sort: SORTS.find((s) => s === sort),
     dietary: dietary
       ?.split(",")
-      .filter((tag): tag is DietaryTag =>
-        DIETARY_TAGS.includes(tag as DietaryTag),
-      ),
-    event: EVENT_CODES.find((code) => code === event),
+      .filter((tag): tag is DietaryTag => dietaryCodes.has(tag)),
+    event: occasions.find((o) => o.code === event)?.code,
   };
 
   const cakes = isSupabaseConfigured()

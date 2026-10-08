@@ -144,6 +144,23 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                         {order.orderSource === "manual" ? "FB/Manual" : "Web"}
                       </span>
                     </div>
+                    {order.cakeImageUrl && (
+                      <a
+                        href={order.cakeImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        draggable={false}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="block h-20 w-full overflow-hidden rounded-lg bg-cream"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={order.cakeImageUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      </a>
+                    )}
                     <p className="font-display text-base font-semibold text-brand-chocolate">
                       {order.cakeName}
                     </p>

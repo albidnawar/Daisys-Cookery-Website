@@ -108,6 +108,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     kitchenNote: input.kitchenNote ?? null,
     orderSource: "web",
     manualTrxId: input.manualTrxId ?? null,
+    needsRiderPickup: false,
+    riderPickupAt: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -260,6 +262,8 @@ function rowToOrder(row: any): Order {
     kitchenNote: row.kitchen_note,
     orderSource: row.order_source ?? "web",
     manualTrxId: row.manual_trx_id ?? null,
+    needsRiderPickup: row.needs_rider_pickup ?? false,
+    riderPickupAt: row.rider_pickup_at ?? null,
     createdAt: row.created_at,
   };
 }

@@ -1,7 +1,10 @@
 import type { EventCode } from "@/lib/catalog/events";
 import type { FocalPoint } from "@/lib/image/focal";
 
-export type DietaryTag = "eggless" | "gluten_free" | "vegan" | "sugar_free";
+// Dietary tag codes are admin-managed (see the `dietary_tags` table and
+// src/lib/admin/taxonomyAdmin.ts) rather than a fixed compile-time list —
+// this type is just a readability alias over the plain code string.
+export type DietaryTag = string;
 
 export type Flavor = {
   id: string;
@@ -68,7 +71,7 @@ export type CatalogFilters = {
 };
 
 export type DraftOrderSpec = {
-  sizeCode?: string; // "1".."5" or "other"
+  sizeCode?: string; // "1".."5", a custom typed weight, or the transient "other" sentinel
   shape?: string;
   tiers?: string;
   sponge?: string;
@@ -252,5 +255,7 @@ export type Order = {
   kitchenNote: string | null;
   orderSource: "web" | "manual";
   manualTrxId: string | null;
+  needsRiderPickup: boolean;
+  riderPickupAt: string | null;
   createdAt: string;
 };
