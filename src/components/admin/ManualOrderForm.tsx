@@ -241,6 +241,18 @@ export function ManualOrderForm({
                 ))}
               </select>
             </Field>
+            {cakeDetail?.heroImageUrl && (
+              <div className="mt-4 flex items-center gap-3">
+                <div className="h-20 w-20 flex-none overflow-hidden rounded-xl bg-cream">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cakeDetail.heroImageUrl} alt="" className="h-full w-full object-cover" />
+                </div>
+                <p className="font-body text-xs text-brand-chocolate/60">
+                  This cake&apos;s catalog photo is used on the order automatically — no need to
+                  upload one.
+                </p>
+              </div>
+            )}
             {cakeDetail && (
               <div className="mt-4 flex flex-col gap-4">
                 {groupsByCode.size_lb && (
@@ -339,13 +351,15 @@ export function ManualOrderForm({
           </Field>
         </div>
 
-        <div className="mt-4">
-          <ImageUploadField
-            label="Reference photo (from FB chat)"
-            value={spec.referenceImageUrl}
-            onChange={(url) => set({ referenceImageUrl: url })}
-          />
-        </div>
+        {cakeMode === "custom" && (
+          <div className="mt-4">
+            <ImageUploadField
+              label="Reference Photo"
+              value={spec.referenceImageUrl}
+              onChange={(url) => set({ referenceImageUrl: url })}
+            />
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border-2 border-brand-chocolate/10 p-4">
