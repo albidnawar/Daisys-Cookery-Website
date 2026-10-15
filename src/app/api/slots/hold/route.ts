@@ -4,7 +4,7 @@ import { updateDraftOrderFulfilment } from "@/lib/draftOrders/store";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { draftId, slotId, fulfilmentType, zoneId } = body;
+  const { draftId, slotId, fulfilmentType, zoneId, deliveryAddress } = body;
 
   if (!draftId || !slotId) {
     return NextResponse.json(
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       slotId,
       fulfilmentType,
       zoneId,
+      deliveryAddress,
     });
     return NextResponse.json({ hold, draft });
   } catch (error) {

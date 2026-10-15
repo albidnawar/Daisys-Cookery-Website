@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { ChatIcon, GlobeIcon } from "@/components/admin/AdminNavIcons";
+import { CopyOrderFormLinkButton } from "@/components/admin/CopyOrderFormLinkButton";
 import { getSalesSummary, getTopSellerStats, type RankedStat } from "@/lib/admin/analytics";
 import { hasModule, requireModulePage } from "@/lib/admin/auth";
 import type { ModuleKey } from "@/lib/admin/modules";
@@ -51,9 +52,12 @@ export default async function AdminOverviewPage() {
   return (
     <div className="flex flex-col gap-10">
       <div>
-        <h1 className="mb-2 font-display text-3xl font-semibold text-brand-chocolate">
-          Welcome back
-        </h1>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display text-3xl font-semibold text-brand-chocolate">
+            Welcome back
+          </h1>
+          <CopyOrderFormLinkButton />
+        </div>
         <p className="mb-6 font-body text-sm text-brand-chocolate/60">
           Sales performance and top sellers, updated live from your order history.
         </p>

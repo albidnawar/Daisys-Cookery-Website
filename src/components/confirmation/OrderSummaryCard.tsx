@@ -36,6 +36,12 @@ export function OrderSummaryCard({
 }) {
   const collectOrDeliver = order.fulfilmentType === "pickup" ? "Collect" : "Delivered";
   const fromOrTo = order.fulfilmentType === "pickup" ? shopAddress : (order.zoneName ?? "your address");
+  // A custom design placed via the public order-form before an admin has
+  // priced it — see createPendingCustomDraft() and setOrderPrice(). A
+  // manually-priced custom order (admin-entered priceOverride) always has
+  // a real subtotal by the time it exists, so this only catches the
+  // genuinely-unpriced case.
+  const isPricePending = order.cakeSnapshot.slug === null && order.subtotal === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,8 +53,9 @@ export function OrderSummaryCard({
         Thank you. We are baking.
       </h1>
       <p className="max-w-lg font-body text-base leading-relaxed text-brand-chocolate/80">
-        Your deposit is in and the date is held. We will message you when
-        your cake goes in the oven, and again when it&apos;s ready.
+        {isPricePending
+          ? "We've got your custom design and your date is held. We'll confirm your price and deposit shortly."
+          : "Your deposit is in and the date is held. We will message you when your cake goes in the oven, and again when it's ready."}
       </p>
       <hr className="border-brand-chocolate/10" />
       <table className="w-full font-body text-sm">
@@ -59,14 +66,20 @@ export function OrderSummaryCard({
             label="Cake"
             value={`${order.cakeSnapshot.name}, ${order.cakeSnapshot.spec.sizeCode ?? "?"} lb, ${summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}`}
           />
-          <Row
-            label="Deposit paid"
-            value={`৳${order.depositAmount.toLocaleString("en-BD")} by ${PAYMENT_METHOD_LABELS[order.paymentMethod]}`}
-          />
-          <Row
-            label={order.fulfilmentType === "pickup" ? "Balance at collection" : "Balance on delivery"}
-            value={`৳${(order.paymentStatus === "paid_in_full" ? 0 : order.balanceDue).toLocaleString("en-BD")}`}
-          />
+          {isPricePending ? (
+            <Row label="Price" value="To be confirmed" />
+          ) : (
+            <>
+              <Row
+                label="Deposit paid"
+                value={`৳${order.depositAmount.toLocaleString("en-BD")} by ${PAYMENT_METHOD_LABELS[order.paymentMethod]}`}
+              />
+              <Row
+                label={order.fulfilmentType === "pickup" ? "Balance at collection" : "Balance on delivery"}
+                value={`৳${(order.paymentStatus === "paid_in_full" ? 0 : order.balanceDue).toLocaleString("en-BD")}`}
+              />
+            </>
+          )}
         </tbody>
       </table>
       <div className="mt-2 flex flex-wrap gap-3">

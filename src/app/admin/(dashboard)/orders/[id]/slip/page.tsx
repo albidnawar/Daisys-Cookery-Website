@@ -48,6 +48,9 @@ export default async function OrderSlipPage({
               value={summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}
             />
             <Row label="Board writing" value={order.cakeSnapshot.spec.message || "-"} />
+            {order.cakeSnapshot.spec.cakeColor && (
+              <Row label="Color" value={order.cakeSnapshot.spec.cakeColor} />
+            )}
             {order.kitchenNote && <Row label="Kitchen note" value={order.kitchenNote} />}
             <Row label="Total" value={`৳${order.total.toLocaleString("en-BD")}`} />
             <Row label="Deposit paid" value={`৳${order.depositAmount.toLocaleString("en-BD")} (${order.paymentMethod})`} />

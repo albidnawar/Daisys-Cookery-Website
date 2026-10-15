@@ -52,6 +52,36 @@ export function OrderDetailEditor({
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(order.paymentStatus);
   const [statusSaving, setStatusSaving] = useState(false);
 
+  const [cakePrice, setCakePrice] = useState(String(order.subtotal));
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [priceSaved, setPriceSaved] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
+
+  const saveCakePrice = async () => {
+    const subtotal = Number(cakePrice);
+    if (!Number.isFinite(subtotal) || subtotal < 0) {
+      setPriceError("Enter a valid price");
+      return;
+    }
+    setPriceError(null);
+    setSavingPrice(true);
+    setPriceSaved(false);
+    const res = await fetch(`/api/admin/orders/${order.id}/price`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subtotal }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setPriceError(data.error ?? "Couldn't save that price");
+      setSavingPrice(false);
+      return;
+    }
+    setPriceSaved(true);
+    setSavingPrice(false);
+    router.refresh();
+  };
+
   const saveDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingDetails(true);
@@ -146,6 +176,11 @@ export function OrderDetailEditor({
             {order.cakeSnapshot.spec.message && (
               <p className="mt-2 font-body text-sm text-brand-chocolate/70">
                 Board writing: &ldquo;{order.cakeSnapshot.spec.message}&rdquo;
+              </p>
+            )}
+            {order.cakeSnapshot.spec.cakeColor && (
+              <p className="mt-2 font-body text-sm text-brand-chocolate/70">
+                Color: {order.cakeSnapshot.spec.cakeColor}
               </p>
             )}
             {order.cakeSnapshot.spec.instructions && (
@@ -262,6 +297,26 @@ export function OrderDetailEditor({
             <p className="mb-3 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
               Pricing
             </p>
+            {order.cakeSnapshot.slug === null && (
+              <div className="mb-4 flex flex-col gap-2 rounded-2xl border-2 border-dashed border-brand-orange/30 bg-brand-orange/5 p-4">
+                <Field label="Cake price (customer placed this before a price was set)">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={cakePrice}
+                      onChange={(e) => setCakePrice(e.target.value)}
+                      className="input-field"
+                    />
+                    <Button type="button" disabled={savingPrice} onClick={saveCakePrice} className="shrink-0">
+                      {savingPrice ? "Saving…" : "Set price"}
+                    </Button>
+                  </div>
+                </Field>
+                {priceError && <p className="font-body text-sm text-red-600">{priceError}</p>}
+                {priceSaved && <p className="font-body text-sm text-emerald-700">Saved — total and deposit updated.</p>}
+              </div>
+            )}
             <table className="w-full font-body text-sm">
               <tbody>
                 <Row label="Subtotal" value={`৳${order.subtotal.toLocaleString("en-BD")}`} />
