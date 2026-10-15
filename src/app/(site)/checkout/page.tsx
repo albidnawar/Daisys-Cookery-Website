@@ -3,6 +3,7 @@ import { CheckoutClient } from "@/components/checkout/CheckoutClient";
 import { getDraftOrder, resolveCake } from "@/lib/draftOrders/store";
 import { listZones } from "@/lib/slots/store";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 import type { OptionGroup, PriceBreakdown } from "@/lib/types/domain";
 
@@ -39,7 +40,7 @@ export default async function CheckoutPage({
 
   const zones = await listZones();
   const zone = zones.find((z) => z.id === draft.zoneId);
-  const { depositRate } = await getStoreSettings();
+  const deposit = toDepositConfig(await getStoreSettings());
 
   let cakeName: string;
   let cakeSlug: string | null;
@@ -65,7 +66,7 @@ export default async function CheckoutPage({
     cakePrice = draft.computedPrice;
   } else {
     const cake = await resolveCake(draft.cakeSlug!);
-    const price = cake ? calculatePrice(cake, draft.spec, depositRate) : null;
+    const price = cake ? calculatePrice(cake, draft.spec, deposit) : null;
     if (!cake || !price || !zone) {
       return (
         <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-8">
@@ -98,7 +99,7 @@ export default async function CheckoutPage({
   }
 
   const deliveryFee = draft.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
-  const price = withDeliveryFee(cakePrice, deliveryFee, depositRate);
+  const price = withDeliveryFee(cakePrice, deliveryFee, deposit);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">

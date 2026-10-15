@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BuyingOptionsClient } from "@/components/buying-options/BuyingOptionsClient";
 import { getDraftOrder } from "@/lib/draftOrders/store";
 import { listZones } from "@/lib/slots/store";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 
 export default async function BuyingOptionsPage({
@@ -49,7 +50,7 @@ export default async function BuyingOptionsPage({
       <BuyingOptionsClient
         draft={draft}
         zones={zones}
-        depositRate={settings.depositRate}
+        deposit={toDepositConfig(settings)}
         shopAddress={settings.shopAddress}
         shopHours={settings.shopHours}
       />

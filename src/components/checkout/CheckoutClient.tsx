@@ -38,7 +38,7 @@ export function CheckoutClient({
       return;
     }
     if (needsTrxId && !manualTrxId.trim()) {
-      setError("Enter the Transaction ID you received after sending the deposit.");
+      setError("Enter the number you sent the deposit from.");
       return;
     }
     setSubmitting(true);

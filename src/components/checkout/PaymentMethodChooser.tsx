@@ -9,7 +9,7 @@ const METHODS: { value: PaymentMethod; label: string }[] = [
 
 // Placeholders until real numbers are set in .env.local — see
 // .env.local.example. No merchant API: customers send money to these
-// personal numbers directly and report back the TrxID they get.
+// personal numbers directly and report back the number they sent it from.
 const RECEIVING_NUMBERS: Partial<Record<PaymentMethod, string>> = {
   bkash: process.env.NEXT_PUBLIC_BKASH_NUMBER || "01000000000",
   nagad: process.env.NEXT_PUBLIC_NAGAD_NUMBER || "01000000000",
@@ -57,17 +57,17 @@ export function PaymentMethodChooser({
           <p className="font-body text-sm leading-relaxed text-brand-chocolate/80">
             Send <strong>৳{depositAmount.toLocaleString("en-BD")}</strong> (the deposit) to our{" "}
             {value === "bkash" ? "bKash" : "Nagad"} number{" "}
-            <strong>{receivingNumber}</strong> (Send Money), then enter the Transaction ID
-            you receive below. We&apos;ll confirm it against our app before your slot is locked in.
+            <strong>{receivingNumber}</strong> (Send Money), then enter the number you sent it
+            from below. We&apos;ll confirm it against our app before your slot is locked in.
           </p>
           <label className="flex flex-col gap-2 font-body text-sm text-brand-chocolate">
-            Transaction ID (TrxID)
+            Your {value === "bkash" ? "bKash" : "Nagad"} number
             <input
               required
               value={manualTrxId}
               onChange={(e) => onTrxIdChange(e.target.value)}
               className="input-field"
-              placeholder="e.g. 8N7A6B5C4D"
+              placeholder="01XXXXXXXXX"
             />
           </label>
         </div>

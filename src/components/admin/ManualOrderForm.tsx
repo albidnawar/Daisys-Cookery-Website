@@ -6,6 +6,7 @@ import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import { todayKey } from "@/lib/dates";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import { computeDepositAmount, depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 import type { AdminCakeSummary } from "@/lib/admin/catalogAdmin";
 import type { CakeDetail, DeliveryZone, DraftOrderSpec, PaymentMethod, PaymentStatus, SlotAvailability } from "@/lib/types/domain";
 
@@ -24,11 +25,11 @@ const PAYMENT_STATUSES: { value: PaymentStatus; label: string }[] = [
 export function ManualOrderForm({
   cakes,
   zones,
-  depositRate,
+  deposit,
 }: {
   cakes: AdminCakeSummary[];
   zones: DeliveryZone[];
-  depositRate: number;
+  deposit: DepositConfig;
 }) {
   // Customer
   const [phone, setPhone] = useState("");
@@ -85,15 +86,19 @@ export function ManualOrderForm({
 
   const groupsByCode = Object.fromEntries((cakeDetail?.optionGroups ?? []).map((g) => [g.code, g]));
 
-  const cakePrice = cakeDetail ? calculatePrice(cakeDetail, spec, depositRate) : null;
+  const cakePrice = cakeDetail ? calculatePrice(cakeDetail, spec, deposit) : null;
   const deliveryFee = fulfilmentType === "delivery" ? deliveryZones.find((z) => z.id === zoneId)?.deliveryFee ?? 0 : 0;
   const override = priceOverride ? Number(priceOverride) : null;
   const computedTotal = override != null
     ? override + deliveryFee
     : cakePrice
-      ? withDeliveryFee(cakePrice, deliveryFee, depositRate).total
+      ? withDeliveryFee(cakePrice, deliveryFee, deposit).total
       : null;
-  const computedDeposit = depositOverride ? Number(depositOverride) : computedTotal != null ? Math.round(computedTotal * depositRate) : null;
+  const computedDeposit = depositOverride
+    ? Number(depositOverride)
+    : computedTotal != null
+      ? computeDepositAmount(computedTotal, deposit)
+      : null;
 
   const lookupCustomer = async () => {
     if (!phone) return;
@@ -439,21 +444,22 @@ export function ManualOrderForm({
               ))}
             </select>
           </Field>
-          {paymentMethod !== "cash_on_collection" && (
-            <Field label="MFS Transaction ID (if verified)">
+          {paymentMethod !== "cash_on_collection" && paymentMethod !== "card" && (
+            <Field label="Payment number (the bKash/Nagad number it was sent from)">
               <input
                 value={manualTrxId}
                 onChange={(e) => setManualTrxId(e.target.value)}
+                placeholder="01XXXXXXXXX"
                 className="input-field"
               />
             </Field>
           )}
-          <Field label={`Deposit due now (defaults to ${Math.round(depositRate * 100)}%)`}>
+          <Field label={`Deposit override (optional) — defaults to ${depositLabel(deposit)}`}>
             <input
               type="number"
               value={depositOverride}
               onChange={(e) => setDepositOverride(e.target.value)}
-              placeholder={computedTotal != null ? String(Math.round(computedTotal * depositRate)) : ""}
+              placeholder={computedTotal != null ? String(computeDepositAmount(computedTotal, deposit)) : ""}
               className="input-field"
             />
           </Field>

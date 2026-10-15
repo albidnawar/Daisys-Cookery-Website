@@ -241,10 +241,11 @@ export function OrderDetailEditor({
               />
             </Field>
             {needsTrxId && (
-              <Field label="Manual TrxID">
+              <Field label="Payment number">
                 <input
                   value={manualTrxId}
                   onChange={(e) => setManualTrxId(e.target.value)}
+                  placeholder="01XXXXXXXXX"
                   className="input-field"
                 />
               </Field>

@@ -5,8 +5,8 @@ import type { DailyFinancialBreakdown, PaymentLedgerRow } from "@/lib/admin/paym
 export type { PaymentLedgerRow, DailyFinancialBreakdown } from "@/lib/admin/paymentsLedgerTypes";
 
 /** All non-cancelled orders' payment info, newest first. No merchant API
- * exists (bKash/Nagad are personal-number, self-reported TrxID) — this is
- * the read side of that manual reconciliation, not a gateway sync. */
+ * exists (bKash/Nagad are personal-number, self-reported sender number) —
+ * this is the read side of that manual reconciliation, not a gateway sync. */
 export async function listPaymentLedger(date?: string): Promise<PaymentLedgerRow[]> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
@@ -39,8 +39,8 @@ export async function listPaymentLedger(date?: string): Promise<PaymentLedgerRow
   return rows;
 }
 
-/** The TrxID Matcher queue: bKash/Nagad orders the customer claims to have
- * paid but nobody's checked the shop's own bKash/Nagad app yet. Not
+/** The payment-matching queue: bKash/Nagad orders the customer claims to
+ * have paid but nobody's checked the shop's own bKash/Nagad app yet. Not
  * date-filtered — an unverified payment from any day still needs action. */
 export async function listPendingTrxMatches(): Promise<PaymentLedgerRow[]> {
   const all = await listPaymentLedger();
@@ -49,8 +49,9 @@ export async function listPendingTrxMatches(): Promise<PaymentLedgerRow[]> {
   );
 }
 
-/** Every order carries a 30% deposit / 70%-at-the-door split. The deposit
- * on a bKash/Nagad order is the only part actually collected digitally —
+/** Every order carries a deposit-now / balance-at-the-door split (a
+ * percentage or a flat amount, per Settings). The deposit on a bKash/Nagad
+ * order is the only part actually collected digitally —
  * the balance, and the whole amount on a cash-on-collection order, is
  * handed over in cash at pickup/delivery (see updateOrderStatus's
  * auto-settle-on-collection). These three buckets are mutually exclusive

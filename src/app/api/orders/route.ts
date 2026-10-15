@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
   if ((paymentMethod === "bkash" || paymentMethod === "nagad") && !manualTrxId) {
     return NextResponse.json(
-      { error: "manualTrxId is required for bKash/Nagad, since there's no merchant gateway to verify it any other way" },
+      { error: "The number the deposit was sent from is required for bKash/Nagad, since there's no merchant gateway to verify it any other way" },
       { status: 400 },
     );
   }

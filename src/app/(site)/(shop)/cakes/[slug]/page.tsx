@@ -7,6 +7,7 @@ import { SaveCakeButton } from "@/components/cake-detail/SaveCakeButton";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { getCachedCakeBySlug, getCachedDietaryTagOptions } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 
 export default async function CakeDetailPage({
@@ -80,7 +81,7 @@ export default async function CakeDetailPage({
             slug={cake.slug}
             name={cake.name}
             basePrice={cake.basePrice}
-            depositRate={settings.depositRate}
+            deposit={toDepositConfig(settings)}
           />
         </div>
       </div>

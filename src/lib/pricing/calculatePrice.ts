@@ -1,3 +1,4 @@
+import { computeDepositAmount, type DepositConfig } from "@/lib/pricing/deposit";
 import type { CakeDetail, DraftOrderSpec, OptionValue, PriceBreakdown } from "@/lib/types/domain";
 
 function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
@@ -35,13 +36,14 @@ function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
  * draft-order update and at checkout. Returns null when the size is
  * unset or still the literal "other" sentinel (the customer has clicked
  * "Other" but not yet typed a weight) since there's nothing to compute
- * yet. depositRate is always the caller's responsibility to supply (from
- * getStoreSettings() — see lib/settings/store.ts) rather than a module
- * constant, since it's now an admin-editable business number. */
+ * yet. deposit is always the caller's responsibility to supply (from
+ * getStoreSettings() via toDepositConfig() — see lib/settings/store.ts and
+ * lib/pricing/deposit.ts) rather than a module constant, since it's now an
+ * admin-editable business setting. */
 export function calculatePrice(
   cake: CakeDetail,
   spec: DraftOrderSpec,
-  depositRate: number,
+  deposit: DepositConfig,
 ): PriceBreakdown | null {
   if (!spec.sizeCode || spec.sizeCode === "other") return null;
   const sizeLb = Number(spec.sizeCode);
@@ -53,7 +55,7 @@ export function calculatePrice(
     0,
   );
   const total = subtotal + extrasTotal;
-  const depositAmount = Math.round(total * depositRate);
+  const depositAmount = computeDepositAmount(total, deposit);
 
   return {
     subtotal,
@@ -69,8 +71,8 @@ export function calculatePrice(
  * Quote Engine). Returns the same pre-delivery-fee shape calculatePrice()
  * does, so withDeliveryFee() and everything downstream treats a quoted
  * price exactly like a catalog one. */
-export function fixedPrice(amount: number, depositRate: number): PriceBreakdown {
-  const depositAmount = Math.round(amount * depositRate);
+export function fixedPrice(amount: number, deposit: DepositConfig): PriceBreakdown {
+  const depositAmount = computeDepositAmount(amount, deposit);
   return {
     subtotal: amount,
     extrasTotal: 0,
@@ -88,10 +90,10 @@ export function fixedPrice(amount: number, depositRate: number): PriceBreakdown 
 export function withDeliveryFee(
   price: PriceBreakdown,
   deliveryFee: number,
-  depositRate: number,
+  deposit: DepositConfig,
 ): PriceBreakdown {
   const total = price.subtotal + price.extrasTotal + deliveryFee;
-  const depositAmount = Math.round(total * depositRate);
+  const depositAmount = computeDepositAmount(total, deposit);
   return {
     ...price,
     total,

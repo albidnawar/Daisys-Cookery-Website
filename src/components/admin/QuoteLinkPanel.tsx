@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 import type { CustomQuoteStatus } from "@/lib/types/domain";
 
-function buildQuoteMessage(cakeTitle: string, price: number, url: string, depositRate: number): string {
+function buildQuoteMessage(cakeTitle: string, price: number, url: string, deposit: DepositConfig): string {
   return [
     `Hi! Here's your quote from Daisy's Cookery for: ${cakeTitle}`,
-    `Price: ৳${price.toLocaleString("en-BD")} (${Math.round(depositRate * 100)}% deposit to book)`,
+    `Price: ৳${price.toLocaleString("en-BD")} (${depositLabel(deposit)} to book)`,
     `Book it here: ${url}`,
   ].join("\n");
 }
@@ -17,14 +18,14 @@ export function QuoteLinkPanel({
   quotedPrice,
   contactPhone,
   cakeTitle,
-  depositRate,
+  deposit,
 }: {
   quoteId: string;
   status: CustomQuoteStatus;
   quotedPrice: number | null;
   contactPhone: string;
   cakeTitle: string;
-  depositRate: number;
+  deposit: DepositConfig;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -38,7 +39,7 @@ export function QuoteLinkPanel({
   }
 
   const quoteUrl = `${window.location.origin}/quote/${quoteId}`;
-  const message = buildQuoteMessage(cakeTitle || "your custom cake", quotedPrice, quoteUrl, depositRate);
+  const message = buildQuoteMessage(cakeTitle || "your custom cake", quotedPrice, quoteUrl, deposit);
   const waLink = `https://wa.me/${contactPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
 
   return (

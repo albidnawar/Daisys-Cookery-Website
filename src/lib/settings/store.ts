@@ -4,6 +4,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 
 export type StoreSettings = {
   depositRate: number;
+  depositMode: "percentage" | "fixed";
+  depositFixedAmount: number | null;
   shopAddress: string;
   shopHours: string;
   shopPhone: string;
@@ -13,6 +15,8 @@ export type StoreSettings = {
 // shop-contact copy work before a Supabase project exists.
 const FALLBACK: StoreSettings = {
   depositRate: 0.3,
+  depositMode: "percentage",
+  depositFixedAmount: null,
   shopAddress: "Flat D3, House - 176, Sanmar Santino, Devpahar, College Road, Chattogram",
   shopHours: "Open 9am to 9pm, seven days",
   shopPhone: "01814438989",
@@ -34,6 +38,8 @@ async function fetchStoreSettings(): Promise<StoreSettings> {
 
   return {
     depositRate: Number(data.deposit_rate),
+    depositMode: data.deposit_mode === "fixed" ? "fixed" : "percentage",
+    depositFixedAmount: data.deposit_fixed_amount === null ? null : Number(data.deposit_fixed_amount),
     shopAddress: data.shop_address,
     shopHours: data.shop_hours,
     shopPhone: data.shop_phone,
