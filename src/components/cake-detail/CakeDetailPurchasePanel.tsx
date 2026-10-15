@@ -5,17 +5,18 @@ import { useRouter } from "next/navigation";
 import { SizeSelector } from "@/components/cake-detail/SizeSelector";
 import { OrderViaChatButton } from "@/components/cake-detail/OrderViaChatButton";
 import { Button, LinkButton } from "@/components/ui/Button";
+import { depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 
 export function CakeDetailPurchasePanel({
   slug,
   name,
   basePrice,
-  depositRate,
+  deposit,
 }: {
   slug: string;
   name: string;
   basePrice: number;
-  depositRate: number;
+  deposit: DepositConfig;
 }) {
   const router = useRouter();
   const [size, setSize] = useState("1");
@@ -59,7 +60,7 @@ export function CakeDetailPurchasePanel({
       />
 
       <p className="font-body text-xs text-brand-chocolate/60">
-        A {Math.round(depositRate * 100)}% deposit holds the date.
+        A {depositLabel(deposit)} holds the date.
       </p>
     </div>
   );

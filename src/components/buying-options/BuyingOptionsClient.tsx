@@ -6,19 +6,20 @@ import { MonthCalendar } from "@/components/buying-options/MonthCalendar";
 import { TimeSlotPicker } from "@/components/buying-options/TimeSlotPicker";
 import { DepositSummary } from "@/components/buying-options/DepositSummary";
 import { withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import type { DepositConfig } from "@/lib/pricing/deposit";
 import { todayKey } from "@/lib/dates";
 import type { DeliveryZone, DraftOrder, SlotAvailability } from "@/lib/types/domain";
 
 export function BuyingOptionsClient({
   draft,
   zones,
-  depositRate,
+  deposit,
   shopAddress,
   shopHours,
 }: {
   draft: DraftOrder;
   zones: DeliveryZone[];
-  depositRate: number;
+  deposit: DepositConfig;
   shopAddress: string;
   shopHours: string;
 }) {
@@ -91,7 +92,7 @@ export function BuyingOptionsClient({
       ? deliveryZones.find((z) => z.id === zoneId)?.deliveryFee ?? 0
       : 0;
   const price = draft.computedPrice
-    ? withDeliveryFee(draft.computedPrice, deliveryFee, depositRate)
+    ? withDeliveryFee(draft.computedPrice, deliveryFee, deposit)
     : null;
   const canContinue = Boolean(fulfilmentType && effectiveZoneId && selectedSlotId);
 
@@ -147,7 +148,7 @@ export function BuyingOptionsClient({
                 {error && <p className="mt-2 font-body text-xs text-red-600">{error}</p>}
               </div>
               <hr className="border-brand-chocolate/10" />
-              <DepositSummary price={price} draftId={draft.id} canContinue={canContinue} depositRate={depositRate} />
+              <DepositSummary price={price} draftId={draft.id} canContinue={canContinue} deposit={deposit} />
             </div>
           </div>
         </>

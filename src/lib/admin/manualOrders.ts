@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { createAdminHoldDraft, markDraftOrderConverted, resolveCake } from "@/lib/draftOrders/store";
 import { convertHold, getSlotLabel, holdSlot, listZones, SlotFullError } from "@/lib/slots/store";
 import { calculatePrice, fixedPrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 import { generateOrderNumber } from "@/lib/orders/store";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
@@ -86,7 +87,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
   const zone = zones.find((z) => z.id === input.zoneId);
   if (!zone) throw new ManualOrderError("Unknown delivery zone");
   const deliveryFee = input.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
-  const { depositRate } = await getStoreSettings();
+  const deposit = toDepositConfig(await getStoreSettings());
 
   // A priceOverride replaces the whole cake price (extras included, hence
   // fixedPrice's extrasTotal: 0) — same shape a Custom Quote gets from
@@ -99,9 +100,9 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     cakeName = cake.name;
     cakeId = cake.id;
     if (input.priceOverride != null) {
-      price = fixedPrice(input.priceOverride, depositRate);
+      price = fixedPrice(input.priceOverride, deposit);
     } else {
-      const cakePrice = calculatePrice(cake, input.spec, depositRate);
+      const cakePrice = calculatePrice(cake, input.spec, deposit);
       if (!cakePrice) throw new ManualOrderError("Size must be set, or provide a manual price for a >5lb order");
       price = cakePrice;
     }
@@ -110,12 +111,12 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     if (input.priceOverride == null) {
       throw new ManualOrderError("A fully custom cake needs a manually entered price");
     }
-    price = fixedPrice(input.priceOverride, depositRate);
+    price = fixedPrice(input.priceOverride, deposit);
   }
   const { subtotal, extrasTotal, total, depositAmount: computedDeposit } = withDeliveryFee(
     price,
     deliveryFee,
-    depositRate,
+    deposit,
   );
 
   const depositAmount = input.depositOverride ?? computedDeposit;

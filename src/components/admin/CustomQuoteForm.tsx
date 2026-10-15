@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { QuoteLinkPanel } from "@/components/admin/QuoteLinkPanel";
+import type { DepositConfig } from "@/lib/pricing/deposit";
 import type { CustomQuoteInput, CustomQuoteStatus } from "@/lib/types/domain";
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -19,12 +20,12 @@ export function CustomQuoteForm({
   initial,
   quoteId,
   contactPhone,
-  depositRate,
+  deposit,
 }: {
   initial: CustomQuoteInput | null;
   quoteId: string | null;
   contactPhone: string | null;
-  depositRate: number;
+  deposit: DepositConfig;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<CustomQuoteInput>(
@@ -217,7 +218,7 @@ export function CustomQuoteForm({
           quotedPrice={values.quotedPrice}
           contactPhone={contactPhone ?? values.contactPhone}
           cakeTitle={values.cakeTitle}
-          depositRate={depositRate}
+          deposit={deposit}
         />
       )}
     </div>

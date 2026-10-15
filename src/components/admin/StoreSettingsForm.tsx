@@ -8,6 +8,7 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
   const [values, setValues] = useState({
     ...initial,
     depositPercent: String(Math.round(initial.depositRate * 100)),
+    depositFixedAmountText: initial.depositFixedAmount != null ? String(initial.depositFixedAmount) : "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -23,14 +24,20 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
     setError(null);
     try {
       const depositRate = Number(values.depositPercent) / 100;
-      if (!Number.isFinite(depositRate) || depositRate <= 0 || depositRate > 1) {
+      if (values.depositMode === "percentage" && (!Number.isFinite(depositRate) || depositRate <= 0 || depositRate > 1)) {
         throw new Error("Deposit % must be a number between 1 and 100.");
+      }
+      const depositFixedAmount = Number(values.depositFixedAmountText);
+      if (values.depositMode === "fixed" && (!Number.isFinite(depositFixedAmount) || depositFixedAmount <= 0)) {
+        throw new Error("Fixed advance must be a number greater than 0.");
       }
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           depositRate,
+          depositMode: values.depositMode,
+          depositFixedAmount: values.depositMode === "fixed" ? depositFixedAmount : null,
           shopAddress: values.shopAddress,
           shopHours: values.shopHours,
           shopPhone: values.shopPhone,
@@ -48,15 +55,56 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-6">
-      <Field label="Deposit percentage" hint="Applies to every new price calculation site-wide, going forward.">
-        <input
-          type="number"
-          min={1}
-          max={100}
-          value={values.depositPercent}
-          onChange={(e) => set("depositPercent", e.target.value)}
-          className="input-field"
-        />
+      <Field label="Deposit / advance" hint="Applies to every new price calculation site-wide, going forward.">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => set("depositMode", "percentage")}
+            className={`rounded-full border-2 px-4 py-2 font-body text-sm font-bold ${
+              values.depositMode === "percentage"
+                ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
+                : "border-brand-chocolate/10 bg-white text-brand-chocolate"
+            }`}
+          >
+            Percentage of total
+          </button>
+          <button
+            type="button"
+            onClick={() => set("depositMode", "fixed")}
+            className={`rounded-full border-2 px-4 py-2 font-body text-sm font-bold ${
+              values.depositMode === "fixed"
+                ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
+                : "border-brand-chocolate/10 bg-white text-brand-chocolate"
+            }`}
+          >
+            Fixed amount
+          </button>
+        </div>
+        {values.depositMode === "percentage" ? (
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={values.depositPercent}
+            onChange={(e) => set("depositPercent", e.target.value)}
+            placeholder="e.g. 30"
+            className="input-field mt-3"
+          />
+        ) : (
+          <input
+            type="number"
+            min={1}
+            value={values.depositFixedAmountText}
+            onChange={(e) => set("depositFixedAmountText", e.target.value)}
+            placeholder="e.g. 500"
+            className="input-field mt-3"
+          />
+        )}
+        <span className="mt-1 block font-body text-xs text-brand-chocolate/50">
+          {values.depositMode === "percentage"
+            ? "Customers pay this % of their order total up front."
+            : "Customers pay this flat amount up front, regardless of order size (never more than the order total)."}
+        </span>
       </Field>
 
       <Field label="Shop address" hint="Shown on the confirmation page, pickup option, and Our Shop page.">

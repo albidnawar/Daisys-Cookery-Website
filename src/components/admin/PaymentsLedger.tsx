@@ -115,8 +115,8 @@ export function PaymentsLedger({
             Needs verification ({pendingMatches.length})
           </h2>
           <p className="mb-3 font-body text-xs text-brand-chocolate/60">
-            Customer says they&apos;ve paid. Check your bKash/Nagad app for a matching transaction ID
-            before marking these.
+            Customer says they&apos;ve paid. Check your bKash/Nagad app for a matching payment
+            from this number before marking these.
           </p>
           <div className="flex flex-col gap-3">
             {pendingMatches.map((row) => (
@@ -132,7 +132,7 @@ export function PaymentsLedger({
                     {row.contactName} &middot; {row.contactPhone}
                   </p>
                   <p className="font-body text-sm text-brand-chocolate/70">
-                    Claimed TrxID: <span className="font-bold">{row.manualTrxId ?? "-"}</span> &middot; ৳
+                    Paid from: <span className="font-bold">{row.manualTrxId ?? "-"}</span> &middot; ৳
                     {row.depositAmount.toLocaleString("en-BD")} deposit
                   </p>
                 </div>
@@ -169,7 +169,7 @@ export function PaymentsLedger({
                 <th className="p-3">Order</th>
                 <th className="p-3">Customer</th>
                 <th className="p-3">Method</th>
-                <th className="p-3">TrxID</th>
+                <th className="p-3">Payment number</th>
                 <th className="p-3">Total</th>
                 <th className="p-3">Deposit</th>
                 <th className="p-3">Balance</th>

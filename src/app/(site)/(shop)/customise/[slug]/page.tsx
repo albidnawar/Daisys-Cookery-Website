@@ -3,6 +3,7 @@ import { WizardShell } from "@/components/customiser/WizardShell";
 import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { getCachedCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 
 // /customise/new is the from-scratch "Build your cake" entry point (no
@@ -36,7 +37,7 @@ export default async function CustomisePage({
       </div>
       <WizardShell
         cake={cake}
-        depositRate={settings.depositRate}
+        deposit={toDepositConfig(settings)}
         isFromScratch={slug === "new"}
       />
     </div>

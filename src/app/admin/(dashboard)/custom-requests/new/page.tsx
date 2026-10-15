@@ -1,4 +1,5 @@
 import { CustomQuoteForm } from "@/components/admin/CustomQuoteForm";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 import { requireModulePage } from "@/lib/admin/auth";
 
@@ -11,7 +12,7 @@ export default async function NewCustomQuotePage() {
       <h1 className="mb-6 font-display text-3xl font-semibold text-brand-chocolate">
         Log a custom request
       </h1>
-      <CustomQuoteForm initial={null} quoteId={null} contactPhone={null} depositRate={settings.depositRate} />
+      <CustomQuoteForm initial={null} quoteId={null} contactPhone={null} deposit={toDepositConfig(settings)} />
     </div>
   );
 }

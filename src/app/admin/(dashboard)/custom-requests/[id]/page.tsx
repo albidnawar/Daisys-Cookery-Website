@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CustomQuoteForm } from "@/components/admin/CustomQuoteForm";
 import { getCustomQuoteForEdit } from "@/lib/admin/customQuotes";
+import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 import { requireModulePage } from "@/lib/admin/auth";
 
@@ -23,7 +24,7 @@ export default async function EditCustomQuotePage({
         initial={quote}
         quoteId={id}
         contactPhone={quote.contactPhone}
-        depositRate={settings.depositRate}
+        deposit={toDepositConfig(settings)}
       />
     </div>
   );

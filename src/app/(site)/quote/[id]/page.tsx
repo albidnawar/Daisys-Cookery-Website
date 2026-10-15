@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Gallery } from "@/components/cake-detail/Gallery";
 import { LinkButton } from "@/components/ui/Button";
 import { getPublicQuote } from "@/lib/quotes/publicQuote";
+import { computeDepositAmount, toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 
 export default async function PublicQuotePage({
@@ -13,7 +14,9 @@ export default async function PublicQuotePage({
   const [quote, settings] = await Promise.all([getPublicQuote(id), getStoreSettings()]);
   if (!quote) notFound();
 
-  const depositAmount = quote.quotedPrice ? Math.round(quote.quotedPrice * settings.depositRate) : null;
+  const depositAmount = quote.quotedPrice
+    ? computeDepositAmount(quote.quotedPrice, toDepositConfig(settings))
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-8">

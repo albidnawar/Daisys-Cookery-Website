@@ -1,22 +1,23 @@
 import { LinkButton } from "@/components/ui/Button";
+import { depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 import type { PriceBreakdown } from "@/lib/types/domain";
 
 export function DepositSummary({
   price,
   draftId,
   canContinue,
-  depositRate,
+  deposit,
 }: {
   price: PriceBreakdown | null;
   draftId: string;
   canContinue: boolean;
-  depositRate: number;
+  deposit: DepositConfig;
 }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="font-body text-sm leading-relaxed text-brand-chocolate/75">
-        A {Math.round(depositRate * 100)}% deposit holds your date and pays for the ingredients we
-        buy in for you. The balance is due at collection or on delivery.
+        A {depositLabel(deposit)} holds your date and pays for the ingredients we buy in for
+        you. The balance is due at collection or on delivery.
       </p>
       <div className="flex items-baseline justify-between border-t border-brand-chocolate/10 pt-3">
         <span className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">

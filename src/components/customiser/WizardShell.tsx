@@ -10,6 +10,7 @@ import { StepFillingFinish } from "@/components/customiser/steps/StepFillingFini
 import { StepMessageExtras } from "@/components/customiser/steps/StepMessageExtras";
 import { Button } from "@/components/ui/Button";
 import { calculatePrice } from "@/lib/pricing/calculatePrice";
+import type { DepositConfig } from "@/lib/pricing/deposit";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { CakeDetail, DraftOrderSpec } from "@/lib/types/domain";
 
@@ -22,11 +23,11 @@ const STEP_TITLES = [
 
 export function WizardShell({
   cake,
-  depositRate,
+  deposit,
   isFromScratch,
 }: {
   cake: CakeDetail;
-  depositRate: number;
+  deposit: DepositConfig;
   isFromScratch: boolean;
 }) {
   const router = useRouter();
@@ -50,7 +51,7 @@ export function WizardShell({
   // lib/pricing/calculatePrice.ts), so computing it here is already
   // "authoritative" for any given spec — no need to round-trip for a
   // number that would come back identical.
-  const price = calculatePrice(cake, spec, depositRate);
+  const price = calculatePrice(cake, spec, deposit);
   const patchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
