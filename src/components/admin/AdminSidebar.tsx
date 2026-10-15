@@ -66,8 +66,16 @@ export function AdminSidebar({ admin }: { admin: AdminUser }) {
 
   const visibleNav = NAV.filter((item) => !item.module || hasModule(admin, item.module));
 
+  // Several hrefs can share a prefix (e.g. "/admin/catalog" and
+  // "/admin/catalog/taxonomy") — only the longest matching one should ever
+  // light up, otherwise a sub-page lights up both itself and its parent.
+  const allHrefs = NAV.flatMap((item) => (isGroup(item) ? item.items.map((i) => i.href) : [item.href]));
+  const bestMatch = allHrefs
+    .filter((href) => (href === "/admin" ? pathname === href : pathname.startsWith(href)))
+    .sort((a, b) => b.length - a.length)[0];
+
   const linkClass = (href: string) => {
-    const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
+    const active = href === bestMatch;
     return `flex items-center gap-2 rounded-xl px-3 py-2 font-body text-sm ${
       active
         ? "bg-brand-orange/10 font-bold text-brand-orange"
