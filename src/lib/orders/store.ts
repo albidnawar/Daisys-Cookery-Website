@@ -70,8 +70,15 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   let price;
   let cakeSnapshot;
   if (isCustomQuote) {
-    if (!draft.computedPrice) throw new OrderValidationError("This quote has no price yet");
-    price = withDeliveryFee(draft.computedPrice, deliveryFee, deposit);
+    // A pending custom design (see createPendingCustomDraft()) has no
+    // price yet either — unlike a Module 5 quote, which only reaches
+    // checkout once an admin has already priced it. The order still gets
+    // created (so it shows up in Live Orders right away) with a zero cake
+    // price; withDeliveryFee still folds in a real delivery fee, and the
+    // admin fills in the rest from the order detail page (setOrderPrice()
+    // in lib/admin/orderDetail.ts).
+    const cakePrice = draft.computedPrice ?? { subtotal: 0, extrasTotal: 0, total: 0, depositAmount: 0, balanceDue: 0 };
+    price = withDeliveryFee(cakePrice, deliveryFee, deposit);
     cakeSnapshot = { name: draft.customCakeName!, slug: null, spec: draft.spec };
   } else {
     const cake = await resolveCake(draft.cakeSlug!);

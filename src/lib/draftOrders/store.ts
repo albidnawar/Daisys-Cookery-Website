@@ -103,11 +103,13 @@ export async function createAdminHoldDraft(cakeId: string | null): Promise<strin
 /** The draft a customer lands on when they open their quote link (Module
  * 5): no catalog cake, a fixed admin-set price standing in for
  * calculatePrice()'s output, and the reference photo/notes carried into
- * spec so they still show up on the kitchen slip like any other order. */
+ * spec so they still show up on the kitchen slip like any other order.
+ * price is also created null — see createPendingCustomDraft() below, which
+ * is the same shape before an admin has set a price yet. */
 export async function createCustomQuoteDraft(
   customCakeName: string,
   spec: DraftOrderSpec,
-  price: PriceBreakdown,
+  price: PriceBreakdown | null,
 ): Promise<string> {
   const id = randomUUID();
   if (isSupabaseConfigured()) {
@@ -139,6 +141,15 @@ export async function createCustomQuoteDraft(
     updatedAt: now,
   });
   return id;
+}
+
+/** The draft the public order-form's "Custom design" path creates: no
+ * catalog cake and no price yet — the admin fills in a price from the
+ * order detail page once it's placed (see setOrderPrice() in
+ * lib/admin/orderDetail.ts), unlike createCustomQuoteDraft()'s own callers
+ * which always already know the price by the time they create one. */
+export async function createPendingCustomDraft(customCakeName: string): Promise<string> {
+  return createCustomQuoteDraft(customCakeName, {}, null);
 }
 
 export async function getDraftOrder(id: string): Promise<DraftOrder | null> {

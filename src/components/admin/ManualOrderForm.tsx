@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { CakeColorField } from "@/components/cake-detail/CakeColorField";
 import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import { todayKey } from "@/lib/dates";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
@@ -256,35 +257,17 @@ export function ManualOrderForm({
             {cakeDetail && (
               <div className="mt-4 flex flex-col gap-4">
                 {groupsByCode.size_lb && (
-                  <div>
-                    <RadioOptionGroup
-                      group={groupsByCode.size_lb}
-                      value={
-                        spec.sizeCode &&
-                        !groupsByCode.size_lb.values.some((v) => v.valueCode === spec.sizeCode)
-                          ? "other"
-                          : spec.sizeCode
-                      }
-                      onChange={(sizeCode) => set({ sizeCode })}
-                      columns={4}
+                  <Field label="Size, in pounds">
+                    <input
+                      type="number"
+                      min={0.5}
+                      step={0.5}
+                      value={spec.sizeCode ?? ""}
+                      onChange={(e) => set({ sizeCode: e.target.value })}
+                      placeholder="e.g. 1"
+                      className="input-field w-32"
                     />
-                    {spec.sizeCode &&
-                      !groupsByCode.size_lb.values.some((v) => v.valueCode === spec.sizeCode) && (
-                        <div className="mt-3">
-                          <label className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
-                            Weight, in pounds
-                          </label>
-                          <input
-                            type="number"
-                            min={0.5}
-                            step={0.5}
-                            value={spec.sizeCode === "other" ? "" : spec.sizeCode}
-                            onChange={(e) => set({ sizeCode: e.target.value })}
-                            className="input-field w-32"
-                          />
-                        </div>
-                      )}
-                  </div>
+                  </Field>
                 )}
                 {groupsByCode.sponge && (
                   <RadioOptionGroup
@@ -340,6 +323,9 @@ export function ManualOrderForm({
               className="input-field"
             />
           </Field>
+          <Field label="Cake color">
+            <CakeColorField value={spec.cakeColor ?? ""} onChange={(cakeColor) => set({ cakeColor })} />
+          </Field>
           <Field label={cakeMode === "custom" || spec.sizeCode === "other" ? "Price (required)" : "Price override (optional)"}>
             <input
               type="number"
@@ -376,7 +362,18 @@ export function ManualOrderForm({
           </button>
           <button
             type="button"
-            onClick={() => setFulfilmentType("delivery")}
+            onClick={() => {
+              setFulfilmentType("delivery");
+              // zoneId starts out pointing at the pickup zone (its initial
+              // state), and nothing else ever corrects that — querying
+              // slots for that stale pickup zone id (wrong zone +
+              // fulfilment combination) always returns zero slots, even
+              // though the Zone <select> below visually shows its first
+              // delivery option regardless of the real underlying value.
+              if (!deliveryZones.some((z) => z.id === zoneId)) {
+                setZoneId(deliveryZones[0]?.id ?? "");
+              }
+            }}
             className={`rounded-full border-2 px-4 py-1.5 font-body text-sm font-bold ${fulfilmentType === "delivery" ? "border-brand-orange bg-brand-orange/10 text-brand-orange" : "border-brand-chocolate/10 text-brand-chocolate"}`}
           >
             Delivery
