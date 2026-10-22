@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublicReceipt } from "@/lib/orders/publicReceipt";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -67,7 +68,7 @@ export default async function ReceiptPage({
             <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
               {receipt.fulfilmentType === "pickup" ? "Pickup" : "Delivery"}
             </p>
-            <p className="font-body text-sm text-brand-chocolate/70">{receipt.slotLabel}</p>
+            <p className="font-body text-sm text-brand-chocolate/70">{formatSlotLabelForDisplay(receipt.slotLabel)}</p>
           </div>
         )}
 
@@ -75,27 +76,41 @@ export default async function ReceiptPage({
           <p className="mb-2 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
             Pricing
           </p>
-          <table className="w-full font-body text-sm">
-            <tbody>
-              <Row label="Cake price" value={`৳${receipt.subtotal.toLocaleString("en-BD")}`} />
-              {receipt.extrasTotal > 0 && (
-                <Row label="Extras" value={`৳${receipt.extrasTotal.toLocaleString("en-BD")}`} />
-              )}
-              {receipt.fulfilmentType === "delivery" && (
-                <Row label="Delivery" value={`৳${receipt.deliveryFee.toLocaleString("en-BD")}`} />
-              )}
-              <Row label="Total" value={`৳${receipt.total.toLocaleString("en-BD")}`} bold />
-              <Row
-                label="Deposit"
-                value={`৳${receipt.depositAmount.toLocaleString("en-BD")} (${PAYMENT_METHOD_LABELS[receipt.paymentMethod] ?? receipt.paymentMethod})`}
-              />
-              <Row
-                label="Due"
-                value={`৳${(receipt.paymentStatus === "paid_in_full" ? 0 : receipt.balanceDue).toLocaleString("en-BD")}`}
-                bold
-              />
-            </tbody>
-          </table>
+          {(() => {
+            const pricePending = receipt.total === 0 && receipt.depositAmount > 0;
+            return (
+              <table className="w-full font-body text-sm">
+                <tbody>
+                  <Row
+                    label="Cake price"
+                    value={pricePending ? "To be confirmed" : `৳${receipt.subtotal.toLocaleString("en-BD")}`}
+                  />
+                  {receipt.extrasTotal > 0 && (
+                    <Row label="Extras" value={`৳${receipt.extrasTotal.toLocaleString("en-BD")}`} />
+                  )}
+                  {receipt.fulfilmentType === "delivery" && !pricePending && (
+                    <Row label="Delivery" value={`৳${receipt.deliveryFee.toLocaleString("en-BD")}`} />
+                  )}
+                  {!pricePending && (
+                    <Row label="Total" value={`৳${receipt.total.toLocaleString("en-BD")}`} bold />
+                  )}
+                  <Row
+                    label={pricePending ? "Advance paid" : "Deposit"}
+                    value={`৳${receipt.depositAmount.toLocaleString("en-BD")} (${PAYMENT_METHOD_LABELS[receipt.paymentMethod] ?? receipt.paymentMethod})`}
+                  />
+                  <Row
+                    label="Due"
+                    value={
+                      pricePending
+                        ? "To be confirmed"
+                        : `৳${(receipt.paymentStatus === "paid_in_full" ? 0 : receipt.balanceDue).toLocaleString("en-BD")}`
+                    }
+                    bold
+                  />
+                </tbody>
+              </table>
+            );
+          })()}
         </div>
 
         <div className="flex items-center justify-between rounded-2xl bg-cream px-4 py-3">

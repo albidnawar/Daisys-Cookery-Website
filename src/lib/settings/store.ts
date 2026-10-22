@@ -6,6 +6,11 @@ export type StoreSettings = {
   depositRate: number;
   depositMode: "percentage" | "fixed";
   depositFixedAmount: number | null;
+  /** Flat advance the public order-form's "Custom design" path charges up
+   * front — there's no catalog price yet to take depositRate/
+   * depositFixedAmount's cut of, so this is always its own flat amount,
+   * independent of the regular checkout's deposit settings above. */
+  customOrderAdvanceAmount: number;
   shopAddress: string;
   shopHours: string;
   shopPhone: string;
@@ -17,6 +22,7 @@ const FALLBACK: StoreSettings = {
   depositRate: 0.3,
   depositMode: "percentage",
   depositFixedAmount: null,
+  customOrderAdvanceAmount: 500,
   shopAddress: "Flat D3, House - 176, Sanmar Santino, Devpahar, College Road, Chattogram",
   shopHours: "Open 9am to 9pm, seven days",
   shopPhone: "01814438989",
@@ -40,6 +46,7 @@ async function fetchStoreSettings(): Promise<StoreSettings> {
     depositRate: Number(data.deposit_rate),
     depositMode: data.deposit_mode === "fixed" ? "fixed" : "percentage",
     depositFixedAmount: data.deposit_fixed_amount === null ? null : Number(data.deposit_fixed_amount),
+    customOrderAdvanceAmount: Number(data.custom_order_advance_amount),
     shopAddress: data.shop_address,
     shopHours: data.shop_hours,
     shopPhone: data.shop_phone,

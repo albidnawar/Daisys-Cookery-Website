@@ -13,3 +13,35 @@ export function toDateKey(date: Date): string {
 export function todayKey(): string {
   return toDateKey(new Date());
 }
+
+/** Formats a "HH:MM" or "HH:MM:SS" 24-hour time as a lowercase am/pm
+ * label, e.g. "9 am" or "6:30 pm" — the one house style for a time of
+ * day, used everywhere a slot's start/end time is shown to anyone
+ * (customer or admin). */
+export function formatTimeAmPm(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const period = h >= 12 ? "pm" : "am";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return m === 0 ? `${hour12} ${period}` : `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+const SLOT_LABEL_PATTERN = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})-(\d{2}:\d{2})$/;
+
+/** Turns the raw, machine-parseable "YYYY-MM-DD HH:MM-HH:MM" slot label
+ * (see formatSlotLabel in lib/slots/store.ts — kept in that exact shape
+ * since AddToCalendarButton's own regex needs it) into a human-friendly,
+ * am/pm date and time range for display. Falls back to the raw string
+ * unchanged if it doesn't match that shape, so an unexpected value never
+ * just disappears. */
+export function formatSlotLabelForDisplay(slotLabel: string | null, fallback = "To be confirmed"): string {
+  if (!slotLabel) return fallback;
+  const match = SLOT_LABEL_PATTERN.exec(slotLabel);
+  if (!match) return slotLabel;
+  const [, date, start, end] = match;
+  const formattedDate = new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return `${formattedDate}, ${formatTimeAmPm(start)}–${formatTimeAmPm(end)}`;
+}

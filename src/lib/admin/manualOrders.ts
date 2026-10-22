@@ -6,6 +6,7 @@ import { calculatePrice, fixedPrice, withDeliveryFee } from "@/lib/pricing/calcu
 import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 import { generateOrderNumber } from "@/lib/orders/store";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
 import { normalizePhone } from "@/lib/phone";
 import type {
@@ -229,7 +230,7 @@ export function buildOrderSlipText(order: Order): string {
   const lines = [
     `Daisy's Cookery: Order ${order.orderNumber}`,
     `Cake: ${order.cakeSnapshot.name}`,
-    order.slotLabel ? `Collection/Delivery: ${order.slotLabel}` : null,
+    order.slotLabel ? `Collection/Delivery: ${formatSlotLabelForDisplay(order.slotLabel)}` : null,
     `Total: ৳${order.total.toLocaleString("en-BD")}`,
     `Deposit due now: ৳${order.depositAmount.toLocaleString("en-BD")}`,
     `Balance: ৳${order.balanceDue.toLocaleString("en-BD")}`,

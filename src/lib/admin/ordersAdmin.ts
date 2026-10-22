@@ -47,7 +47,7 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
     ),
   );
 
-  return rows.map((row) => {
+  const kanbanOrders: KanbanOrder[] = rows.map((row) => {
     const slot = row.delivery_slots;
     const cakeSlug = (row.cake_snapshot as CakeSnapshot).slug;
     return {
@@ -65,6 +65,7 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
       orderSource: row.order_source,
       fulfilmentType: row.fulfilment_type,
       slotDate: slot?.date ?? null,
+      slotStartTime: slot?.start_time ?? null,
       slotLabel: slot ? formatSlotLabel(slot.date, slot.start_time, slot.end_time) : null,
       contactName: row.contact_name,
       contactPhone: row.contact_phone,
@@ -72,6 +73,19 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
       riderPhone: row.rider_phone ?? null,
     };
   });
+
+  // Each column reads top-to-bottom as "what's due soonest" — an order
+  // with no slot yet (shouldn't normally happen) sorts to the end rather
+  // than before everything else.
+  kanbanOrders.sort((a, b) => {
+    if (!a.slotDate || !a.slotStartTime) return 1;
+    if (!b.slotDate || !b.slotStartTime) return -1;
+    const dateCompare = a.slotDate.localeCompare(b.slotDate);
+    if (dateCompare !== 0) return dateCompare;
+    return a.slotStartTime.localeCompare(b.slotStartTime);
+  });
+
+  return kanbanOrders;
 }
 
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {

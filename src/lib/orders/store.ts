@@ -64,21 +64,39 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const zones = await listZones();
   const zone = zones.find((z) => z.id === draft.zoneId);
   if (!zone) throw new OrderValidationError("Unknown delivery zone");
-  const deliveryFee = draft.fulfilmentType === "delivery" ? zone.deliveryFee : 0;
-  const deposit = toDepositConfig(await getStoreSettings());
+  // A pending custom design (no computedPrice yet) has its delivery cost
+  // set manually by the admin too, same as the cake price — a catalog
+  // order, and a Module 5 quote the admin already priced, still pull the
+  // real per-zone fee automatically.
+  const isPendingCustomQuote = isCustomQuote && !draft.computedPrice;
+  const deliveryFee = draft.fulfilmentType === "delivery" && !isPendingCustomQuote ? zone.deliveryFee : 0;
+  const settings = await getStoreSettings();
+  const deposit = toDepositConfig(settings);
 
   let price;
   let cakeSnapshot;
   if (isCustomQuote) {
     // A pending custom design (see createPendingCustomDraft()) has no
-    // price yet either — unlike a Module 5 quote, which only reaches
+    // price yet either, unlike a Module 5 quote, which only reaches
     // checkout once an admin has already priced it. The order still gets
     // created (so it shows up in Live Orders right away) with a zero cake
-    // price; withDeliveryFee still folds in a real delivery fee, and the
-    // admin fills in the rest from the order detail page (setOrderPrice()
-    // in lib/admin/orderDetail.ts).
+    // price and zero delivery fee; the admin fills in both, plus the
+    // actual deposit received, from the order detail page (setOrderPrice()
+    // in lib/admin/orderDetail.ts). The public order-form collects its own
+    // flat booking advance up front (see customOrderAdvanceAmount in
+    // Settings) — record that as the deposit now, from the server's own
+    // settings rather than trusting a client-supplied number, so
+    // setOrderPrice() has the real paid amount as its default once the
+    // admin fills in the price.
     const cakePrice = draft.computedPrice ?? { subtotal: 0, extrasTotal: 0, total: 0, depositAmount: 0, balanceDue: 0 };
     price = withDeliveryFee(cakePrice, deliveryFee, deposit);
+    if (isPendingCustomQuote) {
+      price = {
+        ...price,
+        depositAmount: settings.customOrderAdvanceAmount,
+        balanceDue: price.total - settings.customOrderAdvanceAmount,
+      };
+    }
     cakeSnapshot = { name: draft.customCakeName!, slug: null, spec: draft.spec };
   } else {
     const cake = await resolveCake(draft.cakeSlug!);

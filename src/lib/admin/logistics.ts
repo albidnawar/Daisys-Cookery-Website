@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { pendingCashDue, type PaymentLedgerRow } from "@/lib/admin/paymentsLedger";
-import { toDateKey } from "@/lib/dates";
+import { formatTimeAmPm, toDateKey } from "@/lib/dates";
 import type { CakeSnapshot } from "@/lib/types/domain";
 
 export type DateCapacitySetting = {
@@ -120,7 +120,7 @@ export async function listManifestForDate(date: string): Promise<ManifestRow[]> 
       zoneName: row.delivery_zones?.name ?? "-",
       addressText: (row.delivery_address as { text?: string } | null)?.text ?? null,
       codAmount: pendingCashDue(ledgerRow),
-      slotLabel: slot ? `${slot.start_time.slice(0, 5)}-${slot.end_time.slice(0, 5)}` : null,
+      slotLabel: slot ? `${formatTimeAmPm(slot.start_time)}-${formatTimeAmPm(slot.end_time)}` : null,
     };
   });
 }

@@ -9,6 +9,7 @@ export async function updateStoreSettings(input: StoreSettings): Promise<void> {
       deposit_rate: input.depositRate,
       deposit_mode: input.depositMode,
       deposit_fixed_amount: input.depositFixedAmount,
+      custom_order_advance_amount: input.customOrderAdvanceAmount,
       shop_address: input.shopAddress,
       shop_hours: input.shopHours,
       shop_phone: input.shopPhone,

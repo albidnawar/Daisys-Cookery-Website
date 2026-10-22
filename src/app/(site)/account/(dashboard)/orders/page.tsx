@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentCustomer } from "@/lib/customer/auth";
 import { listCustomerOrders } from "@/lib/customer/orders";
 import { ReorderButton } from "@/components/account/ReorderButton";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 
 export default async function AccountOrdersPage() {
   const customer = await getCurrentCustomer();
@@ -36,7 +37,7 @@ export default async function AccountOrdersPage() {
               {order.cakeSnapshot.name}
             </p>
             <p className="font-body text-sm text-brand-chocolate/60">
-              {order.slotLabel ?? "Scheduling pending"} &middot; ৳{order.total.toLocaleString("en-BD")}
+              {formatSlotLabelForDisplay(order.slotLabel, "Scheduling pending")} &middot; ৳{order.total.toLocaleString("en-BD")}
             </p>
           </div>
           <div className="flex items-center gap-3">

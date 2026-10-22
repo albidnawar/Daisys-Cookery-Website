@@ -15,26 +15,35 @@ import { todayKey } from "@/lib/dates";
 import type { CakeDetail, DeliveryZone, DraftOrderSpec, SlotAvailability } from "@/lib/types/domain";
 
 // The same pricing-placeholder cake the from-scratch customiser
-// (/customise/new) uses — see DEFAULT_FROM_SCRATCH_SLUG in
+// (/customise/new) uses, see DEFAULT_FROM_SCRATCH_SLUG in
 // customise/[slug]/page.tsx. Its option groups (sponge/filling/etc.) give
 // the custom-design picker something to render; the draft actually created
 // for a custom design is a separate, cake-less one (see
 // createPendingCustomDraft()) with no computed price, since a fully custom
-// cake can't be priced by calculatePrice() — the admin sets a real price
+// cake can't be priced by calculatePrice(). The admin sets a real price
 // from the order detail page once it's placed.
 const CUSTOM_DESIGN_SLUG = "the-vanilla-bean";
 
-// This public form is custom-design-only — a customer who wants a catalog
+// Placeholder until a real number is set in .env.local, see
+// .env.local.example — same fallback PaymentMethodChooser uses.
+const BKASH_NUMBER = process.env.NEXT_PUBLIC_BKASH_NUMBER || "01000000000";
+
+// This public form is custom-design-only. A customer who wants a catalog
 // cake already has the full site for that. Keeping it to one path avoids
 // duplicating the real checkout flow for no reason here.
 export function OrderFormClient({
   zones,
   shopAddress,
   shopHours,
+  advanceAmount,
 }: {
   zones: DeliveryZone[];
   shopAddress: string;
   shopHours: string;
+  /** The flat booking advance (Settings > Custom order advance), charged
+   * via bKash before the real price is known — see createOrder()'s
+   * isCustomQuote branch in lib/orders/store.ts. */
+  advanceAmount: number;
 }) {
   const router = useRouter();
 
@@ -148,13 +157,15 @@ export function OrderFormClient({
     Boolean(contact.name) &&
     Boolean(contact.phone) &&
     (fulfilmentType !== "delivery" || Boolean(addressText.trim())) &&
-    getReferenceImages(spec).length > 0;
+    getReferenceImages(spec).length > 0 &&
+    Boolean(paymentNumber.trim());
 
-  // No payment step here — no price exists yet to collect a deposit
-  // against. The order is still created right away (so it shows up in
-  // Live Orders); paymentMethod is a placeholder the admin replaces once
-  // they've arranged real payment with the customer, and paymentNumber (if
-  // given) rides along as manualTrxId purely for the admin's reference.
+  // The real cake price isn't known yet, so there's nothing to take a
+  // deposit percentage of. Instead the order form collects a flat booking
+  // advance via bKash up front (see Settings > Custom order advance); the
+  // server derives the actual amount from its own settings in
+  // createOrder() rather than trusting a number from the client, so only
+  // the bKash number the customer sent it from travels with the request.
   const handleSubmit = async () => {
     if (!draftId) return;
     setError(null);
@@ -164,6 +175,10 @@ export function OrderFormClient({
     }
     if (getReferenceImages(spec).length === 0) {
       setError("Please upload at least one reference photo.");
+      return;
+    }
+    if (!paymentNumber.trim()) {
+      setError("Enter the bKash number you sent the advance from.");
       return;
     }
     setSubmitting(true);
@@ -176,8 +191,8 @@ export function OrderFormClient({
           contactName: contact.name,
           contactPhone: contact.phone,
           kitchenNote: contact.kitchenNote,
-          paymentMethod: "cash_on_collection",
-          manualTrxId: paymentNumber.trim() || null,
+          paymentMethod: "bkash",
+          manualTrxId: paymentNumber.trim(),
         }),
       });
       const data = await res.json();
@@ -200,7 +215,7 @@ export function OrderFormClient({
 
         <p className="mb-4 font-body text-sm text-brand-chocolate/70">
           Upload a reference photo, pick your flavours, and choose your pickup or delivery slot
-          below — we&apos;ll confirm your price once we&apos;ve seen your design.
+          below. We&apos;ll confirm your final price once we&apos;ve seen your design.
         </p>
 
         {cakeDetail && (
@@ -270,7 +285,7 @@ export function OrderFormClient({
             </div>
 
             <p className="border-t border-brand-chocolate/10 pt-4 font-body text-xs text-brand-chocolate/50">
-              We&apos;ll confirm your price after you submit — no payment is needed yet.
+              We&apos;ll confirm your final price after you submit. A ৳{advanceAmount.toLocaleString("en-BD")} booking advance is required below to hold your slot.
             </p>
           </div>
         )}
@@ -343,27 +358,34 @@ export function OrderFormClient({
       </section>
 
       <section className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-5 sm:p-6">
+        <h2 className="mb-4 font-display text-2xl font-semibold text-brand-chocolate">
+          Booking advance
+        </h2>
+        <p className="mb-4 font-body text-sm leading-relaxed text-brand-chocolate/80">
+          Send <strong>৳{advanceAmount.toLocaleString("en-BD")}</strong> to our bKash number{" "}
+          <strong>{BKASH_NUMBER}</strong> (Send Money) to hold your slot, then enter the number
+          you sent it from below. This is separate from your final cake price, which we&apos;ll
+          confirm once we&apos;ve reviewed your design.
+        </p>
         <label className="block">
           <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
-            Your bKash / Nagad / other payment number (optional)
+            Your bKash number
           </span>
           <input
+            required
             value={paymentNumber}
             onChange={(e) => setPaymentNumber(e.target.value)}
             placeholder="01XXXXXXXXX"
             className="input-field"
           />
-          <span className="mt-1 block font-body text-xs text-brand-chocolate/50">
-            If you already know which number you&apos;ll pay the deposit from, add it here — we&apos;ll
-            still confirm the amount with you once your design is priced.
-          </span>
         </label>
       </section>
 
       <section className="rounded-3xl border-2 border-brand-orange/30 bg-brand-orange/5 p-5 sm:p-6">
         <p className="mb-4 font-body text-sm text-brand-chocolate/70">
-          No payment is needed yet — we&apos;ll confirm your price and deposit once we&apos;ve
-          reviewed your design, then follow up on {contact.phone || "your number"}.
+          Your ৳{advanceAmount.toLocaleString("en-BD")} advance holds your slot. We&apos;ll confirm
+          your final price and remaining deposit once we&apos;ve reviewed your design, then follow
+          up on {contact.phone || "your number"}.
         </p>
         {error && <p className="mb-3 font-body text-sm text-red-600">{error}</p>}
         <Button
