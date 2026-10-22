@@ -170,9 +170,20 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                     {order.slotLabel && (
                       <p className="font-body text-xs text-brand-chocolate/60">{order.slotLabel}</p>
                     )}
+                    {order.riderName && (
+                      <p className="font-body text-xs text-brand-chocolate/60">
+                        🛵 {order.riderName}
+                        {order.riderPhone ? ` · ${order.riderPhone}` : ""}
+                      </p>
+                    )}
                     <p className="font-body text-xs text-brand-chocolate/70">
                       ৳{order.total.toLocaleString("en-BD")} &middot; {order.paymentStatus}
                     </p>
+                    {order.paymentStatus !== "paid_in_full" && order.paymentStatus !== "refunded" && (
+                      <p className="font-body text-xs font-bold text-brand-orange">
+                        Due: ৳{order.balanceDue.toLocaleString("en-BD")}
+                      </p>
+                    )}
                     <select
                       value={order.status}
                       onChange={(e) => changeStatus(order.id, e.target.value as OrderStatus)}

@@ -260,13 +260,14 @@ export function CakeForm({
                 src={values.galleryImageUrls[adjustingGalleryIndex]}
                 value={values.galleryImageFocals[adjustingGalleryIndex]}
                 onChange={(point) => setGalleryFocal(adjustingGalleryIndex, point)}
-                onRotate={(newUrl) =>
+                onAdjust={(newUrl) =>
                   set(
                     "galleryImageUrls",
                     values.galleryImageUrls.map((u, i) => (i === adjustingGalleryIndex ? newUrl : u)),
                   )
                 }
                 aspectClassName="aspect-square"
+                aspect={1}
               />
             </div>
           )}

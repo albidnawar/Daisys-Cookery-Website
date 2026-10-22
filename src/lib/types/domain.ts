@@ -258,5 +258,7 @@ export type Order = {
   manualTrxId: string | null;
   needsRiderPickup: boolean;
   riderPickupAt: string | null;
+  riderName: string | null;
+  riderPhone: string | null;
   createdAt: string;
 };

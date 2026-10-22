@@ -36,6 +36,8 @@ export type OrderEditableFields = {
   manualTrxId: string | null;
   needsRiderPickup: boolean;
   riderPickupAt: string | null;
+  riderName: string | null;
+  riderPhone: string | null;
 };
 
 export async function updateOrderDetails(orderId: string, patch: OrderEditableFields): Promise<void> {
@@ -50,19 +52,32 @@ export async function updateOrderDetails(orderId: string, patch: OrderEditableFi
       manual_trx_id: patch.manualTrxId,
       needs_rider_pickup: patch.needsRiderPickup,
       rider_pickup_at: patch.riderPickupAt,
+      rider_name: patch.riderName,
+      rider_phone: patch.riderPhone ? normalizePhone(patch.riderPhone) : null,
     })
     .eq("id", orderId);
   if (error) throw error;
 }
 
-/** Fills in the cake price for an order placed with none yet — the public
- * order-form's "Custom design" path (see createPendingCustomDraft())
- * creates the order right away so it shows up in Live Orders, with the
- * admin setting the real price here once they've seen the reference photo
- * and quoted the customer directly. Recomputes total/deposit/balance the
- * same way every other price path does (delivery fee folded in, deposit
- * from the current store settings), rather than leaving them at zero. */
-export async function setOrderPrice(orderId: string, subtotal: number): Promise<void> {
+/** Fills in the cake price, the delivery cost (a custom design has no
+ * catalog cake and so no zone-based fee to fall back on — the admin names
+ * a number once they know what the delivery actually involves), and,
+ * since it's rarely exactly the store's usual percentage/fixed deposit,
+ * the actual amount received by bKash/Nagad — all for an order placed
+ * with none of them set yet. The public order-form's "Custom design" path
+ * (see createPendingCustomDraft()) creates the order right away so it
+ * shows up in Live Orders, with the admin filling these in here once
+ * they've seen the reference photo, quoted the customer, and confirmed
+ * what actually landed in the shop's account. deliveryFee defaults to
+ * whatever the order already had (0 for pickup); depositAmount defaults
+ * to the store's usual computed deposit when the admin hasn't overridden
+ * it, same as every other price path. */
+export async function setOrderPrice(
+  orderId: string,
+  subtotal: number,
+  depositAmount?: number,
+  deliveryFee?: number,
+): Promise<void> {
   const supabase = createServiceRoleClient();
   const { data: existing, error: fetchError } = await supabase
     .from("orders")
@@ -71,18 +86,20 @@ export async function setOrderPrice(orderId: string, subtotal: number): Promise<
     .single();
   if (fetchError) throw fetchError;
 
-  const deposit = toDepositConfig(await getStoreSettings());
-  const total = subtotal + Number(existing.delivery_fee);
-  const depositAmount = computeDepositAmount(total, deposit);
-  const balanceDue = total - depositAmount;
+  const resolvedDeliveryFee = deliveryFee ?? Number(existing.delivery_fee);
+  const total = subtotal + resolvedDeliveryFee;
+  const resolvedDeposit =
+    depositAmount ?? computeDepositAmount(total, toDepositConfig(await getStoreSettings()));
+  const balanceDue = total - resolvedDeposit;
 
   const { error } = await supabase
     .from("orders")
     .update({
       subtotal,
       extras_total: 0,
+      delivery_fee: resolvedDeliveryFee,
       total,
-      deposit_amount: depositAmount,
+      deposit_amount: resolvedDeposit,
       balance_due: balanceDue,
     })
     .eq("id", orderId);

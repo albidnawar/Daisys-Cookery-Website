@@ -118,6 +118,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     manualTrxId: input.manualTrxId ?? null,
     needsRiderPickup: false,
     riderPickupAt: null,
+    riderName: null,
+    riderPhone: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -273,6 +275,8 @@ function rowToOrder(row: any): Order {
     manualTrxId: row.manual_trx_id ?? null,
     needsRiderPickup: row.needs_rider_pickup ?? false,
     riderPickupAt: row.rider_pickup_at ?? null,
+    riderName: row.rider_name ?? null,
+    riderPhone: row.rider_phone ?? null,
     createdAt: row.created_at,
   };
 }
