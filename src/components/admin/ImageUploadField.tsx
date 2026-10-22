@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FocalPointPicker } from "@/components/admin/FocalPointPicker";
-import { rotateImage } from "@/lib/image/rotateImage";
+import { ImageAdjusterModal } from "@/components/admin/ImageAdjusterModal";
 import type { FocalPoint } from "@/lib/image/focal";
 
 export function ImageUploadField({
@@ -23,20 +23,7 @@ export function ImageUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rotating, setRotating] = useState(false);
-
-  const rotate = async (degrees: 90 | -90) => {
-    if (!value) return;
-    setRotating(true);
-    setError(null);
-    try {
-      onChange(await rotateImage(value, degrees));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't rotate that image");
-    } finally {
-      setRotating(false);
-    }
-  };
+  const [adjusting, setAdjusting] = useState(false);
 
   const upload = async (file: File) => {
     setUploading(true);
@@ -75,7 +62,7 @@ export function ImageUploadField({
         <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
           {label}
         </span>
-        <FocalPointPicker src={value} value={focal} onChange={onFocalChange} onRotate={onChange} />
+        <FocalPointPicker src={value} value={focal} onChange={onFocalChange} onAdjust={onChange} />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -110,30 +97,30 @@ export function ImageUploadField({
           )}
         </button>
         {value && (
-          <div className="absolute right-2 top-2 flex gap-1">
+          <div className="absolute right-2 top-2">
             <button
               type="button"
-              onClick={() => rotate(-90)}
-              disabled={rotating}
-              title="Rotate left"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-chocolate shadow-md hover:bg-white disabled:opacity-50"
+              onClick={() => setAdjusting(true)}
+              title="Zoom, rotate, or crop"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-chocolate shadow-md hover:bg-white"
             >
-              ↺
-            </button>
-            <button
-              type="button"
-              onClick={() => rotate(90)}
-              disabled={rotating}
-              title="Rotate right"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-chocolate shadow-md hover:bg-white disabled:opacity-50"
-            >
-              ↻
+              ⤢
             </button>
           </div>
         )}
       </div>
       {fileInput}
       {error && <p className="mt-1 font-body text-xs text-red-600">{error}</p>}
+      {adjusting && value && (
+        <ImageAdjusterModal
+          src={value}
+          onCancel={() => setAdjusting(false)}
+          onSave={(newUrl) => {
+            onChange(newUrl);
+            setAdjusting(false);
+          }}
+        />
+      )}
     </div>
   );
 }

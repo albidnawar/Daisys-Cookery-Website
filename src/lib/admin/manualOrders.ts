@@ -167,6 +167,8 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     manualTrxId: input.manualTrxId,
     needsRiderPickup: false,
     riderPickupAt: null,
+    riderName: null,
+    riderPhone: null,
     createdAt: new Date().toISOString(),
   };
 

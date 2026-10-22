@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import { ImageLightbox } from "@/components/admin/ImageLightbox";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
@@ -43,6 +44,8 @@ export function OrderDetailEditor({
   const [riderPickupAt, setRiderPickupAt] = useState(
     order.riderPickupAt ? order.riderPickupAt.slice(0, 16) : "",
   );
+  const [riderName, setRiderName] = useState(order.riderName ?? "");
+  const [riderPhone, setRiderPhone] = useState(order.riderPhone ?? "");
 
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
@@ -52,15 +55,30 @@ export function OrderDetailEditor({
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(order.paymentStatus);
   const [statusSaving, setStatusSaving] = useState(false);
 
+  const [receiptLinkCopied, setReceiptLinkCopied] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   const [cakePrice, setCakePrice] = useState(String(order.subtotal));
+  const [deliveryCost, setDeliveryCost] = useState(String(order.deliveryFee));
+  const [depositReceived, setDepositReceived] = useState(String(order.depositAmount));
   const [savingPrice, setSavingPrice] = useState(false);
   const [priceSaved, setPriceSaved] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
 
   const saveCakePrice = async () => {
     const subtotal = Number(cakePrice);
+    const deliveryFee = Number(deliveryCost);
+    const depositAmount = Number(depositReceived);
     if (!Number.isFinite(subtotal) || subtotal < 0) {
       setPriceError("Enter a valid price");
+      return;
+    }
+    if (!Number.isFinite(deliveryFee) || deliveryFee < 0) {
+      setPriceError("Enter a valid delivery cost");
+      return;
+    }
+    if (!Number.isFinite(depositAmount) || depositAmount < 0) {
+      setPriceError("Enter a valid deposit amount");
       return;
     }
     setPriceError(null);
@@ -69,11 +87,11 @@ export function OrderDetailEditor({
     const res = await fetch(`/api/admin/orders/${order.id}/price`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subtotal }),
+      body: JSON.stringify({ subtotal, depositAmount, deliveryFee }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setPriceError(data.error ?? "Couldn't save that price");
+      setPriceError(data.error ?? "Couldn't save that");
       setSavingPrice(false);
       return;
     }
@@ -98,6 +116,8 @@ export function OrderDetailEditor({
         manualTrxId: manualTrxId || null,
         needsRiderPickup,
         riderPickupAt: riderPickupAt ? new Date(riderPickupAt).toISOString() : null,
+        riderName: riderName.trim() || null,
+        riderPhone: riderPhone.trim() || null,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -148,6 +168,17 @@ export function OrderDetailEditor({
           <h1 className="font-display text-3xl font-semibold text-brand-chocolate">{order.orderNumber}</h1>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/receipt/${order.id}`);
+              setReceiptLinkCopied(true);
+              setTimeout(() => setReceiptLinkCopied(false), 2000);
+            }}
+            className="font-body text-sm font-bold text-brand-orange hover:text-brand-chocolate"
+          >
+            {receiptLinkCopied ? "Copied!" : "Copy receipt link"}
+          </button>
           <Link
             href={`/admin/orders/${order.id}/slip`}
             target="_blank"
@@ -193,9 +224,13 @@ export function OrderDetailEditor({
                 <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
                   Cake photo
                 </p>
-                <div className="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10">
+                <button
+                  type="button"
+                  onClick={() => setLightboxSrc(cakeImageUrl)}
+                  className="relative block h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10"
+                >
                   <Image src={cakeImageUrl} alt="" fill className="object-cover" />
-                </div>
+                </button>
               </div>
             )}
             {getReferenceImages(order.cakeSnapshot.spec).length > 0 && (
@@ -205,17 +240,23 @@ export function OrderDetailEditor({
                 </p>
                 <div className="flex flex-wrap gap-2">
                 {getReferenceImages(order.cakeSnapshot.spec).map((url) => (
-                  <div
+                  <button
                     key={url}
-                    className="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10"
+                    type="button"
+                    onClick={() => setLightboxSrc(url)}
+                    className="relative block h-32 w-32 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10"
                   >
                     <Image src={url} alt="Reference" fill className="object-cover" />
-                  </div>
+                  </button>
                 ))}
                 </div>
               </div>
             )}
           </section>
+
+          {lightboxSrc && (
+            <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+          )}
 
           {/* Customer & fulfilment — editable */}
           <form onSubmit={saveDetails} className="flex flex-col gap-4 rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6">
@@ -246,8 +287,26 @@ export function OrderDetailEditor({
               <p className="font-body text-sm text-brand-chocolate/70">{order.slotLabel ?? "To be confirmed"}</p>
             </Field>
             {order.fulfilmentType === "delivery" && (
-              <div className="rounded-2xl border-2 border-brand-chocolate/10 p-3">
-                <label className="mb-2 flex items-center gap-2 font-body text-sm text-brand-chocolate">
+              <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-chocolate/10 p-3">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Delivery person name">
+                    <input
+                      value={riderName}
+                      onChange={(e) => setRiderName(e.target.value)}
+                      placeholder="Who's delivering this"
+                      className="input-field"
+                    />
+                  </Field>
+                  <Field label="Delivery person phone">
+                    <input
+                      value={riderPhone}
+                      onChange={(e) => setRiderPhone(e.target.value)}
+                      placeholder="01XXXXXXXXX"
+                      className="input-field"
+                    />
+                  </Field>
+                </div>
+                <label className="flex items-center gap-2 font-body text-sm text-brand-chocolate">
                   <input
                     type="checkbox"
                     checked={needsRiderPickup}
@@ -298,23 +357,39 @@ export function OrderDetailEditor({
               Pricing
             </p>
             {order.cakeSnapshot.slug === null && (
-              <div className="mb-4 flex flex-col gap-2 rounded-2xl border-2 border-dashed border-brand-orange/30 bg-brand-orange/5 p-4">
+              <div className="mb-4 flex flex-col gap-3 rounded-2xl border-2 border-dashed border-brand-orange/30 bg-brand-orange/5 p-4">
                 <Field label="Cake price (customer placed this before a price was set)">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={cakePrice}
-                      onChange={(e) => setCakePrice(e.target.value)}
-                      className="input-field"
-                    />
-                    <Button type="button" disabled={savingPrice} onClick={saveCakePrice} className="shrink-0">
-                      {savingPrice ? "Saving…" : "Set price"}
-                    </Button>
-                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={cakePrice}
+                    onChange={(e) => setCakePrice(e.target.value)}
+                    className="input-field"
+                  />
                 </Field>
+                <Field label="Delivery cost (no catalog cake to pull a zone fee from)">
+                  <input
+                    type="number"
+                    min={0}
+                    value={deliveryCost}
+                    onChange={(e) => setDeliveryCost(e.target.value)}
+                    className="input-field"
+                  />
+                </Field>
+                <Field label="Deposit received (actual bKash/Nagad amount, not just the usual %)">
+                  <input
+                    type="number"
+                    min={0}
+                    value={depositReceived}
+                    onChange={(e) => setDepositReceived(e.target.value)}
+                    className="input-field"
+                  />
+                </Field>
+                <Button type="button" disabled={savingPrice} onClick={saveCakePrice} className="w-fit">
+                  {savingPrice ? "Saving…" : "Save price, delivery & deposit"}
+                </Button>
                 {priceError && <p className="font-body text-sm text-red-600">{priceError}</p>}
-                {priceSaved && <p className="font-body text-sm text-emerald-700">Saved — total and deposit updated.</p>}
+                {priceSaved && <p className="font-body text-sm text-emerald-700">Saved — total and balance updated.</p>}
               </div>
             )}
             <table className="w-full font-body text-sm">

@@ -57,10 +57,6 @@ export function FulfilmentTypeCards({
           Inside Chattogram city, in a two-hour window. Carried by our own
           rider in a cold box, handed to a person.
         </p>
-        <div className="mt-4 flex items-baseline justify-between">
-          <span className="font-display text-xl text-brand-chocolate">৳180–৳420</span>
-          <span className="font-body text-xs text-brand-chocolate/60">by distance</span>
-        </div>
 
         {fulfilmentType === "delivery" && (
           <div
@@ -78,7 +74,7 @@ export function FulfilmentTypeCards({
                     : "border-brand-chocolate/10 bg-white text-brand-chocolate"
                 }`}
               >
-                {zone.name} &middot; ৳{zone.deliveryFee}
+                {zone.name}
               </button>
             ))}
           </div>

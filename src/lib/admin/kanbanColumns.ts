@@ -42,4 +42,6 @@ export type KanbanOrder = {
   slotLabel: string | null;
   contactName: string;
   contactPhone: string;
+  riderName: string | null;
+  riderPhone: string | null;
 };

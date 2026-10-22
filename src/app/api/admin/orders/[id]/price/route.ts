@@ -21,7 +21,21 @@ export async function PATCH(
   if (!Number.isFinite(subtotal) || subtotal < 0) {
     return NextResponse.json({ error: "A valid price is required" }, { status: 400 });
   }
+  let depositAmount: number | undefined;
+  if (body.depositAmount !== undefined && body.depositAmount !== null) {
+    depositAmount = Number(body.depositAmount);
+    if (!Number.isFinite(depositAmount) || depositAmount < 0) {
+      return NextResponse.json({ error: "A valid deposit amount is required" }, { status: 400 });
+    }
+  }
+  let deliveryFee: number | undefined;
+  if (body.deliveryFee !== undefined && body.deliveryFee !== null) {
+    deliveryFee = Number(body.deliveryFee);
+    if (!Number.isFinite(deliveryFee) || deliveryFee < 0) {
+      return NextResponse.json({ error: "A valid delivery cost is required" }, { status: 400 });
+    }
+  }
 
-  await setOrderPrice(id, subtotal);
+  await setOrderPrice(id, subtotal, depositAmount, deliveryFee);
   return NextResponse.json({ ok: true });
 }

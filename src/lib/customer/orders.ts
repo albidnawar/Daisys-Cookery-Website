@@ -49,6 +49,8 @@ export async function listCustomerOrders(customerId: string): Promise<Order[]> {
       manualTrxId: row.manual_trx_id ?? null,
       needsRiderPickup: row.needs_rider_pickup ?? false,
       riderPickupAt: row.rider_pickup_at ?? null,
+      riderName: row.rider_name ?? null,
+      riderPhone: row.rider_phone ?? null,
       createdAt: row.created_at,
     };
   });
