@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { ALL_ORDER_STATUSES, KANBAN_COLUMNS, type KanbanOrder } from "@/lib/admin/kanbanColumns";
-import { todayKey } from "@/lib/dates";
+import { formatSlotLabelForDisplay, todayKey } from "@/lib/dates";
 import type { OrderStatus } from "@/lib/types/domain";
 
 // A column can cover more than one status (e.g. "Ready" spans ready/out_for_delivery).
@@ -86,7 +86,13 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
         {loading && <span className="font-body text-xs text-brand-chocolate/50">Loading…</span>}
       </div>
 
-      <div className="grid gap-4 overflow-x-auto pb-4 lg:grid-cols-5">
+      {/* A plain flex row (not CSS grid) so columns always sit side by
+          side with a horizontal scrollbar below the point where all five
+          fit — a grid with no explicit column count below its one
+          breakpoint collapsed every column into a single implicit track,
+          stacking cards from different statuses on top of each other on
+          iPad/laptop-width screens. */}
+      <div className="flex gap-6 overflow-x-auto pb-4">
         {KANBAN_COLUMNS.map((col) => {
           const columnOrders = orders.filter((o) => col.statuses.includes(o.status));
           return (
@@ -101,7 +107,7 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                 e.preventDefault();
                 handleDrop(col.key);
               }}
-              className={`flex min-w-[220px] flex-col gap-3 rounded-2xl p-2 transition-colors ${
+              className={`flex w-72 shrink-0 flex-col gap-3 rounded-2xl p-2 transition-colors ${
                 dragOverCol === col.key ? "bg-brand-orange/10 ring-2 ring-brand-orange/40" : ""
               }`}
             >
@@ -168,7 +174,9 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                       {order.contactName} &middot; {order.contactPhone}
                     </p>
                     {order.slotLabel && (
-                      <p className="font-body text-xs text-brand-chocolate/60">{order.slotLabel}</p>
+                      <p className="font-body text-xs text-brand-chocolate/60">
+                        {formatSlotLabelForDisplay(order.slotLabel)}
+                      </p>
                     )}
                     {order.riderName && (
                       <p className="font-body text-xs text-brand-chocolate/60">
@@ -179,10 +187,16 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                     <p className="font-body text-xs text-brand-chocolate/70">
                       ৳{order.total.toLocaleString("en-BD")} &middot; {order.paymentStatus}
                     </p>
-                    {order.paymentStatus !== "paid_in_full" && order.paymentStatus !== "refunded" && (
+                    {order.total === 0 && order.depositAmount > 0 ? (
                       <p className="font-body text-xs font-bold text-brand-orange">
-                        Due: ৳{order.balanceDue.toLocaleString("en-BD")}
+                        Advance paid: ৳{order.depositAmount.toLocaleString("en-BD")} (price pending)
                       </p>
+                    ) : (
+                      order.paymentStatus !== "paid_in_full" && order.paymentStatus !== "refunded" && (
+                        <p className="font-body text-xs font-bold text-brand-orange">
+                          Due: ৳{order.balanceDue.toLocaleString("en-BD")}
+                        </p>
+                      )
                     )}
                     <select
                       value={order.status}

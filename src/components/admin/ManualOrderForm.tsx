@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { CakeColorField } from "@/components/cake-detail/CakeColorField";
 import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
-import { todayKey } from "@/lib/dates";
+import { formatTimeAmPm, todayKey } from "@/lib/dates";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { computeDepositAmount, depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 import type { AdminCakeSummary } from "@/lib/admin/catalogAdmin";
@@ -418,7 +418,7 @@ export function ManualOrderForm({
               </option>
               {slots.map((s) => (
                 <option key={s.slotId} value={s.slotId} disabled={s.status === "full"}>
-                  {s.startTime}–{s.endTime} ({s.status === "full" ? "full" : `${s.remaining} left`})
+                  {formatTimeAmPm(s.startTime)}–{formatTimeAmPm(s.endTime)} ({s.status === "full" ? "full" : `${s.remaining} left`})
                 </option>
               ))}
             </select>

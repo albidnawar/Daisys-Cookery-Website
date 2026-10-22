@@ -9,6 +9,7 @@ import { ImageLightbox } from "@/components/admin/ImageLightbox";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { OrderStatusHistoryEntry } from "@/lib/admin/orderDetail";
 import type { Order, OptionGroup, OrderStatus, PaymentStatus } from "@/lib/types/domain";
@@ -284,7 +285,7 @@ export function OrderDetailEditor({
               )}
             </Field>
             <Field label="Slot">
-              <p className="font-body text-sm text-brand-chocolate/70">{order.slotLabel ?? "To be confirmed"}</p>
+              <p className="font-body text-sm text-brand-chocolate/70">{formatSlotLabelForDisplay(order.slotLabel)}</p>
             </Field>
             {order.fulfilmentType === "delivery" && (
               <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-chocolate/10 p-3">

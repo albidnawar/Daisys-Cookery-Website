@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentCustomer } from "@/lib/customer/auth";
 import { listCustomerOrders } from "@/lib/customer/orders";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 
 export default async function AccountOverviewPage() {
   const customer = await getCurrentCustomer();
@@ -32,7 +33,7 @@ export default async function AccountOverviewPage() {
                 {latest.cakeSnapshot.name}
               </p>
               <p className="font-body text-sm text-brand-chocolate/60">
-                {latest.slotLabel ?? "Scheduling pending"} &middot; ৳{latest.total.toLocaleString("en-BD")}
+                {formatSlotLabelForDisplay(latest.slotLabel, "Scheduling pending")} &middot; ৳{latest.total.toLocaleString("en-BD")}
               </p>
             </div>
             <Link

@@ -1,11 +1,5 @@
+import { formatTimeAmPm } from "@/lib/dates";
 import type { SlotAvailability } from "@/lib/types/domain";
-
-function formatTime(t: string) {
-  const [h, m] = t.split(":").map(Number);
-  const period = h >= 12 ? "pm" : "am";
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return m === 0 ? `${hour12} ${period}` : `${hour12}:${String(m).padStart(2, "0")} ${period}`;
-}
 
 export function TimeSlotPicker({
   slots,
@@ -49,7 +43,7 @@ export function TimeSlotPicker({
             }`}
           >
             <span>
-              {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+              {formatTimeAmPm(slot.startTime)} – {formatTimeAmPm(slot.endTime)}
             </span>
             <span className="text-xs font-normal">
               {isSelected

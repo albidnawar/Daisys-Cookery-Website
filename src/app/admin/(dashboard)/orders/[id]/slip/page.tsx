@@ -4,6 +4,7 @@ import { getOrder } from "@/lib/orders/store";
 import { resolveCake } from "@/lib/draftOrders/store";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { requireModulePage } from "@/lib/admin/auth";
 import { PrintButton } from "@/components/admin/PrintButton";
 
@@ -39,7 +40,7 @@ export default async function OrderSlipPage({
             <Row label="Order source" value={order.orderSource === "manual" ? "FB / Manual" : "Web"} />
             <Row
               label={order.fulfilmentType === "pickup" ? "Pickup" : "Delivery"}
-              value={order.slotLabel ?? "To be confirmed"}
+              value={formatSlotLabelForDisplay(order.slotLabel)}
             />
             <Row label="Cake" value={order.cakeSnapshot.name} />
             <Row label="Size" value={order.cakeSnapshot.spec.sizeCode ? `${order.cakeSnapshot.spec.sizeCode} lb` : "-"} />

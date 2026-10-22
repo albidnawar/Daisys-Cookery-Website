@@ -9,6 +9,7 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
     ...initial,
     depositPercent: String(Math.round(initial.depositRate * 100)),
     depositFixedAmountText: initial.depositFixedAmount != null ? String(initial.depositFixedAmount) : "",
+    customOrderAdvanceAmountText: String(initial.customOrderAdvanceAmount),
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,6 +32,10 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
       if (values.depositMode === "fixed" && (!Number.isFinite(depositFixedAmount) || depositFixedAmount <= 0)) {
         throw new Error("Fixed advance must be a number greater than 0.");
       }
+      const customOrderAdvanceAmount = Number(values.customOrderAdvanceAmountText);
+      if (!Number.isFinite(customOrderAdvanceAmount) || customOrderAdvanceAmount <= 0) {
+        throw new Error("Custom order advance must be a number greater than 0.");
+      }
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -38,6 +43,7 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
           depositRate,
           depositMode: values.depositMode,
           depositFixedAmount: values.depositMode === "fixed" ? depositFixedAmount : null,
+          customOrderAdvanceAmount,
           shopAddress: values.shopAddress,
           shopHours: values.shopHours,
           shopPhone: values.shopPhone,
@@ -105,6 +111,20 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
             ? "Customers pay this % of their order total up front."
             : "Customers pay this flat amount up front, regardless of order size (never more than the order total)."}
         </span>
+      </Field>
+
+      <Field
+        label="Custom order advance (bKash/Nagad)"
+        hint="The public order form's 'Custom design' path has no catalog price to take a % of, so this flat amount is required up front regardless of the deposit setting above."
+      >
+        <input
+          type="number"
+          min={1}
+          value={values.customOrderAdvanceAmountText}
+          onChange={(e) => set("customOrderAdvanceAmountText", e.target.value)}
+          placeholder="e.g. 500"
+          className="input-field"
+        />
       </Field>
 
       <Field label="Shop address" hint="Shown on the confirmation page, pickup option, and Our Shop page.">

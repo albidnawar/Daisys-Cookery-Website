@@ -1,20 +1,8 @@
 import { LinkButton } from "@/components/ui/Button";
 import { AddToCalendarButton } from "@/components/confirmation/AddToCalendarButton";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { formatSlotLabelForDisplay } from "@/lib/dates";
 import type { Order, OptionGroup } from "@/lib/types/domain";
-
-function formatSlotLabel(slotLabel: string | null): string {
-  if (!slotLabel) return "To be confirmed";
-  const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})-(\d{2}:\d{2})$/.exec(slotLabel);
-  if (!match) return slotLabel;
-  const [, date, start, end] = match;
-  const formatted = new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  return `${formatted}, ${start}–${end}`;
-}
 
 const PAYMENT_METHOD_LABELS: Record<Order["paymentMethod"], string> = {
   bkash: "bKash",
@@ -60,7 +48,7 @@ export function OrderSummaryCard({
       <hr className="border-brand-chocolate/10" />
       <table className="w-full font-body text-sm">
         <tbody>
-          <Row label={collectOrDeliver} value={formatSlotLabel(order.slotLabel)} />
+          <Row label={collectOrDeliver} value={formatSlotLabelForDisplay(order.slotLabel)} />
           <Row label={order.fulfilmentType === "pickup" ? "From" : "To"} value={fromOrTo} />
           <Row
             label="Cake"

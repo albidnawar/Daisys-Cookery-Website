@@ -39,6 +39,10 @@ export type KanbanOrder = {
   orderSource: "web" | "manual";
   fulfilmentType: "pickup" | "delivery";
   slotDate: string | null;
+  /** Raw "HH:MM:SS" start time — kept separate from slotLabel (which is
+   * formatted for display) so cards can be sorted chronologically without
+   * re-parsing a human-readable string. */
+  slotStartTime: string | null;
   slotLabel: string | null;
   contactName: string;
   contactPhone: string;
