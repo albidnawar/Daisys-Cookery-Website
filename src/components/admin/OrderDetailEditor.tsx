@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
-import { ImageLightbox } from "@/components/admin/ImageLightbox";
+import { ImageLightbox } from "@/components/shared/ImageLightbox";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { summarizeSpec } from "@/lib/catalog/specLabels";
