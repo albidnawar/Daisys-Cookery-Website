@@ -2,17 +2,37 @@
 
 import { useRef, useState } from "react";
 
+const COPY = {
+  en: {
+    uploading: "Uploading…",
+    dropPrompt: "Drop a reference photo, or click to browse",
+    uploadError: "Couldn't upload that image. Try a PNG, JPEG, or WebP under 8MB.",
+    instructionsPlaceholder:
+      "Tell us what to change, e.g. write 'Happy Anniversary' on the board, add fresh flowers on top…",
+  },
+  bn: {
+    uploading: "আপলোড হচ্ছে…",
+    dropPrompt: "একটি রেফারেন্স ছবি ড্রপ করুন, অথবা ব্রাউজ করতে ক্লিক করুন",
+    uploadError: "ছবিটি আপলোড করা যায়নি। ৮MB-এর কম সাইজের PNG, JPEG বা WebP ব্যবহার করুন।",
+    instructionsPlaceholder:
+      "কী পরিবর্তন চান তা লিখুন, যেমন: বোর্ডে 'Happy Anniversary' লিখুন, উপরে তাজা ফুল যোগ করুন…",
+  },
+} as const;
+
 function UploadSlot({
   draftId,
   onUploaded,
   onError,
+  locale,
 }: {
   draftId: string | null;
   onUploaded: (url: string) => void;
   onError: (message: string) => void;
+  locale: "en" | "bn";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const t = COPY[locale];
 
   const upload = async (file: File) => {
     if (!draftId) return;
@@ -29,7 +49,7 @@ function UploadSlot({
       const urls: string[] = data.draft.spec.referenceImageUrls ?? [];
       onUploaded(urls[urls.length - 1]);
     } catch {
-      onError("Couldn't upload that image. Try a PNG, JPEG, or WebP under 8MB.");
+      onError(t.uploadError);
     } finally {
       setUploading(false);
     }
@@ -48,7 +68,7 @@ function UploadSlot({
       className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand-chocolate/25 bg-cream text-center"
     >
       <span className="px-4 font-body text-sm text-brand-chocolate/60">
-        {uploading ? "Uploading…" : "Drop a reference photo, or click to browse"}
+        {uploading ? t.uploading : t.dropPrompt}
       </span>
       <input
         ref={inputRef}
@@ -72,6 +92,7 @@ export function ReferenceImageDropzone({
   instructions,
   onChange,
   onInstructionsChange,
+  locale = "en",
 }: {
   draftId: string | null;
   imageUrls: string[];
@@ -79,8 +100,10 @@ export function ReferenceImageDropzone({
   instructions: string | undefined;
   onChange: (urls: string[]) => void;
   onInstructionsChange: (value: string) => void;
+  locale?: "en" | "bn";
 }) {
   const [error, setError] = useState<string | null>(null);
+  const t = COPY[locale];
 
   return (
     <div className="flex flex-col gap-3">
@@ -106,6 +129,7 @@ export function ReferenceImageDropzone({
               onChange([...imageUrls, url]);
             }}
             onError={setError}
+            locale={locale}
           />
         )}
       </div>
@@ -113,7 +137,7 @@ export function ReferenceImageDropzone({
       <textarea
         value={instructions ?? ""}
         onChange={(e) => onInstructionsChange(e.target.value)}
-        placeholder="Tell us what to change, e.g. write 'Happy Anniversary' on the board, add fresh flowers on top…"
+        placeholder={t.instructionsPlaceholder}
         rows={3}
         className="w-full rounded-2xl border-2 border-brand-chocolate/10 bg-white px-3 py-2 font-body text-sm text-brand-chocolate outline-none focus:border-brand-orange"
       />

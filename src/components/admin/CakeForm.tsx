@@ -161,11 +161,10 @@ export function CakeForm({
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Base price (৳ per lb)">
+        <Field label="Base price (৳ per lb) — optional">
           <input
             type="number"
             min={0}
-            required
             value={values.basePrice}
             onChange={(e) => set("basePrice", Number(e.target.value))}
             className="input-field"

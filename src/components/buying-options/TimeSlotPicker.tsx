@@ -1,24 +1,44 @@
 import { formatTimeAmPm } from "@/lib/dates";
 import type { SlotAvailability } from "@/lib/types/domain";
 
+const COPY = {
+  en: {
+    checking: "Checking availability…",
+    noSlots: "No slots for that date yet. Try another day.",
+    chosen: "chosen",
+    full: "full",
+    left: (remaining: number) => `${remaining} left`,
+  },
+  bn: {
+    checking: "উপলভ্যতা যাচাই করা হচ্ছে…",
+    noSlots: "এই তারিখে এখনো কোনো স্লট নেই। অন্য দিন চেষ্টা করুন।",
+    chosen: "নির্বাচিত",
+    full: "পূর্ণ",
+    left: (remaining: number) => `${remaining}টি বাকি`,
+  },
+} as const;
+
 export function TimeSlotPicker({
   slots,
   selectedSlotId,
   onSelect,
   loading,
+  locale = "en",
 }: {
   slots: SlotAvailability[];
   selectedSlotId: string | null;
   onSelect: (slot: SlotAvailability) => void;
   loading: boolean;
+  locale?: "en" | "bn";
 }) {
+  const t = COPY[locale];
   if (loading) {
-    return <p className="font-body text-sm text-brand-chocolate/60">Checking availability…</p>;
+    return <p className="font-body text-sm text-brand-chocolate/60">{t.checking}</p>;
   }
   if (slots.length === 0) {
     return (
       <p className="font-body text-sm text-brand-chocolate/60">
-        No slots for that date yet. Try another day.
+        {t.noSlots}
       </p>
     );
   }
@@ -47,10 +67,10 @@ export function TimeSlotPicker({
             </span>
             <span className="text-xs font-normal">
               {isSelected
-                ? "chosen"
+                ? t.chosen
                 : slot.status === "full"
-                  ? "full"
-                  : `${slot.remaining} left`}
+                  ? t.full
+                  : t.left(slot.remaining)}
             </span>
           </button>
         );

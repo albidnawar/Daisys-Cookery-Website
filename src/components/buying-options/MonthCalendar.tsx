@@ -3,20 +3,31 @@
 import { useState } from "react";
 import { toDateKey } from "@/lib/dates";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+const WEEKDAYS = {
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  bn: ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র", "শনি"],
+} as const;
+const MONTH_NAMES = {
+  en: [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ],
+  bn: [
+    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+  ],
+} as const;
 
 export function MonthCalendar({
   selectedDate,
   onSelect,
   isDateSelectable,
+  locale = "en",
 }: {
   selectedDate: string;
   onSelect: (dateKey: string) => void;
   isDateSelectable?: (dateKey: string) => boolean;
+  locale?: "en" | "bn";
 }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -46,7 +57,7 @@ export function MonthCalendar({
     <div>
       <div className="mb-3 flex items-center justify-between">
         <span className="font-display text-xl text-brand-chocolate">
-          {MONTH_NAMES[viewMonth]} {viewYear}
+          {MONTH_NAMES[locale][viewMonth]} {viewYear}
         </span>
         <div className="flex gap-2">
           <button
@@ -66,7 +77,7 @@ export function MonthCalendar({
         </div>
       </div>
       <div className="grid grid-cols-7 gap-1 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10 bg-brand-chocolate/10 p-px">
-        {WEEKDAYS.map((w) => (
+        {WEEKDAYS[locale].map((w) => (
           <div
             key={w}
             className="bg-cream py-2 text-center font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60"
