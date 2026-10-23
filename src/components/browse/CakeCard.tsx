@@ -36,10 +36,7 @@ export function CakeCard({ cake }: { cake: CakeSummary }) {
           {cake.shortDescription}
         </p>
       </Link>
-      <div className="mt-auto flex items-baseline justify-between pt-1">
-        <span className="font-body text-sm font-bold text-brand-chocolate">
-          from ৳{cake.basePrice.toLocaleString("en-BD")}
-        </span>
+      <div className="mt-auto flex items-baseline justify-end pt-1">
         <Link
           href={`/customise/${cake.slug}`}
           className="font-body text-sm font-bold text-brand-orange hover:text-brand-chocolate"

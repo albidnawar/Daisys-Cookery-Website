@@ -1,6 +1,31 @@
 import { Card } from "@/components/ui/Card";
 import type { DeliveryZone } from "@/lib/types/domain";
 
+const COPY = {
+  en: {
+    optionOne: "Option one",
+    collectFromShop: "Collect from the shop",
+    pickupDesc: "Boxed cold and ribboned while you wait.",
+    free: "Free",
+    selected: "Selected",
+    optionTwo: "Option two",
+    localDelivery: "Local delivery",
+    deliveryDesc:
+      "Inside Chattogram city, in a two-hour window. Carried by our own rider in a cold box, handed to a person.",
+  },
+  bn: {
+    optionOne: "অপশন এক",
+    collectFromShop: "দোকান থেকে সংগ্রহ করুন",
+    pickupDesc: "আপনার অপেক্ষার মধ্যেই ঠান্ডা অবস্থায় বক্স ও রিবন করে দেওয়া হবে।",
+    free: "ফ্রি",
+    selected: "নির্বাচিত",
+    optionTwo: "অপশন দুই",
+    localDelivery: "লোকাল ডেলিভারি",
+    deliveryDesc:
+      "চট্টগ্রাম শহরের ভেতরে, দুই ঘণ্টার সময়সীমায়। আমাদের নিজস্ব রাইডার ঠান্ডা বক্সে করে সরাসরি হাতে পৌঁছে দেবে।",
+  },
+} as const;
+
 export function FulfilmentTypeCards({
   fulfilmentType,
   onSelect,
@@ -9,6 +34,7 @@ export function FulfilmentTypeCards({
   onZoneSelect,
   shopAddress,
   shopHours,
+  locale = "en",
 }: {
   fulfilmentType: "pickup" | "delivery" | null;
   onSelect: (type: "pickup" | "delivery") => void;
@@ -17,7 +43,9 @@ export function FulfilmentTypeCards({
   onZoneSelect: (zoneId: string) => void;
   shopAddress: string;
   shopHours: string;
+  locale?: "en" | "bn";
 }) {
+  const t = COPY[locale];
   return (
     <div className="grid gap-6 sm:grid-cols-2">
       <Card
@@ -25,19 +53,19 @@ export function FulfilmentTypeCards({
         onClick={() => onSelect("pickup")}
       >
         <span className="font-body text-xs font-bold uppercase tracking-widest text-brand-orange">
-          Option one
+          {t.optionOne}
         </span>
         <h3 className="mt-2 font-display text-2xl font-semibold text-brand-chocolate">
-          Collect from the shop
+          {t.collectFromShop}
         </h3>
         <p className="mt-2 font-body text-sm leading-relaxed text-brand-chocolate/75">
-          {shopAddress}. {shopHours}. Boxed cold and ribboned while you wait.
+          {shopAddress}. {shopHours}. {t.pickupDesc}
         </p>
         <div className="mt-4 flex items-baseline justify-between">
-          <span className="font-display text-xl text-brand-chocolate">Free</span>
+          <span className="font-display text-xl text-brand-chocolate">{t.free}</span>
           {fulfilmentType === "pickup" && (
             <span className="rounded-full bg-brand-orange/10 px-3 py-1 font-body text-xs font-bold text-brand-orange">
-              Selected
+              {t.selected}
             </span>
           )}
         </div>
@@ -48,14 +76,13 @@ export function FulfilmentTypeCards({
         onClick={() => onSelect("delivery")}
       >
         <span className="font-body text-xs font-bold uppercase tracking-widest text-brand-orange">
-          Option two
+          {t.optionTwo}
         </span>
         <h3 className="mt-2 font-display text-2xl font-semibold text-brand-chocolate">
-          Local delivery
+          {t.localDelivery}
         </h3>
         <p className="mt-2 font-body text-sm leading-relaxed text-brand-chocolate/75">
-          Inside Chattogram city, in a two-hour window. Carried by our own
-          rider in a cold box, handed to a person.
+          {t.deliveryDesc}
         </p>
 
         {fulfilmentType === "delivery" && (
