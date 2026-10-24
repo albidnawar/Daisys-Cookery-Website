@@ -45,26 +45,26 @@ const COPY = {
     messageLabel: "Message on board",
     messagePlaceholder: "Happy Birthday, Daisy!",
     colorLabel: "Cake color",
-    pendingPriceNote: (amount: string) =>
-      `We'll confirm your final price after you submit. A ৳${amount} booking advance is required below to hold your slot.`,
+    pendingPriceNote:
+      "We'll confirm your final price after you submit. An advance payment is required below to hold your slot.",
     pickupOrDelivery: "Pickup or delivery",
     deliveryAddressLabel: "Delivery address",
     deliveryAddressPlaceholder: "House, road, area",
     pickDate: "Pick a date",
     timeSlot: "Time slot",
     bookingAdvance: "Booking advance",
-    bookingAdvanceIntro: (amount: string, number: string) => (
+    bookingAdvanceIntro: (number: string) => (
       <>
-        Send <strong>৳{amount}</strong> to our bKash number <strong>{number}</strong> (Send Money)
-        to hold your slot, then enter the number you sent it from below. This is separate from
-        your final cake price, which we&apos;ll confirm once we&apos;ve reviewed your design.
+        Send the advance payment to our bKash number <strong>{number}</strong> (Send Money) to
+        hold your slot, then enter the number you sent it from below. This is separate from your
+        final cake price, which we&apos;ll confirm once we&apos;ve reviewed your design.
       </>
     ),
     bkashNumberLabel: "Your bKash number",
     bkashNumberPlaceholder: "01XXXXXXXXX",
-    confirmNote: (amount: string, phone: string) => (
+    confirmNote: (phone: string) => (
       <>
-        Your ৳{amount} advance holds your slot. We&apos;ll confirm your final price and remaining
+        Your advance payment holds your slot. We&apos;ll confirm your final price and remaining
         deposit once we&apos;ve reviewed your design, then follow up on {phone}.
       </>
     ),
@@ -91,27 +91,27 @@ const COPY = {
     messageLabel: "কেকের উপর লেখা",
     messagePlaceholder: "শুভ জন্মদিন, Daisy!",
     colorLabel: "কেকের রঙ",
-    pendingPriceNote: (amount: string) =>
-      `জমা দেওয়ার পর আমরা আপনার চূড়ান্ত দাম নিশ্চিত করব। আপনার স্লট বুক রাখতে নিচে ৳${amount} বুকিং অগ্রিম প্রয়োজন।`,
+    pendingPriceNote:
+      "জমা দেওয়ার পর আমরা আপনার চূড়ান্ত দাম নিশ্চিত করব। আপনার স্লট বুক রাখতে নিচে অগ্রিম পেমেন্ট প্রয়োজন।",
     pickupOrDelivery: "পিকআপ অথবা ডেলিভারি",
     deliveryAddressLabel: "ডেলিভারি ঠিকানা",
     deliveryAddressPlaceholder: "বাসা, রোড, এলাকা",
     pickDate: "তারিখ বেছে নিন",
     timeSlot: "সময় বেছে নিন",
     bookingAdvance: "বুকিং অগ্রিম",
-    bookingAdvanceIntro: (amount: string, number: string) => (
+    bookingAdvanceIntro: (number: string) => (
       <>
-        আপনার স্লট বুক রাখতে আমাদের বিকাশ নম্বর <strong>{number}</strong>-এ (Send Money){" "}
-        <strong>৳{amount}</strong> পাঠান, এরপর নিচে যে নম্বর থেকে পাঠিয়েছেন তা লিখুন। এটি আপনার
-        চূড়ান্ত কেকের দাম থেকে আলাদা, যা আমরা আপনার ডিজাইন দেখার পর নিশ্চিত করব।
+        আপনার স্লট বুক রাখতে আমাদের বিকাশ নম্বর <strong>{number}</strong>-এ (Send Money) অগ্রিম
+        পেমেন্ট পাঠান, এরপর নিচে যে নম্বর থেকে পাঠিয়েছেন তা লিখুন। এটি আপনার চূড়ান্ত কেকের দাম থেকে
+        আলাদা, যা আমরা আপনার ডিজাইন দেখার পর নিশ্চিত করব।
       </>
     ),
     bkashNumberLabel: "আপনার বিকাশ নম্বর",
     bkashNumberPlaceholder: "01XXXXXXXXX",
-    confirmNote: (amount: string, phone: string) => (
+    confirmNote: (phone: string) => (
       <>
-        আপনার ৳{amount} অগ্রিম আপনার স্লট বুক রাখবে। আমরা আপনার ডিজাইন দেখার পর চূড়ান্ত দাম ও বাকি
-        জমার পরিমাণ নিশ্চিত করব, এরপর {phone} নম্বরে যোগাযোগ করব।
+        আপনার অগ্রিম পেমেন্ট আপনার স্লট বুক রাখবে। আমরা আপনার ডিজাইন দেখার পর চূড়ান্ত দাম ও বাকি জমার
+        পরিমাণ নিশ্চিত করব, এরপর {phone} নম্বরে যোগাযোগ করব।
       </>
     ),
     yourNumberFallback: "আপনার নম্বরে",
@@ -136,15 +136,10 @@ export function OrderFormClient({
   zones,
   shopAddress,
   shopHours,
-  advanceAmount,
 }: {
   zones: DeliveryZone[];
   shopAddress: string;
   shopHours: string;
-  /** The flat booking advance (Settings > Custom order advance), charged
-   * via bKash before the real price is known — see createOrder()'s
-   * isCustomQuote branch in lib/orders/store.ts. */
-  advanceAmount: number;
 }) {
   const router = useRouter();
 
@@ -404,7 +399,7 @@ export function OrderFormClient({
             </div>
 
             <p className="border-t border-brand-chocolate/10 pt-4 font-body text-xs text-brand-chocolate/50">
-              {t.pendingPriceNote(advanceAmount.toLocaleString("en-BD"))}
+              {t.pendingPriceNote}
             </p>
           </div>
         )}
@@ -484,7 +479,7 @@ export function OrderFormClient({
           {t.bookingAdvance}
         </h2>
         <p className="mb-4 font-body text-sm leading-relaxed text-brand-chocolate/80">
-          {t.bookingAdvanceIntro(advanceAmount.toLocaleString("en-BD"), BKASH_NUMBER)}
+          {t.bookingAdvanceIntro(BKASH_NUMBER)}
         </p>
         <label className="block">
           <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
@@ -502,7 +497,7 @@ export function OrderFormClient({
 
       <section className="rounded-3xl border-2 border-brand-orange/30 bg-brand-orange/5 p-5 sm:p-6">
         <p className="mb-4 font-body text-sm text-brand-chocolate/70">
-          {t.confirmNote(advanceAmount.toLocaleString("en-BD"), contact.phone || t.yourNumberFallback)}
+          {t.confirmNote(contact.phone || t.yourNumberFallback)}
         </p>
         {error && <p className="mb-3 font-body text-sm text-red-600">{error}</p>}
         <Button

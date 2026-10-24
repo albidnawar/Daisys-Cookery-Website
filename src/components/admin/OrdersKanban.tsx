@@ -3,8 +3,18 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { ALL_ORDER_STATUSES, KANBAN_COLUMNS, type KanbanOrder } from "@/lib/admin/kanbanColumns";
-import { formatSlotLabelForDisplay, todayKey } from "@/lib/dates";
+import { formatSlotLabelForDisplay, formatTimeAmPm, todayKey } from "@/lib/dates";
 import type { OrderStatus } from "@/lib/types/domain";
+
+/** riderPickupAt is a timestamptz instant — format just its local time of
+ * day through the site's one am/pm house style (formatTimeAmPm), the same
+ * way a slot's start/end time is shown. */
+function formatRiderPickupTime(riderPickupAt: string): string {
+  const date = new Date(riderPickupAt);
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return formatTimeAmPm(`${hh}:${mm}`);
+}
 
 // A column can cover more than one status (e.g. "Ready" spans ready/out_for_delivery).
 // Dropping a card into such a column resolves the exact status from the order's fulfilment type.
@@ -182,6 +192,7 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                       <p className="font-body text-xs text-brand-chocolate/60">
                         🛵 {order.riderName}
                         {order.riderPhone ? ` · ${order.riderPhone}` : ""}
+                        {order.riderPickupAt ? ` · Pickup ${formatRiderPickupTime(order.riderPickupAt)}` : ""}
                       </p>
                     )}
                     <p className="font-body text-xs text-brand-chocolate/70">

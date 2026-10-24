@@ -22,7 +22,6 @@ export default async function OrderFormPage() {
         zones={zones}
         shopAddress={settings.shopAddress}
         shopHours={settings.shopHours}
-        advanceAmount={settings.customOrderAdvanceAmount}
       />
     </div>
   );
