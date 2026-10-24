@@ -52,26 +52,18 @@ export const FIXTURE_OPTION_GROUPS: OptionGroup[] = [
   ], 1, 1),
   group(
     "sponge",
-    "Sponge flavor",
+    "Flavor",
     "radio",
     FIXTURE_FLAVORS_SPONGE_VALUES(),
     1,
     1,
   ),
-  group("filling", "Filling", "radio", [
-    ["whipped_cream", "Whipped cream", 0],
-    ["cherry_cream", "Cherry & cream", 0],
-    ["chocolate_ganache", "Chocolate ganache", 0],
-    ["cream_cheese", "Cream cheese", 0],
-    ["fresh_fruit_curd", "Fresh fruit & curd", 100],
-  ], 1, 1),
-  group("frosting_finish", "Frosting & finish", "radio", [
-    ["swiss_buttercream", "Swiss buttercream, smooth", 0],
-    ["whipped_shell", "Whipped cream, piped shell", 0],
-    ["shaved_chocolate", "Shaved chocolate", 0],
-    ["mirror_glaze", "Mirror glaze", 200],
-    ["naked_dusted", "Naked, dusted", 0],
-  ], 1, 1),
+  group("cake_color", "Cake color", "radio", [
+    ["white", "White", 0],
+    ["pink", "Pink", 0],
+    ["red", "Red", 0],
+    ["gold", "Gold", 50],
+  ], 0, 1),
   group("extras", "Candles & toppers", "checkbox_multi", [
     ["candles", "Candles x6", 50],
     ["sparkler", "Sparkler", 120],

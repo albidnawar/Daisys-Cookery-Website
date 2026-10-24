@@ -11,8 +11,6 @@ function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
 
   const codes: [string, string | string[] | undefined][] = [
     ["tiers", spec.tiers],
-    ["filling", spec.filling],
-    ["frosting_finish", spec.frostingFinish],
     ["extras", spec.extras],
     ["allergen_swap", spec.allergenSwap],
   ];
@@ -28,6 +26,21 @@ function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
       if (value) values.push(value);
     }
   }
+
+  // Cake color is free text (CakeColorField also allows typing anything
+  // custom), not a valueCode a customer picks from, so it can't be looked
+  // up the same way as the groups above. A chip click fills in that chip's
+  // exact label, so matching the typed text against a "cake_color" option's
+  // label is what makes its price apply — a custom, non-matching color
+  // stays free, same as before this group existed.
+  if (spec.cakeColor) {
+    const cakeColorGroup = cake.optionGroups.find((g) => g.code === "cake_color");
+    const match = cakeColorGroup?.values.find(
+      (v) => v.label.trim().toLowerCase() === spec.cakeColor!.trim().toLowerCase(),
+    );
+    if (match) values.push(match);
+  }
+
   return values;
 }
 

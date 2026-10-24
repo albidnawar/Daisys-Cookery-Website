@@ -16,7 +16,7 @@ import type { CakeDetail, DeliveryZone, DraftOrderSpec, SlotAvailability } from 
 
 // The same pricing-placeholder cake the from-scratch customiser
 // (/customise/new) uses, see DEFAULT_FROM_SCRATCH_SLUG in
-// customise/[slug]/page.tsx. Its option groups (sponge/filling/etc.) give
+// customise/[slug]/page.tsx. Its option groups (flavor/extras/etc.) give
 // the custom-design picker something to render; the draft actually created
 // for a custom design is a separate, cake-less one (see
 // createPendingCustomDraft()) with no computed price, since a fully custom
@@ -374,17 +374,6 @@ export function OrderFormClient({
             {groupsByCode.sponge && (
               <RadioOptionGroup group={groupsByCode.sponge} value={spec.sponge} onChange={(sponge) => set({ sponge })} columns={4} />
             )}
-            {groupsByCode.filling && (
-              <RadioOptionGroup group={groupsByCode.filling} value={spec.filling} onChange={(filling) => set({ filling })} columns={2} />
-            )}
-            {groupsByCode.frosting_finish && (
-              <RadioOptionGroup
-                group={groupsByCode.frosting_finish}
-                value={spec.frostingFinish}
-                onChange={(frostingFinish) => set({ frostingFinish })}
-                columns={2}
-              />
-            )}
             {groupsByCode.extras && (
               <CheckboxOptionGroup group={groupsByCode.extras} value={spec.extras ?? []} onChange={(extras) => set({ extras })} />
             )}
@@ -405,7 +394,12 @@ export function OrderFormClient({
                 <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
                   {t.colorLabel}
                 </span>
-                <CakeColorField value={spec.cakeColor ?? ""} onChange={(cakeColor) => set({ cakeColor })} locale={locale} />
+                <CakeColorField
+                  value={spec.cakeColor ?? ""}
+                  onChange={(cakeColor) => set({ cakeColor })}
+                  locale={locale}
+                  colorOptions={groupsByCode.cake_color?.values ?? []}
+                />
               </label>
             </div>
 
