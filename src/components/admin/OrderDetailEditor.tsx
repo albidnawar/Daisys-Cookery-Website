@@ -12,6 +12,7 @@ import { summarizeSpec } from "@/lib/catalog/specLabels";
 import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { OrderStatusHistoryEntry } from "@/lib/admin/orderDetail";
+import type { Rider } from "@/lib/admin/ridersAdmin";
 import type { Order, OptionGroup, OrderStatus, PaymentStatus } from "@/lib/types/domain";
 
 const PAYMENT_METHOD_LABELS: Record<Order["paymentMethod"], string> = {
@@ -26,11 +27,13 @@ export function OrderDetailEditor({
   groupsByCode,
   history,
   cakeImageUrl,
+  riders,
 }: {
   order: Order;
   groupsByCode: Record<string, OptionGroup>;
   history: OrderStatusHistoryEntry[];
   cakeImageUrl: string | null;
+  riders: Rider[];
 }) {
   const router = useRouter();
 
@@ -289,6 +292,31 @@ export function OrderDetailEditor({
             </Field>
             {order.fulfilmentType === "delivery" && (
               <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-chocolate/10 p-3">
+                {riders.length > 0 && (
+                  <Field label="Choose a saved rider">
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        const rider = riders.find((r) => r.id === e.target.value);
+                        if (rider) {
+                          setRiderName(rider.name);
+                          setRiderPhone(rider.phone);
+                        }
+                        e.target.value = "";
+                      }}
+                      className="input-field"
+                    >
+                      <option value="" disabled>
+                        Fill name/phone from a saved rider…
+                      </option>
+                      {riders.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name} · {r.phone}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Delivery person name">
                     <input

@@ -48,4 +48,8 @@ export type KanbanOrder = {
   contactPhone: string;
   riderName: string | null;
   riderPhone: string | null;
+  /** When the rider needs to swing by the shop to collect the cake — see
+   * needs_rider_pickup/rider_pickup_at on orders, distinct from the slot
+   * time the customer booked. Null when no pickup time has been set. */
+  riderPickupAt: string | null;
 };

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { hasModule, MODULES, MODULE_ROUTES, type ModuleKey } from "@/lib/admin/modules";
@@ -36,8 +37,11 @@ function rowToAdmin(data: AdminRow): AdminUser | null {
 
 /** Server Components / route handlers: returns the logged-in admin, or
  * null if there's no session or the session isn't an admin_users row. A
- * Supabase Auth session alone is not enough — see the migration comment. */
-export async function getCurrentAdmin(): Promise<AdminUser | null> {
+ * Supabase Auth session alone is not enough — see the migration comment.
+ * Wrapped in React's cache() so the dashboard layout and a page under it
+ * (e.g. requireModulePage) share one lookup per request instead of each
+ * re-running auth.getUser() plus the admin_users query. */
+export const getCurrentAdmin = cache(async (): Promise<AdminUser | null> => {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -52,7 +56,7 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
   if (!data) return null;
 
   return rowToAdmin(data);
-}
+});
 
 /** Route handlers only: throws a plain Error (caught by the route's own
  * try/catch, or surfaced as a 500 — routes below use it inside a guard

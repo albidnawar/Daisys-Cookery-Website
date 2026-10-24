@@ -4,7 +4,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/isConfigured";
 import { calculatePrice } from "@/lib/pricing/calculatePrice";
 import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
-import { getCakeBySlug } from "@/lib/catalog/queries";
+import { getCakeBySlug, getCachedCakeBySlug } from "@/lib/catalog/queries";
 import { getFixtureCakeDetail } from "@/lib/catalog/fixtures";
 import { readJson, withFileLock, writeJson } from "@/lib/devStore/fileStore";
 import type { DraftOrder, DraftOrderSpec, PriceBreakdown } from "@/lib/types/domain";
@@ -29,6 +29,19 @@ async function writeOne(draft: DraftOrder): Promise<void> {
 export async function resolveCake(cakeSlug: string) {
   if (isSupabaseConfigured()) {
     return getCakeBySlug(await createServiceRoleClient(), cakeSlug);
+  }
+  return getFixtureCakeDetail(cakeSlug);
+}
+
+/** Same as resolveCake, but for read-only displays (admin order views,
+ * confirmation pages) that don't need up-to-the-second pricing/option
+ * data — goes through getCachedCakeBySlug's 2-minute cache instead of
+ * re-running the full cake+option-groups join on every page view. Pricing
+ * flows (createDraftOrder, checkout, manual orders) must keep using
+ * resolveCake so a just-edited price/option never gets served stale. */
+export async function resolveCakeForDisplay(cakeSlug: string) {
+  if (isSupabaseConfigured()) {
+    return getCachedCakeBySlug(cakeSlug);
   }
   return getFixtureCakeDetail(cakeSlug);
 }

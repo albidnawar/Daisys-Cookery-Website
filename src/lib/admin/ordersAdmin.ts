@@ -19,7 +19,7 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
   const query = supabase
     .from("orders")
     .select(
-      "id, order_number, cake_snapshot, total, deposit_amount, balance_due, payment_status, status, order_source, fulfilment_type, contact_name, contact_phone, rider_name, rider_phone, delivery_slots ( date, start_time, end_time )",
+      "id, order_number, cake_snapshot, total, deposit_amount, balance_due, payment_status, status, order_source, fulfilment_type, contact_name, contact_phone, rider_name, rider_phone, rider_pickup_at, delivery_slots ( date, start_time, end_time )",
     )
     .neq("status", "cancelled")
     .order("created_at", { ascending: true });
@@ -73,6 +73,7 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
       contactPhone: row.contact_phone,
       riderName: row.rider_name ?? null,
       riderPhone: row.rider_phone ?? null,
+      riderPickupAt: row.rider_pickup_at ?? null,
     };
   });
 

@@ -36,6 +36,8 @@ const NAV: ((NavItem & { module?: ModuleKey }) | NavGroup)[] = [
   { label: "New Order", href: "/admin/orders/new", icon: NewOrderIcon, module: "new_order" },
   { label: "Overview", href: "/admin", icon: OverviewIcon, module: "overview" },
   { label: "Live Orders", href: "/admin/orders", icon: BoardIcon, module: "live_orders" },
+  { label: "Courier Messages", href: "/admin/courier-messages", icon: TruckIcon, module: "courier_messages" },
+  { label: "Delivery Man Details", href: "/admin/delivery-riders", icon: UsersIcon, module: "delivery_riders" },
   { label: "Kitchen Batch", href: "/admin/kitchen", icon: ChefHatIcon, module: "kitchen_batch" },
   { label: "Custom Requests", href: "/admin/custom-requests", icon: ChatIcon, module: "custom_requests" },
   { label: "Payments", href: "/admin/payments", icon: CardIcon, module: "payments" },
