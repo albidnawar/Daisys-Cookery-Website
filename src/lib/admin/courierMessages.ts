@@ -32,8 +32,10 @@ export type CourierMessageOrder = {
   /** Local "HH:MM" — null when the admin hasn't set a rider pickup time
    * yet (see rider_pickup_at on orders). */
   riderPickupTime: string | null;
-  /** Raw "HH:MM:SS" from the booked delivery slot. */
-  deliverySlotStartTime: string | null;
+  /** Raw "HH:MM:SS" end of the booked delivery slot — the message shows
+   * this (not the slot's start time) as ডেলিভারি টাইম, since a courier
+   * reads a 2-hour window as "deliver by" the later end. */
+  deliverySlotEndTime: string | null;
 };
 
 /** Every non-cancelled delivery order scheduled for a date, in dispatch
@@ -45,7 +47,7 @@ export async function listCourierMessageOrders(date: string): Promise<CourierMes
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, cake_snapshot, contact_phone, delivery_address, payment_status, total, deposit_amount, balance_due, rider_pickup_at, delivery_slots ( date, start_time )",
+      "id, order_number, cake_snapshot, contact_phone, delivery_address, payment_status, total, deposit_amount, balance_due, rider_pickup_at, delivery_slots ( date, start_time, end_time )",
     )
     .eq("fulfilment_type", "delivery")
     .neq("status", "cancelled");
@@ -85,7 +87,7 @@ export async function listCourierMessageOrders(date: string): Promise<CourierMes
       customerAddress: (row.delivery_address as { text?: string } | null)?.text ?? null,
       cashAmount: pendingCashDue(ledgerRow),
       riderPickupTime,
-      deliverySlotStartTime: row.delivery_slots?.start_time ?? null,
+      deliverySlotEndTime: row.delivery_slots?.end_time ?? null,
     };
   });
 }
@@ -104,7 +106,7 @@ export function buildCourierMessage(
   const orderNumBn = toBengaliDigits(String(sequenceNumber).padStart(2, "0"));
   const dateBn = formatBengaliDate(dateKey);
   const pickupTimeBn = order.riderPickupTime ? formatBengaliTimeOfDay(order.riderPickupTime) : "";
-  const deliveryTimeBn = order.deliverySlotStartTime ? formatBengaliTimeOfDay(order.deliverySlotStartTime) : "";
+  const deliveryTimeBn = order.deliverySlotEndTime ? formatBengaliTimeOfDay(order.deliverySlotEndTime) : "";
   const cashBn = toBengaliDigits(order.cashAmount);
 
   return `🚴 ${template.courierName}
