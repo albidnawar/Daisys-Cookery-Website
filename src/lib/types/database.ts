@@ -58,8 +58,7 @@ export type Database = {
             | "shape"
             | "tiers"
             | "sponge"
-            | "filling"
-            | "frosting_finish"
+            | "cake_color"
             | "extras"
             | "allergen_swap"
             | "photo_print";

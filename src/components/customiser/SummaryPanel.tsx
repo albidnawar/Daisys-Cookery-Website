@@ -87,12 +87,7 @@ export function SummaryPanel({
 
       <table className="w-full font-body text-sm">
         <tbody>
-          <Row label="Sponge" value={labelFor(groupsByCode, "sponge", spec.sponge)} />
-          <Row label="Filling" value={labelFor(groupsByCode, "filling", spec.filling)} />
-          <Row
-            label="Finish"
-            value={labelFor(groupsByCode, "frosting_finish", spec.frostingFinish)}
-          />
+          <Row label="Flavor" value={labelFor(groupsByCode, "sponge", spec.sponge)} />
           <Row label="Message" value={spec.message || "-"} />
           <Row label="Extras" value={extrasLabels || "-"} />
         </tbody>

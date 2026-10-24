@@ -45,20 +45,30 @@ body {
   }
 }
 
-/* Shared text-input styling for admin forms (src/components/admin/**). */
-.input-field {
-  width: 100%;
-  border-radius: 1rem;
-  border-width: 2px;
-  border-color: color-mix(in srgb, var(--color-brand-chocolate) 10%, transparent);
-  background-color: white;
-  padding: 0.5rem 0.75rem;
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  color: var(--color-brand-chocolate);
-  outline: none;
-}
+/* Shared text-input styling for admin forms (src/components/admin/**).
+   Scoped to Tailwind's "components" layer — left unlayered, this plain
+   class would sit outside Tailwind's cascade layers entirely, and
+   unlayered CSS always wins over layered CSS (Tailwind's utilities
+   included) regardless of class order. That silently broke every
+   "input-field w-*" combination: the width utility lost to this class's
+   width: 100% every time, which only became visually obvious once a
+   width-constrained input had to share a flex row with a flex-1 sibling
+   (see OptionValuesManager.tsx) and got squeezed to near nothing. */
+@layer components {
+  .input-field {
+    width: 100%;
+    border-radius: 1rem;
+    border-width: 2px;
+    border-color: color-mix(in srgb, var(--color-brand-chocolate) 10%, transparent);
+    background-color: white;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--color-brand-chocolate);
+    outline: none;
+  }
 
-.input-field:focus {
-  border-color: var(--color-brand-orange);
+  .input-field:focus {
+    border-color: var(--color-brand-orange);
+  }
 }

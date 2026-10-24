@@ -6,7 +6,6 @@ import { SummaryPanel } from "@/components/customiser/SummaryPanel";
 import { QuickOrderPanel } from "@/components/customiser/QuickOrderPanel";
 import { StepSizeShapeTiers } from "@/components/customiser/steps/StepSizeShapeTiers";
 import { StepSponge } from "@/components/customiser/steps/StepSponge";
-import { StepFillingFinish } from "@/components/customiser/steps/StepFillingFinish";
 import { StepMessageExtras } from "@/components/customiser/steps/StepMessageExtras";
 import { Button } from "@/components/ui/Button";
 import { calculatePrice } from "@/lib/pricing/calculatePrice";
@@ -14,12 +13,7 @@ import type { DepositConfig } from "@/lib/pricing/deposit";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { CakeDetail, DraftOrderSpec } from "@/lib/types/domain";
 
-const STEP_TITLES = [
-  "Size, shape & tiers",
-  "Sponge flavor",
-  "Filling & finish",
-  "Message & extras",
-];
+const STEP_TITLES = ["Size, shape & tiers", "Flavor", "Message & extras"];
 
 export function WizardShell({
   cake,
@@ -133,9 +127,6 @@ export function WizardShell({
           <StepSponge groupsByCode={groupsByCode} spec={spec} onChange={patch} />
         )}
         {step === 3 && (
-          <StepFillingFinish groupsByCode={groupsByCode} spec={spec} onChange={patch} />
-        )}
-        {step === 4 && (
           <StepMessageExtras
             groupsByCode={groupsByCode}
             spec={spec}

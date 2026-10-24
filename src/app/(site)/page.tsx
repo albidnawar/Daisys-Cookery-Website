@@ -58,7 +58,7 @@ export default async function Home() {
           </h1>
           <p className="max-w-md font-body text-lg leading-relaxed text-brand-chocolate/80">
             Eleven flavors, sponge baked the morning you collect it. Tell us
-            the size, the filling and what to write on top, and we will do
+            the size, the flavor and what to write on top, and we will do
             the rest by hand.
           </p>
           <div className="flex flex-wrap gap-3">

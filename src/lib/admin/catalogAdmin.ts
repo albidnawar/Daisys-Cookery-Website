@@ -181,6 +181,23 @@ export async function createCake(input: CakeInput): Promise<string> {
     .single();
   if (error) throw error;
   await syncTags(data.id, input.dietaryTags, input.events);
+
+  // The catalog doesn't yet support picking which option groups apply to
+  // which cake despite cake_option_groups' per-cake shape (see
+  // supabase/seed.sql) — every customisable cake gets every group, so a
+  // newly created one needs the same backfill the seed did once, or its
+  // flavor/color/extras pickers (and the admin module that manages their
+  // prices) would silently have nothing to show.
+  if (input.isCustomisable) {
+    const { data: groups, error: groupsError } = await supabase.from("option_groups").select("id");
+    if (groupsError) throw groupsError;
+    if (groups.length > 0) {
+      await supabase
+        .from("cake_option_groups")
+        .insert(groups.map((g) => ({ cake_id: data.id, option_group_id: g.id })));
+    }
+  }
+
   return data.id;
 }
 

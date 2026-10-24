@@ -2,6 +2,8 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { formatSlotLabel } from "@/lib/slots/store";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
 import { getCachedCakeBySlug } from "@/lib/catalog/queries";
+import { getReferenceImages } from "@/lib/customiser/referenceImages";
+import { deleteReferenceImageUrls } from "@/lib/storage/referenceImageCleanup";
 import type { KanbanOrder } from "@/lib/admin/kanbanColumns";
 import type { CakeSnapshot, OrderStatus } from "@/lib/types/domain";
 
@@ -88,9 +90,21 @@ export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]>
   return kanbanOrders;
 }
 
+// A reference photo is only ever useful while the kitchen still has the
+// cake to make — once an order lands in one of these, it's either baked
+// and gone or never happening, so its reference photo(s) get deleted from
+// Storage (see deleteReferenceImageUrls) rather than sitting there forever.
+const TERMINAL_STATUSES: OrderStatus[] = ["collected", "delivered", "cancelled"];
+
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {
   const supabase = createServiceRoleClient();
   const update: { status: OrderStatus; payment_status?: "paid_in_full" } = { status };
+
+  const { data: existing } = await supabase
+    .from("orders")
+    .select("status, payment_status, slot_id, cake_snapshot")
+    .eq("id", id)
+    .single();
 
   // Every order — cash-on-collection or a bKash/Nagad deposit — has its
   // remaining balance settled in cash at the door under the 30%-deposit
@@ -99,7 +113,6 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   // separately remember to do it in the Payments ledger; they can still
   // override it there afterward if something unusual happened.
   if (status === "collected" || status === "delivered") {
-    const { data: existing } = await supabase.from("orders").select("payment_status").eq("id", id).single();
     if (existing && existing.payment_status !== "paid_in_full" && existing.payment_status !== "refunded") {
       update.payment_status = "paid_in_full";
     }
@@ -108,17 +121,35 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   // Cancelling gives the slot's capacity back — otherwise a cancelled
   // order keeps looking like a real booking forever, inflating "booked
   // today" and eventually blocking a date's daily cap for no reason.
-  if (status === "cancelled") {
-    const { data: existing } = await supabase.from("orders").select("slot_id, status").eq("id", id).single();
-    if (existing && existing.status !== "cancelled") {
-      await supabase.rpc("release_slot_capacity", { p_slot_id: existing.slot_id });
-    }
+  if (status === "cancelled" && existing && existing.status !== "cancelled") {
+    await supabase.rpc("release_slot_capacity", { p_slot_id: existing.slot_id });
   }
 
   const { error } = await supabase.from("orders").update(update).eq("id", id);
   if (error) throw error;
   await supabase.from("order_status_history").insert({ order_id: id, status, changed_by: "admin" });
   await notifyOrderStatusChange(id, status);
+
+  // Only fires the moment an order first reaches a terminal status, not on
+  // every subsequent no-op write (an admin re-saving "cancelled," say) —
+  // otherwise this would try (harmlessly, but needlessly) to delete
+  // already-deleted files on every later edit to that same order.
+  if (existing && TERMINAL_STATUSES.includes(status) && !TERMINAL_STATUSES.includes(existing.status as OrderStatus)) {
+    const snapshot = existing.cake_snapshot as CakeSnapshot;
+    const urls = getReferenceImages(snapshot.spec);
+    if (urls.length > 0) {
+      await deleteReferenceImageUrls(urls);
+      await supabase
+        .from("orders")
+        .update({
+          cake_snapshot: {
+            ...snapshot,
+            spec: { ...snapshot.spec, referenceImageUrl: null, referenceImageUrls: [] },
+          },
+        })
+        .eq("id", id);
+    }
+  }
 }
 
 export type KitchenBatchLine = {

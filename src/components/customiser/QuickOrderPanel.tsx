@@ -8,10 +8,10 @@ import { toObjectPosition } from "@/lib/image/focal";
 import type { CakeDetail, DraftOrderSpec, PriceBreakdown } from "@/lib/types/domain";
 
 /** The "Add to basket" path — buy the cake exactly as listed, at a chosen
- * size, with an optional message. No shape/sponge/filling/frosting/extras
- * are ever set here, so calculatePrice() prices it as basePrice × size with
- * zero extras (see lib/pricing/calculatePrice.ts) — straight to checkout,
- * no options wizard. */
+ * size, with an optional message. No shape/flavor/color/extras are ever
+ * set here, so calculatePrice() prices it as basePrice × size with zero
+ * extras (see lib/pricing/calculatePrice.ts) — straight to checkout, no
+ * options wizard. */
 export function QuickOrderPanel({
   cake,
   draftId,

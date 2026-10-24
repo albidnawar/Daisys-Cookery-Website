@@ -45,6 +45,7 @@ const NAV: ((NavItem & { module?: ModuleKey }) | NavGroup)[] = [
     module: "content_media",
     items: [
       { label: "Product Catalog", href: "/admin/catalog", icon: GalleryIcon },
+      { label: "Order Options", href: "/admin/catalog/options", icon: TagIcon },
       { label: "Flavors & Tags", href: "/admin/catalog/taxonomy", icon: TagIcon },
       { label: "Hero Banner", href: "/admin/hero-banner", icon: FlagIcon },
       { label: "Banners", href: "/admin/banners", icon: MegaphoneIcon },

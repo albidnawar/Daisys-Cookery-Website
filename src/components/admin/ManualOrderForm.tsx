@@ -9,7 +9,15 @@ import { formatTimeAmPm, todayKey } from "@/lib/dates";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { computeDepositAmount, depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 import type { AdminCakeSummary } from "@/lib/admin/catalogAdmin";
-import type { CakeDetail, DeliveryZone, DraftOrderSpec, PaymentMethod, PaymentStatus, SlotAvailability } from "@/lib/types/domain";
+import type {
+  CakeDetail,
+  DeliveryZone,
+  DraftOrderSpec,
+  OptionValue,
+  PaymentMethod,
+  PaymentStatus,
+  SlotAvailability,
+} from "@/lib/types/domain";
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "bkash", label: "bKash" },
@@ -27,10 +35,12 @@ export function ManualOrderForm({
   cakes,
   zones,
   deposit,
+  colorOptions,
 }: {
   cakes: AdminCakeSummary[];
   zones: DeliveryZone[];
   deposit: DepositConfig;
+  colorOptions: OptionValue[];
 }) {
   // Customer
   const [phone, setPhone] = useState("");
@@ -277,22 +287,6 @@ export function ManualOrderForm({
                     columns={4}
                   />
                 )}
-                {groupsByCode.filling && (
-                  <RadioOptionGroup
-                    group={groupsByCode.filling}
-                    value={spec.filling}
-                    onChange={(filling) => set({ filling })}
-                    columns={2}
-                  />
-                )}
-                {groupsByCode.frosting_finish && (
-                  <RadioOptionGroup
-                    group={groupsByCode.frosting_finish}
-                    value={spec.frostingFinish}
-                    onChange={(frostingFinish) => set({ frostingFinish })}
-                    columns={2}
-                  />
-                )}
                 {groupsByCode.extras && (
                   <CheckboxOptionGroup
                     group={groupsByCode.extras}
@@ -324,7 +318,11 @@ export function ManualOrderForm({
             />
           </Field>
           <Field label="Cake color">
-            <CakeColorField value={spec.cakeColor ?? ""} onChange={(cakeColor) => set({ cakeColor })} />
+            <CakeColorField
+              value={spec.cakeColor ?? ""}
+              onChange={(cakeColor) => set({ cakeColor })}
+              colorOptions={colorOptions}
+            />
           </Field>
           <Field label={cakeMode === "custom" || spec.sizeCode === "other" ? "Price (required)" : "Price override (optional)"}>
             <input
