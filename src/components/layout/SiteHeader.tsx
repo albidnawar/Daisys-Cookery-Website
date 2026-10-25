@@ -17,9 +17,10 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string | null })
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   // The order-form page (the direct link sent to customers for custom
-  // designs) has its own prominent submit flow — a second "Order a cake"
-  // CTA in the mobile menu there is redundant and competes with it on a
-  // small screen, so it's left out of the phone nav on this one page only.
+  // designs) has its own prominent submit flow — the top-bar "Order a
+  // cake" CTA there is redundant, so it's left out on this one page only.
+  // The hamburger menu's copy of the button still shows everywhere,
+  // order-form included.
   const isOrderForm = pathname?.startsWith("/order-form") ?? false;
   const accountLink = customerEmail
     ? { href: "/account", label: "My account" }
@@ -60,9 +61,11 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string | null })
           </Link>
         </nav>
 
-        <LinkButton href="/browse" className="ml-auto hidden md:inline-flex">
-          Order a cake
-        </LinkButton>
+        {!isOrderForm && (
+          <LinkButton href="/browse" className="ml-auto hidden md:inline-flex">
+            Order a cake
+          </LinkButton>
+        )}
 
         <button
           type="button"
@@ -100,11 +103,9 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string | null })
           >
             {accountLink.label}
           </Link>
-          {!isOrderForm && (
-            <LinkButton href="/browse" className="mt-2 w-full">
-              Order a cake
-            </LinkButton>
-          )}
+          <LinkButton href="/browse" className="mt-2 w-full">
+            Order a cake
+          </LinkButton>
         </nav>
       )}
     </header>
