@@ -77,11 +77,11 @@ export async function setOrderPrice(
   subtotal: number,
   depositAmount?: number,
   deliveryFee?: number,
-): Promise<void> {
+): Promise<{ paymentStatus: string }> {
   const supabase = createServiceRoleClient();
   const { data: existing, error: fetchError } = await supabase
     .from("orders")
-    .select("delivery_fee")
+    .select("delivery_fee, payment_status")
     .eq("id", orderId)
     .single();
   if (fetchError) throw fetchError;
@@ -92,16 +92,27 @@ export async function setOrderPrice(
     depositAmount ?? computeDepositAmount(total, toDepositConfig(await getStoreSettings()));
   const balanceDue = total - resolvedDeposit;
 
-  const { error } = await supabase
-    .from("orders")
-    .update({
-      subtotal,
-      extras_total: 0,
-      delivery_fee: resolvedDeliveryFee,
-      total,
-      deposit_amount: resolvedDeposit,
-      balance_due: balanceDue,
-    })
-    .eq("id", orderId);
+  const update: Record<string, unknown> = {
+    subtotal,
+    extras_total: 0,
+    delivery_fee: resolvedDeliveryFee,
+    total,
+    deposit_amount: resolvedDeposit,
+    balance_due: balanceDue,
+  };
+  // Entering a real deposit amount here *is* the admin confirming it
+  // actually landed in the shop's account — no need to separately re-verify
+  // it in the Payments module too (its "Needs verification" queue only
+  // shows paymentStatus === "pending", so this is enough to drop it from
+  // there). Never downgrades an order already further along (paid_in_full,
+  // refunded, failed) — same guard style as updateOrderStatus()'s
+  // auto-settle-on-collection logic in ordersAdmin.ts.
+  if (resolvedDeposit > 0 && existing.payment_status === "pending") {
+    update.payment_status = "deposit_paid";
+  }
+
+  const { error } = await supabase.from("orders").update(update).eq("id", orderId);
   if (error) throw error;
+
+  return { paymentStatus: (update.payment_status as string | undefined) ?? existing.payment_status };
 }

@@ -12,7 +12,7 @@ import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/O
 import { ReferenceImageDropzone } from "@/components/customiser/ReferenceImageDropzone";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import { todayKey } from "@/lib/dates";
-import type { CakeDetail, DeliveryZone, DraftOrderSpec, SlotAvailability } from "@/lib/types/domain";
+import type { CakeDetail, DeliveryZone, DraftOrderSpec } from "@/lib/types/domain";
 
 // The same pricing-placeholder cake the from-scratch customiser
 // (/customise/new) uses, see DEFAULT_FROM_SCRATCH_SLUG in
@@ -155,12 +155,11 @@ export function OrderFormClient({
 
   // Fulfilment
   const [fulfilmentType, setFulfilmentType] = useState<"pickup" | "delivery" | null>(null);
-  const [zoneId, setZoneId] = useState<string | null>(null);
   const [addressText, setAddressText] = useState("");
   const [date, setDate] = useState(todayKey());
-  const [slots, setSlots] = useState<SlotAvailability[]>([]);
-  const [isLoadingSlots, startLoadingSlots] = useTransition();
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [time, setTime] = useState("");
+  const [confirmedSlotId, setConfirmedSlotId] = useState<string | null>(null);
+  const [confirmingSlot, startConfirmingSlot] = useTransition();
   const [slotError, setSlotError] = useState<string | null>(null);
 
   // Contact & payment
@@ -173,8 +172,8 @@ export function OrderFormClient({
   const patchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pickupZone = zones.find((z) => z.distanceBand === "pickup") ?? null;
-  const deliveryZones = zones.filter((z) => z.distanceBand !== "pickup");
-  const effectiveZoneId = fulfilmentType === "pickup" ? pickupZone?.id ?? null : zoneId;
+  const deliveryZone = zones.find((z) => z.distanceBand !== "pickup") ?? null;
+  const effectiveZoneId = fulfilmentType === "pickup" ? pickupZone?.id ?? null : deliveryZone?.id ?? null;
 
   // Fetch the placeholder cake's option groups for the picker (display
   // only — see CUSTOM_DESIGN_SLUG above), and create a separate cake-less,
@@ -206,55 +205,49 @@ export function OrderFormClient({
     }, 300);
   }, [draftId, spec]);
 
-  useEffect(() => {
-    if (!fulfilmentType || !effectiveZoneId) return;
-    const params = new URLSearchParams({ date, fulfilmentType, zoneId: effectiveZoneId });
-    startLoadingSlots(async () => {
-      const res = await fetch(`/api/slots/availability?${params}`);
-      const data = await res.json();
-      setSlots(data.slots ?? []);
-    });
-  }, [fulfilmentType, effectiveZoneId, date]);
-
   const groupsByCode = Object.fromEntries((cakeDetail?.optionGroups ?? []).map((g) => [g.code, g]));
 
   const set = (patch: Partial<DraftOrderSpec>) => setSpec((prev) => ({ ...prev, ...patch }));
 
-  const selectSlot = async (slot: SlotAvailability) => {
+  const confirmTime = () => {
     if (!draftId || !fulfilmentType) return;
     setSlotError(null);
-    const res = await fetch("/api/slots/hold", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        draftId,
-        slotId: slot.slotId,
-        fulfilmentType,
-        zoneId: effectiveZoneId,
-        deliveryAddress: fulfilmentType === "delivery" ? { text: addressText } : null,
-      }),
+    startConfirmingSlot(async () => {
+      const res = await fetch("/api/slots/hold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draftId,
+          date,
+          startTime: time,
+          fulfilmentType,
+          zoneId: effectiveZoneId,
+          deliveryAddress: fulfilmentType === "delivery" ? { text: addressText } : null,
+        }),
+      });
+      if (res.status === 409) {
+        const data = await res.json().catch(() => ({}));
+        const messages: Record<string, string> = {
+          date_blocked: t.errDateBlocked,
+          daily_cap_reached: t.errDailyCap,
+        };
+        setSlotError(messages[data.error] ?? t.errSlotFull);
+        return;
+      }
+      if (!res.ok) {
+        setSlotError(t.errHoldFailed);
+        return;
+      }
+      const data = await res.json();
+      setConfirmedSlotId(data.hold.slotId);
     });
-    if (res.status === 409) {
-      const data = await res.json().catch(() => ({}));
-      const messages: Record<string, string> = {
-        date_blocked: t.errDateBlocked,
-        daily_cap_reached: t.errDailyCap,
-      };
-      setSlotError(messages[data.error] ?? t.errSlotFull);
-      return;
-    }
-    if (!res.ok) {
-      setSlotError(t.errHoldFailed);
-      return;
-    }
-    setSelectedSlotId(slot.slotId);
   };
 
   const canSubmit =
     Boolean(draftId) &&
     Boolean(fulfilmentType) &&
     Boolean(effectiveZoneId) &&
-    Boolean(selectedSlotId) &&
+    Boolean(confirmedSlotId) &&
     Boolean(contact.name) &&
     Boolean(contact.phone) &&
     (fulfilmentType !== "delivery" || Boolean(addressText.trim())) &&
@@ -390,7 +383,7 @@ export function OrderFormClient({
                   {t.colorLabel}
                 </span>
                 <CakeColorField
-                  value={spec.cakeColor ?? ""}
+                  value={spec.cakeColor ?? []}
                   onChange={(cakeColor) => set({ cakeColor })}
                   locale={locale}
                   colorOptions={groupsByCode.cake_color?.values ?? []}
@@ -413,13 +406,7 @@ export function OrderFormClient({
           fulfilmentType={fulfilmentType}
           onSelect={(type) => {
             setFulfilmentType(type);
-            setSelectedSlotId(null);
-          }}
-          deliveryZones={deliveryZones}
-          zoneId={zoneId}
-          onZoneSelect={(z) => {
-            setZoneId(z);
-            setSelectedSlotId(null);
+            setConfirmedSlotId(null);
           }}
           shopAddress={shopAddress}
           shopHours={shopHours}
@@ -450,7 +437,7 @@ export function OrderFormClient({
                 selectedDate={date}
                 onSelect={(d) => {
                   setDate(d);
-                  setSelectedSlotId(null);
+                  setConfirmedSlotId(null);
                 }}
                 locale={locale}
               />
@@ -458,13 +445,18 @@ export function OrderFormClient({
             <div>
               <h3 className="mb-3 font-display text-lg font-semibold text-brand-chocolate">{t.timeSlot}</h3>
               <TimeSlotPicker
-                slots={slots}
-                selectedSlotId={selectedSlotId}
-                onSelect={selectSlot}
-                loading={isLoadingSlots}
+                fulfilmentType={fulfilmentType}
+                value={time}
+                onChange={(tm) => {
+                  setTime(tm);
+                  setConfirmedSlotId(null);
+                }}
+                onConfirm={confirmTime}
+                confirmed={Boolean(confirmedSlotId)}
+                confirming={confirmingSlot}
+                error={slotError}
                 locale={locale}
               />
-              {slotError && <p className="mt-2 font-body text-xs text-red-600">{slotError}</p>}
             </div>
           </div>
         )}

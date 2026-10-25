@@ -43,5 +43,9 @@ export function formatSlotLabelForDisplay(slotLabel: string | null, fallback = "
     day: "numeric",
     month: "long",
   });
-  return `${formattedDate}, ${formatTimeAmPm(start)}–${formatTimeAmPm(end)}`;
+  // An exact-time booking stores start === end (see book_exact_time() in
+  // 0032_local_delivery_and_exact_time_booking.sql) — show it as a single
+  // time rather than a zero-width "4:30 pm–4:30 pm" range.
+  const time = start === end ? formatTimeAmPm(start) : `${formatTimeAmPm(start)}–${formatTimeAmPm(end)}`;
+  return `${formattedDate}, ${time}`;
 }

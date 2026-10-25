@@ -1,80 +1,88 @@
+"use client";
+
+import { useEffect } from "react";
 import { formatTimeAmPm } from "@/lib/dates";
-import type { SlotAvailability } from "@/lib/types/domain";
+
+// Soft guardrails on the exact-time input (shop open/close bounds) — not
+// enforced server-side, just min/max on the <input type="time"> so a
+// customer can't type "3am" even though there's no longer a discrete list
+// of windows to choose from.
+const HOURS: Record<"pickup" | "delivery", [string, string]> = {
+  pickup: ["09:00", "21:00"],
+  delivery: ["10:00", "20:00"],
+};
 
 const COPY = {
   en: {
-    checking: "Checking availability…",
-    noSlots: "No slots for that date yet. Try another day.",
-    chosen: "chosen",
-    full: "full",
-    left: (remaining: number) => `${remaining} left`,
+    hint: (min: string, max: string) => `Between ${min} and ${max}`,
+    confirming: "Checking…",
+    confirmed: "Time set ✓",
   },
   bn: {
-    checking: "উপলভ্যতা যাচাই করা হচ্ছে…",
-    noSlots: "এই তারিখে এখনো কোনো স্লট নেই। অন্য দিন চেষ্টা করুন।",
-    chosen: "নির্বাচিত",
-    full: "পূর্ণ",
-    left: (remaining: number) => `${remaining}টি বাকি`,
+    hint: (min: string, max: string) => `${min} থেকে ${max} এর মধ্যে`,
+    confirming: "যাচাই করা হচ্ছে…",
+    confirmed: "সময় নির্ধারিত ✓",
   },
 } as const;
 
+/** Auto-books the chosen time (debounced) as soon as the customer stops
+ * typing — no separate "confirm" click. */
 export function TimeSlotPicker({
-  slots,
-  selectedSlotId,
-  onSelect,
-  loading,
+  fulfilmentType,
+  value,
+  onChange,
+  onConfirm,
+  confirmed,
+  confirming,
+  error,
   locale = "en",
 }: {
-  slots: SlotAvailability[];
-  selectedSlotId: string | null;
-  onSelect: (slot: SlotAvailability) => void;
-  loading: boolean;
+  fulfilmentType: "pickup" | "delivery";
+  value: string;
+  onChange: (time: string) => void;
+  onConfirm: () => void;
+  confirmed: boolean;
+  confirming: boolean;
+  error: string | null;
   locale?: "en" | "bn";
 }) {
   const t = COPY[locale];
-  if (loading) {
-    return <p className="font-body text-sm text-brand-chocolate/60">{t.checking}</p>;
-  }
-  if (slots.length === 0) {
-    return (
-      <p className="font-body text-sm text-brand-chocolate/60">
-        {t.noSlots}
-      </p>
-    );
-  }
+  const [minTime, maxTime] = HOURS[fulfilmentType];
+
+  useEffect(() => {
+    if (!value) return;
+    const timer = setTimeout(onConfirm, 500);
+    return () => clearTimeout(timer);
+    // Only re-run when the typed time itself changes — onConfirm is a
+    // fresh closure every render, re-running on it too would refire the
+    // hold request without the time actually changing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   return (
     <div className="flex flex-col gap-2">
-      {slots.map((slot) => {
-        const isSelected = slot.slotId === selectedSlotId;
-        const isFull = slot.status === "full" && !isSelected;
-        return (
-          <button
-            key={slot.slotId}
-            type="button"
-            disabled={isFull}
-            onClick={() => onSelect(slot)}
-            className={`flex items-center justify-between rounded-full border-2 px-4 py-2.5 font-body text-sm font-bold ${
-              isSelected
-                ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                : isFull
-                  ? "cursor-not-allowed border-brand-chocolate/10 bg-white text-brand-chocolate/30"
-                  : "border-brand-chocolate/10 bg-white text-brand-chocolate hover:border-brand-chocolate/25"
-            }`}
-          >
-            <span>
-              {formatTimeAmPm(slot.startTime)} – {formatTimeAmPm(slot.endTime)}
-            </span>
-            <span className="text-xs font-normal">
-              {isSelected
-                ? t.chosen
-                : slot.status === "full"
-                  ? t.full
-                  : t.left(slot.remaining)}
-            </span>
-          </button>
-        );
-      })}
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="time"
+          value={value}
+          min={minTime}
+          max={maxTime}
+          onChange={(e) => onChange(e.target.value)}
+          className="input-field w-auto"
+        />
+        {confirming && (
+          <span className="font-body text-sm text-brand-chocolate/50">{t.confirming}</span>
+        )}
+        {!confirming && confirmed && (
+          <span className="rounded-full border-2 border-brand-orange bg-brand-orange/10 px-3 py-1 font-body text-sm font-bold text-brand-orange">
+            {t.confirmed}
+          </span>
+        )}
+      </div>
+      <p className="font-body text-xs text-brand-chocolate/50">
+        {t.hint(formatTimeAmPm(minTime), formatTimeAmPm(maxTime))}
+      </p>
+      {error && <p className="font-body text-xs text-red-600">{error}</p>}
     </div>
   );
 }

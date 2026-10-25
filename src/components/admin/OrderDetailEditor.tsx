@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { ImageLightbox } from "@/components/shared/ImageLightbox";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
-import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { formatCakeColor, summarizeSpec } from "@/lib/catalog/specLabels";
 import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import type { OrderStatusHistoryEntry } from "@/lib/admin/orderDetail";
@@ -99,6 +99,7 @@ export function OrderDetailEditor({
       setSavingPrice(false);
       return;
     }
+    if (data.paymentStatus) setPaymentStatus(data.paymentStatus as PaymentStatus);
     setPriceSaved(true);
     setSavingPrice(false);
     router.refresh();
@@ -213,9 +214,9 @@ export function OrderDetailEditor({
                 Board writing: &ldquo;{order.cakeSnapshot.spec.message}&rdquo;
               </p>
             )}
-            {order.cakeSnapshot.spec.cakeColor && (
+            {formatCakeColor(order.cakeSnapshot.spec.cakeColor) && (
               <p className="mt-2 font-body text-sm text-brand-chocolate/70">
-                Color: {order.cakeSnapshot.spec.cakeColor}
+                Color: {formatCakeColor(order.cakeSnapshot.spec.cakeColor)}
               </p>
             )}
             {order.cakeSnapshot.spec.instructions && (
@@ -413,6 +414,9 @@ export function OrderDetailEditor({
                     onChange={(e) => setDepositReceived(e.target.value)}
                     className="input-field"
                   />
+                  <span className="mt-1 block font-body text-xs text-brand-chocolate/50">
+                    Entering an amount here marks the deposit verified — no separate step needed in Payments.
+                  </span>
                 </Field>
                 <Button type="button" disabled={savingPrice} onClick={saveCakePrice} className="w-fit">
                   {savingPrice ? "Saving…" : "Save price, delivery & deposit"}

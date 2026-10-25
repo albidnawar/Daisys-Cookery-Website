@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { FulfilmentTypeCards } from "@/components/buying-options/FulfilmentTypeCards";
 import { MonthCalendar } from "@/components/buying-options/MonthCalendar";
 import { TimeSlotPicker } from "@/components/buying-options/TimeSlotPicker";
@@ -8,7 +8,7 @@ import { DepositSummary } from "@/components/buying-options/DepositSummary";
 import { withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import type { DepositConfig } from "@/lib/pricing/deposit";
 import { todayKey } from "@/lib/dates";
-import type { DeliveryZone, DraftOrder, SlotAvailability } from "@/lib/types/domain";
+import type { DeliveryZone, DraftOrder } from "@/lib/types/domain";
 
 export function BuyingOptionsClient({
   draft,
@@ -24,77 +24,57 @@ export function BuyingOptionsClient({
   shopHours: string;
 }) {
   const pickupZone = zones.find((z) => z.distanceBand === "pickup") ?? null;
-  const deliveryZones = zones.filter((z) => z.distanceBand !== "pickup");
+  const deliveryZone = zones.find((z) => z.distanceBand !== "pickup") ?? null;
 
   const [fulfilmentType, setFulfilmentType] = useState<"pickup" | "delivery" | null>(
     draft.fulfilmentType,
   );
-  const [zoneId, setZoneId] = useState<string | null>(draft.zoneId);
   const [date, setDate] = useState(todayKey());
-  const [slots, setSlots] = useState<SlotAvailability[]>([]);
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(draft.slotId);
-  const [isLoadingSlots, startLoadingSlots] = useTransition();
+  const [time, setTime] = useState("");
+  const [confirmedSlotId, setConfirmedSlotId] = useState<string | null>(draft.slotId);
+  const [confirming, startConfirming] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const effectiveZoneId =
-    fulfilmentType === "pickup" ? pickupZone?.id ?? null : zoneId;
+    fulfilmentType === "pickup" ? pickupZone?.id ?? null : deliveryZone?.id ?? null;
 
-  useEffect(() => {
-    // Nothing to fetch yet; the slot section (and thus TimeSlotPicker)
-    // only renders once both are set, so stale slots here are never shown.
-    if (!fulfilmentType || !effectiveZoneId) return;
-
-    const params = new URLSearchParams({
-      date,
-      fulfilmentType,
-      zoneId: effectiveZoneId,
-    });
-    startLoadingSlots(async () => {
-      const res = await fetch(`/api/slots/availability?${params}`);
-      const data = await res.json();
-      setSlots(data.slots ?? []);
-    });
-  }, [fulfilmentType, effectiveZoneId, date]);
-
-  const handleSelectSlot = async (slot: SlotAvailability) => {
+  const handleConfirmTime = () => {
     setError(null);
-    const res = await fetch("/api/slots/hold", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        draftId: draft.id,
-        slotId: slot.slotId,
-        fulfilmentType,
-        zoneId: effectiveZoneId,
-      }),
+    startConfirming(async () => {
+      const res = await fetch("/api/slots/hold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draftId: draft.id,
+          date,
+          startTime: time,
+          fulfilmentType,
+          zoneId: effectiveZoneId,
+        }),
+      });
+      if (res.status === 409) {
+        const data = await res.json().catch(() => ({}));
+        const messages: Record<string, string> = {
+          date_blocked: "That date isn't available for orders. Please pick another date.",
+          daily_cap_reached: "We've reached our production limit for that date. Please pick another date.",
+        };
+        setError(messages[data.error] ?? "Couldn't book that time. Try again.");
+        return;
+      }
+      if (!res.ok) {
+        setError("Couldn't hold that time. Try again.");
+        return;
+      }
+      const data = await res.json();
+      setConfirmedSlotId(data.hold.slotId);
     });
-    if (res.status === 409) {
-      const data = await res.json().catch(() => ({}));
-      const messages: Record<string, string> = {
-        date_blocked: "That date isn't available for orders. Please pick another date.",
-        daily_cap_reached: "We've reached our production limit for that date. Please pick another date.",
-      };
-      setError(messages[data.error] ?? "That slot just filled up. Pick another one.");
-      const params = new URLSearchParams({ date, fulfilmentType: fulfilmentType!, zoneId: effectiveZoneId! });
-      const refreshed = await fetch(`/api/slots/availability?${params}`).then((r) => r.json());
-      setSlots(refreshed.slots ?? []);
-      return;
-    }
-    if (!res.ok) {
-      setError("Couldn't hold that slot. Try again.");
-      return;
-    }
-    setSelectedSlotId(slot.slotId);
   };
 
-  const deliveryFee =
-    fulfilmentType === "delivery"
-      ? deliveryZones.find((z) => z.id === zoneId)?.deliveryFee ?? 0
-      : 0;
+  const deliveryFee = fulfilmentType === "delivery" ? deliveryZone?.deliveryFee ?? 0 : 0;
   const price = draft.computedPrice
     ? withDeliveryFee(draft.computedPrice, deliveryFee, deposit)
     : null;
-  const canContinue = Boolean(fulfilmentType && effectiveZoneId && selectedSlotId);
+  const canContinue = Boolean(fulfilmentType && effectiveZoneId && confirmedSlotId);
 
   return (
     <div className="flex flex-col gap-8">
@@ -102,13 +82,7 @@ export function BuyingOptionsClient({
         fulfilmentType={fulfilmentType}
         onSelect={(type) => {
           setFulfilmentType(type);
-          setSelectedSlotId(null);
-        }}
-        deliveryZones={deliveryZones}
-        zoneId={zoneId}
-        onZoneSelect={(z) => {
-          setZoneId(z);
-          setSelectedSlotId(null);
+          setConfirmedSlotId(null);
         }}
         shopAddress={shopAddress}
         shopHours={shopHours}
@@ -126,7 +100,7 @@ export function BuyingOptionsClient({
                 selectedDate={date}
                 onSelect={(d) => {
                   setDate(d);
-                  setSelectedSlotId(null);
+                  setConfirmedSlotId(null);
                 }}
               />
               <p className="mt-3 font-body text-xs leading-relaxed text-brand-chocolate/60">
@@ -137,15 +111,20 @@ export function BuyingOptionsClient({
             <div className="flex flex-col gap-6">
               <div>
                 <h4 className="mb-3 font-display text-lg font-semibold text-brand-chocolate">
-                  Time slot
+                  Time
                 </h4>
                 <TimeSlotPicker
-                  slots={slots}
-                  selectedSlotId={selectedSlotId}
-                  onSelect={handleSelectSlot}
-                  loading={isLoadingSlots}
+                  fulfilmentType={fulfilmentType}
+                  value={time}
+                  onChange={(t) => {
+                    setTime(t);
+                    setConfirmedSlotId(null);
+                  }}
+                  onConfirm={handleConfirmTime}
+                  confirmed={Boolean(confirmedSlotId)}
+                  confirming={confirming}
+                  error={error}
                 />
-                {error && <p className="mt-2 font-body text-xs text-red-600">{error}</p>}
               </div>
               <hr className="border-brand-chocolate/10" />
               <DepositSummary price={price} draftId={draft.id} canContinue={canContinue} deposit={deposit} />

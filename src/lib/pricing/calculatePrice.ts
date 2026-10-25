@@ -27,19 +27,8 @@ function selectedValues(cake: CakeDetail, spec: DraftOrderSpec): OptionValue[] {
     }
   }
 
-  // Cake color is free text (CakeColorField also allows typing anything
-  // custom), not a valueCode a customer picks from, so it can't be looked
-  // up the same way as the groups above. A chip click fills in that chip's
-  // exact label, so matching the typed text against a "cake_color" option's
-  // label is what makes its price apply — a custom, non-matching color
-  // stays free, same as before this group existed.
-  if (spec.cakeColor) {
-    const cakeColorGroup = cake.optionGroups.find((g) => g.code === "cake_color");
-    const match = cakeColorGroup?.values.find(
-      (v) => v.label.trim().toLowerCase() === spec.cakeColor!.trim().toLowerCase(),
-    );
-    if (match) values.push(match);
-  }
+  // Cake color never affects price (multi-select — see CakeColorField) —
+  // any price set on a "cake_color" option value is inert.
 
   return values;
 }

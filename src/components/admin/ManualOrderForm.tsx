@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { CakeColorField } from "@/components/cake-detail/CakeColorField";
 import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
-import { formatTimeAmPm, todayKey } from "@/lib/dates";
+import { todayKey } from "@/lib/dates";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { computeDepositAmount, depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
 import type { AdminCakeSummary } from "@/lib/admin/catalogAdmin";
@@ -16,7 +16,6 @@ import type {
   OptionValue,
   PaymentMethod,
   PaymentStatus,
-  SlotAvailability,
 } from "@/lib/types/domain";
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
@@ -58,10 +57,8 @@ export function ManualOrderForm({
 
   // Fulfilment
   const [fulfilmentType, setFulfilmentType] = useState<"pickup" | "delivery">("pickup");
-  const [zoneId, setZoneId] = useState(zones.find((z) => z.distanceBand === "pickup")?.id ?? "");
   const [date, setDate] = useState(todayKey());
-  const [slots, setSlots] = useState<SlotAvailability[]>([]);
-  const [slotId, setSlotId] = useState<string | null>(null);
+  const [time, setTime] = useState("");
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bkash");
@@ -75,8 +72,8 @@ export function ManualOrderForm({
   const [result, setResult] = useState<{ order: { id: string; orderNumber: string; total: number; depositAmount: number; balanceDue: number } } | null>(null);
 
   const pickupZone = zones.find((z) => z.distanceBand === "pickup");
-  const deliveryZones = zones.filter((z) => z.distanceBand !== "pickup");
-  const effectiveZoneId = fulfilmentType === "pickup" ? pickupZone?.id ?? "" : zoneId;
+  const deliveryZone = zones.find((z) => z.distanceBand !== "pickup");
+  const effectiveZoneId = fulfilmentType === "pickup" ? pickupZone?.id ?? "" : deliveryZone?.id ?? "";
 
   useEffect(() => {
     if (cakeMode !== "catalog" || !cakeSlug) return;
@@ -85,20 +82,10 @@ export function ManualOrderForm({
       .then((data) => setCakeDetail(data.cake ?? null));
   }, [cakeMode, cakeSlug]);
 
-  useEffect(() => {
-    if (!effectiveZoneId || !date) return;
-    fetch(`/api/slots/availability?date=${date}&fulfilmentType=${fulfilmentType}&zoneId=${effectiveZoneId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setSlots(data.slots ?? []);
-        setSlotId(null);
-      });
-  }, [effectiveZoneId, date, fulfilmentType]);
-
   const groupsByCode = Object.fromEntries((cakeDetail?.optionGroups ?? []).map((g) => [g.code, g]));
 
   const cakePrice = cakeDetail ? calculatePrice(cakeDetail, spec, deposit) : null;
-  const deliveryFee = fulfilmentType === "delivery" ? deliveryZones.find((z) => z.id === zoneId)?.deliveryFee ?? 0 : 0;
+  const deliveryFee = fulfilmentType === "delivery" ? deliveryZone?.deliveryFee ?? 0 : 0;
   const override = priceOverride ? Number(priceOverride) : null;
   const computedTotal = override != null
     ? override + deliveryFee
@@ -132,7 +119,7 @@ export function ManualOrderForm({
     setSaving(true);
     setError(null);
     try {
-      if (!slotId) throw new Error("Pick a delivery/collection slot first.");
+      if (!time) throw new Error("Pick a delivery/collection time first.");
       const res = await fetch("/api/admin/manual-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,7 +129,8 @@ export function ManualOrderForm({
           spec,
           fulfilmentType,
           zoneId: effectiveZoneId,
-          slotId,
+          date,
+          startTime: time,
           deliveryAddress: fulfilmentType === "delivery" ? { text: addressText } : null,
           contactName,
           contactPhone: phone,
@@ -319,7 +307,7 @@ export function ManualOrderForm({
           </Field>
           <Field label="Cake color">
             <CakeColorField
-              value={spec.cakeColor ?? ""}
+              value={spec.cakeColor ?? []}
               onChange={(cakeColor) => set({ cakeColor })}
               colorOptions={colorOptions}
             />
@@ -360,18 +348,7 @@ export function ManualOrderForm({
           </button>
           <button
             type="button"
-            onClick={() => {
-              setFulfilmentType("delivery");
-              // zoneId starts out pointing at the pickup zone (its initial
-              // state), and nothing else ever corrects that — querying
-              // slots for that stale pickup zone id (wrong zone +
-              // fulfilment combination) always returns zero slots, even
-              // though the Zone <select> below visually shows its first
-              // delivery option regardless of the real underlying value.
-              if (!deliveryZones.some((z) => z.id === zoneId)) {
-                setZoneId(deliveryZones[0]?.id ?? "");
-              }
-            }}
+            onClick={() => setFulfilmentType("delivery")}
             className={`rounded-full border-2 px-4 py-1.5 font-body text-sm font-bold ${fulfilmentType === "delivery" ? "border-brand-orange bg-brand-orange/10 text-brand-orange" : "border-brand-chocolate/10 text-brand-chocolate"}`}
           >
             Delivery
@@ -379,47 +356,23 @@ export function ManualOrderForm({
         </div>
 
         {fulfilmentType === "delivery" && (
-          <>
-            <Field label="Zone">
-              <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className="input-field">
-                {deliveryZones.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {z.name} · ৳{z.deliveryFee}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Delivery address">
-              <textarea
-                required
-                rows={2}
-                value={addressText}
-                onChange={(e) => setAddressText(e.target.value)}
-                className="input-field mt-2"
-              />
-            </Field>
-          </>
+          <Field label="Delivery address">
+            <textarea
+              required
+              rows={2}
+              value={addressText}
+              onChange={(e) => setAddressText(e.target.value)}
+              className="input-field mt-2"
+            />
+          </Field>
         )}
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Date">
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field" />
           </Field>
-          <Field label="Slot">
-            <select
-              value={slotId ?? ""}
-              onChange={(e) => setSlotId(e.target.value)}
-              className="input-field"
-            >
-              <option value="" disabled>
-                Choose a slot
-              </option>
-              {slots.map((s) => (
-                <option key={s.slotId} value={s.slotId} disabled={s.status === "full"}>
-                  {formatTimeAmPm(s.startTime)}–{formatTimeAmPm(s.endTime)} ({s.status === "full" ? "full" : `${s.remaining} left`})
-                </option>
-              ))}
-            </select>
+          <Field label="Time">
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="input-field" />
           </Field>
         </div>
       </section>

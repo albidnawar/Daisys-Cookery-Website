@@ -120,7 +120,14 @@ export async function listManifestForDate(date: string): Promise<ManifestRow[]> 
       zoneName: row.delivery_zones?.name ?? "-",
       addressText: (row.delivery_address as { text?: string } | null)?.text ?? null,
       codAmount: pendingCashDue(ledgerRow),
-      slotLabel: slot ? `${formatTimeAmPm(slot.start_time)}-${formatTimeAmPm(slot.end_time)}` : null,
+      // An exact-time booking stores start === end — show it as a single
+      // time rather than a zero-width range (see formatSlotLabelForDisplay
+      // in lib/dates.ts for the same treatment).
+      slotLabel: slot
+        ? slot.start_time === slot.end_time
+          ? formatTimeAmPm(slot.start_time)
+          : `${formatTimeAmPm(slot.start_time)}-${formatTimeAmPm(slot.end_time)}`
+        : null,
     };
   });
 }

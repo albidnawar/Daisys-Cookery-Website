@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/Card";
-import type { DeliveryZone } from "@/lib/types/domain";
 
 const COPY = {
   en: {
@@ -11,7 +10,7 @@ const COPY = {
     optionTwo: "Option two",
     localDelivery: "Local delivery",
     deliveryDesc:
-      "Inside Chattogram city, in a two-hour window. Carried by our own rider in a cold box, handed to a person.",
+      "Inside Chattogram city, at the exact time you choose. Carried by our own rider in a cold box, handed to a person.",
   },
   bn: {
     optionOne: "অপশন এক",
@@ -22,25 +21,19 @@ const COPY = {
     optionTwo: "অপশন দুই",
     localDelivery: "লোকাল ডেলিভারি",
     deliveryDesc:
-      "চট্টগ্রাম শহরের ভেতরে, দুই ঘণ্টার সময়সীমায়। আমাদের নিজস্ব রাইডার ঠান্ডা বক্সে করে সরাসরি হাতে পৌঁছে দেবে।",
+      "চট্টগ্রাম শহরের ভেতরে, আপনার পছন্দের সময়ে। আমাদের নিজস্ব রাইডার ঠান্ডা বক্সে করে সরাসরি হাতে পৌঁছে দেবে।",
   },
 } as const;
 
 export function FulfilmentTypeCards({
   fulfilmentType,
   onSelect,
-  deliveryZones,
-  zoneId,
-  onZoneSelect,
   shopAddress,
   shopHours,
   locale = "en",
 }: {
   fulfilmentType: "pickup" | "delivery" | null;
   onSelect: (type: "pickup" | "delivery") => void;
-  deliveryZones: DeliveryZone[];
-  zoneId: string | null;
-  onZoneSelect: (zoneId: string) => void;
   shopAddress: string;
   shopHours: string;
   locale?: "en" | "bn";
@@ -84,26 +77,11 @@ export function FulfilmentTypeCards({
         <p className="mt-2 font-body text-sm leading-relaxed text-brand-chocolate/75">
           {t.deliveryDesc}
         </p>
-
         {fulfilmentType === "delivery" && (
-          <div
-            className="mt-4 flex flex-wrap gap-2 border-t border-brand-chocolate/10 pt-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {deliveryZones.map((zone) => (
-              <button
-                key={zone.id}
-                type="button"
-                onClick={() => onZoneSelect(zone.id)}
-                className={`rounded-full border-2 px-3 py-1.5 font-body text-xs font-bold ${
-                  zoneId === zone.id
-                    ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                    : "border-brand-chocolate/10 bg-white text-brand-chocolate"
-                }`}
-              >
-                {zone.name}
-              </button>
-            ))}
+          <div className="mt-4 flex items-baseline justify-between border-t border-brand-chocolate/10 pt-4">
+            <span className="rounded-full bg-brand-orange/10 px-3 py-1 font-body text-xs font-bold text-brand-orange">
+              {t.selected}
+            </span>
           </div>
         )}
       </Card>

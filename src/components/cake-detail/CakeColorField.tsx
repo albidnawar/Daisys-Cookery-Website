@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { OptionValue } from "@/lib/types/domain";
 
 const COLOR_PRESETS = {
@@ -7,69 +8,98 @@ const COLOR_PRESETS = {
   bn: ["সাদা", "গোলাপি", "লাল", "নীল", "বেগুনি", "সোনালি", "কালো", "হলুদ", "সবুজ", "মাল্টিকালার"],
 } as const;
 
-const PLACEHOLDER = {
-  en: "Type a color, or pick one below",
-  bn: "রঙ লিখুন, অথবা নিচে থেকে বেছে নিন",
+const COPY = {
+  en: { customPlaceholder: "Add another color", add: "Add" },
+  bn: { customPlaceholder: "আরেকটি রঙ যোগ করুন", add: "যোগ করুন" },
 } as const;
 
-function formatDelta(delta: number) {
-  if (delta <= 0) return "";
-  return ` +৳${delta.toLocaleString("en-BD")}`;
-}
-
-/** A free-text color field with quick-pick preset chips underneath —
- * clicking a chip fills the text field with its exact label, but the field
- * stays freely editable for anything more specific ("Blush pink and gold
- * ombre"), which carries no extra charge. Shared between the admin
- * manual-order form and the public order form so the two never drift
- * apart.
+/** A multi-select color picker — click any number of preset/admin-managed
+ * chips, plus type in anything more specific not on the list ("Blush pink
+ * and gold ombre"). Color never affects price (see calculatePrice.ts), so
+ * there's no price badge here, unlike the single-select option groups
+ * elsewhere in the Customiser. Shared between the admin manual-order form
+ * and the public order form so the two never drift apart.
  *
- * `colorOptions` are the admin-managed, optionally-priced choices from the
- * "Cake color" option group (see /admin/catalog/options) — calculatePrice()
- * applies a chip's price by matching the typed text against its label, so
- * clicking a chip (which fills in that exact text) is what makes the price
- * apply; typing something custom keeps it free. Falls back to a plain,
- * unpriced preset list when the admin hasn't added any colors yet. */
+ * `colorOptions` are the admin-managed choices from the "Cake color" option
+ * group (see /admin/catalog/options) — falls back to a plain preset list
+ * when the admin hasn't added any colors yet. */
 export function CakeColorField({
   value,
   onChange,
   locale = "en",
   colorOptions = [],
 }: {
-  value: string;
-  onChange: (next: string) => void;
+  value: string[];
+  onChange: (next: string[]) => void;
   locale?: "en" | "bn";
   colorOptions?: OptionValue[];
 }) {
-  const chips: { key: string; label: string; priceDelta: number }[] =
-    colorOptions.length > 0
-      ? colorOptions.map((o) => ({ key: o.id, label: o.label, priceDelta: o.priceDelta }))
-      : COLOR_PRESETS[locale].map((label) => ({ key: label, label, priceDelta: 0 }));
+  const t = COPY[locale];
+  const [customText, setCustomText] = useState("");
+
+  const presets: string[] =
+    colorOptions.length > 0 ? colorOptions.map((o) => o.label) : [...COLOR_PRESETS[locale]];
+  const customSelected = value.filter((v) => !presets.includes(v));
+
+  const toggle = (label: string) => {
+    onChange(value.includes(label) ? value.filter((v) => v !== label) : [...value, label]);
+  };
+
+  const addCustom = () => {
+    const trimmed = customText.trim();
+    if (!trimmed || value.includes(trimmed)) return;
+    onChange([...value, trimmed]);
+    setCustomText("");
+  };
 
   return (
     <div>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={PLACEHOLDER[locale]}
-        className="input-field"
-      />
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {chips.map((chip) => (
+      <div className="flex flex-wrap gap-1.5">
+        {presets.map((label) => (
           <button
-            key={chip.key}
+            key={label}
             type="button"
-            onClick={() => onChange(chip.label)}
+            onClick={() => toggle(label)}
             className={`rounded-full border-2 px-2.5 py-1 font-body text-xs font-bold ${
-              value === chip.label
+              value.includes(label)
                 ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
                 : "border-brand-chocolate/10 bg-white text-brand-chocolate hover:border-brand-chocolate/25"
             }`}
           >
-            {chip.label}
-            {formatDelta(chip.priceDelta)}
+            {label}
           </button>
         ))}
+        {customSelected.map((label) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => toggle(label)}
+            className="rounded-full border-2 border-brand-orange bg-brand-orange/10 px-2.5 py-1 font-body text-xs font-bold text-brand-orange"
+          >
+            {label} ×
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          value={customText}
+          onChange={(e) => setCustomText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addCustom();
+            }
+          }}
+          placeholder={t.customPlaceholder}
+          className="input-field flex-1"
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          className="rounded-full border-2 border-brand-chocolate/10 bg-white px-3 py-1.5 font-body text-xs font-bold text-brand-chocolate hover:border-brand-chocolate/25"
+        >
+          {t.add}
+        </button>
       </div>
     </div>
   );

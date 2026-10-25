@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getOrder } from "@/lib/orders/store";
 import { resolveCake } from "@/lib/draftOrders/store";
-import { summarizeSpec } from "@/lib/catalog/specLabels";
+import { formatCakeColor, summarizeSpec } from "@/lib/catalog/specLabels";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { requireModulePage } from "@/lib/admin/auth";
@@ -49,8 +49,8 @@ export default async function OrderSlipPage({
               value={summarizeSpec(groupsByCode, order.cakeSnapshot.spec)}
             />
             <Row label="Board writing" value={order.cakeSnapshot.spec.message || "-"} />
-            {order.cakeSnapshot.spec.cakeColor && (
-              <Row label="Color" value={order.cakeSnapshot.spec.cakeColor} />
+            {formatCakeColor(order.cakeSnapshot.spec.cakeColor) && (
+              <Row label="Color" value={formatCakeColor(order.cakeSnapshot.spec.cakeColor)!} />
             )}
             {order.kitchenNote && <Row label="Kitchen note" value={order.kitchenNote} />}
             <Row label="Total" value={`৳${order.total.toLocaleString("en-BD")}`} />

@@ -1,31 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { DailyCapReachedError, DateBlockedError, holdSlot, SlotFullError } from "@/lib/slots/store";
+import { DailyCapReachedError, DateBlockedError, holdSlot } from "@/lib/slots/store";
 import { updateDraftOrderFulfilment } from "@/lib/draftOrders/store";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { draftId, slotId, fulfilmentType, zoneId, deliveryAddress } = body;
+  const { draftId, date, startTime, fulfilmentType, zoneId, deliveryAddress } = body;
 
-  if (!draftId || !slotId) {
+  if (!draftId || !date || !startTime || !fulfilmentType || !zoneId) {
     return NextResponse.json(
-      { error: "draftId and slotId are required" },
+      { error: "draftId, date, startTime, fulfilmentType and zoneId are required" },
       { status: 400 },
     );
   }
 
   try {
-    const hold = await holdSlot(slotId, draftId);
+    const hold = await holdSlot({ date, startTime, fulfilmentType, zoneId, draftId });
     const draft = await updateDraftOrderFulfilment(draftId, {
-      slotId,
+      slotId: hold.slotId,
       fulfilmentType,
       zoneId,
       deliveryAddress,
     });
     return NextResponse.json({ hold, draft });
   } catch (error) {
-    if (error instanceof SlotFullError) {
-      return NextResponse.json({ error: "slot_full" }, { status: 409 });
-    }
     if (error instanceof DateBlockedError) {
       return NextResponse.json({ error: "date_blocked" }, { status: 409 });
     }

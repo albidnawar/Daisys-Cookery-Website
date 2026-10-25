@@ -36,6 +36,6 @@ export async function PATCH(
     }
   }
 
-  await setOrderPrice(id, subtotal, depositAmount, deliveryFee);
-  return NextResponse.json({ ok: true });
+  const result = await setOrderPrice(id, subtotal, depositAmount, deliveryFee);
+  return NextResponse.json({ ok: true, paymentStatus: result.paymentStatus });
 }

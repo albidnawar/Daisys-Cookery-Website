@@ -32,6 +32,13 @@ export function AddToCalendarButton({
     const parsed = parseSlotLabel(slotLabel);
     if (!parsed) return;
 
+    // An exact-time booking's start === end (a point in time, not a
+    // window) — give the calendar event a sensible 30-minute duration
+    // instead of a zero-length one.
+    const end = parsed.end.getTime() === parsed.start.getTime()
+      ? new Date(parsed.start.getTime() + 30 * 60_000)
+      : parsed.end;
+
     const ics = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
@@ -40,7 +47,7 @@ export function AddToCalendarButton({
       `UID:${orderNumber}@daisyscookery`,
       `DTSTAMP:${toIcsDate(new Date())}`,
       `DTSTART:${toIcsDate(parsed.start)}`,
-      `DTEND:${toIcsDate(parsed.end)}`,
+      `DTEND:${toIcsDate(end)}`,
       `SUMMARY:${summary}`,
       `LOCATION:${location}`,
       "END:VEVENT",

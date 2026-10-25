@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { createAdminHoldDraft, markDraftOrderConverted, resolveCake } from "@/lib/draftOrders/store";
-import { convertHold, getSlotLabel, holdSlot, listZones, SlotFullError } from "@/lib/slots/store";
+import { convertHold, getSlotLabel, holdSlot, listZones, DailyCapReachedError, DateBlockedError } from "@/lib/slots/store";
 import { calculatePrice, fixedPrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
@@ -65,7 +65,8 @@ export type ManualOrderInput = {
   spec: DraftOrderSpec;
   fulfilmentType: "pickup" | "delivery";
   zoneId: string;
-  slotId: string;
+  date: string;
+  startTime: string;
   deliveryAddress: Record<string, unknown> | null;
   contactName: string;
   contactPhone: string;
@@ -123,22 +124,34 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
   const depositAmount = input.depositOverride ?? computedDeposit;
   const balanceDue = total - depositAmount;
 
-  // Manual orders draw from the exact same slot capacity as web orders —
-  // otherwise an admin could double-book a slot the storefront thinks is
-  // full, which is the whole point of the M4 capacity-locking work.
-  // hold_slot's FK requires a real draft_orders row, hence this rather
-  // than a bare random id.
+  // Manual orders go through the same date-blocked / day-level cap checks
+  // as web orders — book_exact_time() (see
+  // 0032_local_delivery_and_exact_time_booking.sql) creates a fresh,
+  // single-use slot row for this exact date+time rather than picking from
+  // a shared list. hold_slot's FK requires a real draft_orders row, hence
+  // this rather than a bare random id.
   const holdDraftId = await createAdminHoldDraft(cakeId);
+  let slotId: string;
   try {
-    await holdSlot(input.slotId, holdDraftId);
+    const hold = await holdSlot({
+      date: input.date,
+      startTime: input.startTime,
+      fulfilmentType: input.fulfilmentType,
+      zoneId: input.zoneId,
+      draftId: holdDraftId,
+    });
+    slotId = hold.slotId;
   } catch (error) {
-    if (error instanceof SlotFullError) {
-      throw new ManualOrderError("That slot is full. Pick another one.");
+    if (error instanceof DateBlockedError) {
+      throw new ManualOrderError("That date isn't available for orders.");
+    }
+    if (error instanceof DailyCapReachedError) {
+      throw new ManualOrderError("That date has reached its production limit.");
     }
     throw error;
   }
 
-  const slotLabel = await getSlotLabel(input.slotId);
+  const slotLabel = await getSlotLabel(slotId);
   const cakeSnapshot: CakeSnapshot = { name: cakeName!, slug: input.cakeSlug, spec: input.spec };
 
   const order: Order = {
@@ -150,7 +163,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
     zoneId: input.zoneId,
     zoneName: zone.name,
     deliveryAddress: input.deliveryAddress,
-    slotId: input.slotId,
+    slotId,
     slotLabel,
     subtotal,
     extrasTotal,
@@ -217,7 +230,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Order>
   // Convert the hold the same way a real checkout would — removes the
   // slot_holds row without double-decrementing capacity (it was already
   // counted when the hold was created).
-  await convertHold(input.slotId, holdDraftId);
+  await convertHold(slotId, holdDraftId);
   await markDraftOrderConverted(holdDraftId);
   await notifyOrderStatusChange(order.id, order.status);
 

@@ -81,7 +81,7 @@ export type DraftOrderSpec = {
   allergenSwap?: string[];
   photoPrint?: boolean;
   message?: string;
-  cakeColor?: string;
+  cakeColor?: string[];
   // Legacy single-image field — still read for historical orders and still
   // written by the admin's manual-order form. New code reads/writes
   // referenceImageUrls instead (see getReferenceImages() in
@@ -151,18 +151,6 @@ export type DeliveryZone = {
   name: string;
   distanceBand: string;
   deliveryFee: number;
-};
-
-export type SlotAvailability = {
-  slotId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  fulfilmentType: "pickup" | "delivery";
-  zoneId: string;
-  capacity: number;
-  remaining: number;
-  status: "available" | "low" | "full";
 };
 
 export type PaymentMethod = "bkash" | "nagad" | "card" | "cash_on_collection";

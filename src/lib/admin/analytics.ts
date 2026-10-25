@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { toDateKey, todayKey } from "@/lib/dates";
+import { todayKey } from "@/lib/dates";
 import type { CakeSnapshot } from "@/lib/types/domain";
 
 export type SalesSummary = {
@@ -11,26 +11,29 @@ export type SalesSummary = {
   manualOrderCount: number;
 };
 
-/** Revenue here means order value by the day it was *placed* — how much
- * business came in today/this month — a different question from the
- * Payments ledger's "cash actually collected," which tracks money in hand
- * rather than sales volume. */
+/** Revenue here means order value by the day it's *due* (its delivery/
+ * pickup slot date) — the same "today"/"this month" the Kanban board and
+ * Kitchen Batch use — not the day it was placed. A bakery routinely takes
+ * orders well ahead of their delivery date, so counting by created_at
+ * would mix in orders due on completely different days (the original bug
+ * this fixes: "Orders today" showed every order placed today regardless
+ * of when it was actually scheduled for). Cancelled orders are excluded,
+ * same as Kanban. This is a different question from the Payments ledger's
+ * "cash actually collected," which tracks money in hand rather than sales
+ * volume. */
 export async function getSalesSummary(): Promise<SalesSummary> {
   const supabase = createServiceRoleClient();
   const today = todayKey();
   const monthPrefix = today.slice(0, 7);
 
-  // created_at is a UTC timestamp; comparing it against a bare local date
-  // string at the DB level would shift results by Bangladesh's UTC+6 offset
-  // (the same bug class toDateKey()/todayKey() exist to avoid elsewhere).
-  // Instead, pull a UTC-safe margin wide enough to cover the whole month
-  // either way, then bucket by local calendar day/month in JS.
-  const cutoff = new Date(Date.now() - 35 * 86400_000).toISOString();
+  // Same unbounded, filter-in-JS shape as listOrdersForKanban() — a slot
+  // date can be arbitrarily far in the future (no more fixed booking
+  // window), so a created_at cutoff here would wrongly exclude orders
+  // placed long ago for a slot date that falls in the current day/month.
   const { data, error } = await supabase
     .from("orders")
-    .select("total, order_source, created_at")
-    .neq("status", "cancelled")
-    .gte("created_at", cutoff);
+    .select("total, order_source, delivery_slots ( date )")
+    .neq("status", "cancelled");
   if (error) throw error;
 
   const summary: SalesSummary = {
@@ -42,16 +45,17 @@ export async function getSalesSummary(): Promise<SalesSummary> {
     manualOrderCount: 0,
   };
 
-  for (const row of data ?? []) {
-    const localDate = toDateKey(new Date(row.created_at));
-    if (!localDate.startsWith(monthPrefix)) continue;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (data ?? []) as any[]) {
+    const slotDate: string | null = row.delivery_slots?.date ?? null;
+    if (!slotDate || !slotDate.startsWith(monthPrefix)) continue;
 
     const total = Number(row.total);
     summary.monthlyRevenue += total;
     summary.monthlyOrderCount += 1;
     if (row.order_source === "web") summary.webOrderCount += 1;
     else summary.manualOrderCount += 1;
-    if (localDate === today) {
+    if (slotDate === today) {
       summary.dailyRevenue += total;
       summary.dailyOrderCount += 1;
     }
