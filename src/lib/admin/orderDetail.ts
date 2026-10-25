@@ -2,7 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
 import { computeDepositAmount, toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
-import type { OrderStatus } from "@/lib/types/domain";
+import type { CakeSnapshot, DraftOrderSpec, OrderStatus } from "@/lib/types/domain";
 
 export type OrderStatusHistoryEntry = {
   status: OrderStatus;
@@ -55,6 +55,57 @@ export async function updateOrderDetails(orderId: string, patch: OrderEditableFi
       rider_name: patch.riderName,
       rider_phone: patch.riderPhone ? normalizePhone(patch.riderPhone) : null,
     })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
+export type CakeSpecPatch = {
+  name?: string;
+  sizeCode?: string;
+  sponge?: string;
+  extras?: string[];
+  message?: string;
+  cakeColor?: string[];
+  instructions?: string;
+};
+
+/** Lets the admin correct what the customer actually ordered (size,
+ * flavor, extras, message, color, instructions, and — for a custom design
+ * with no catalog cake — the cake's name/description) after the fact, e.g.
+ * a typo on the order form or a verbal change the customer called in with.
+ * `cake_snapshot` is the single jsonb column both this and the public
+ * order flow write to, so this merges into its existing `spec` rather than
+ * replacing it, leaving fields this editor doesn't touch (reference
+ * photos, allergen swaps, etc.) untouched. Deliberately doesn't recompute
+ * price — the admin sets price by hand in the Pricing section, same as
+ * every other manual price path in this file. */
+export async function updateOrderCakeSpec(orderId: string, patch: CakeSpecPatch): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: existing, error: fetchError } = await supabase
+    .from("orders")
+    .select("cake_snapshot")
+    .eq("id", orderId)
+    .single();
+  if (fetchError) throw fetchError;
+
+  const snapshot = existing.cake_snapshot as CakeSnapshot;
+  const specPatch: Partial<DraftOrderSpec> = {
+    sizeCode: patch.sizeCode,
+    sponge: patch.sponge,
+    extras: patch.extras,
+    message: patch.message,
+    cakeColor: patch.cakeColor,
+    instructions: patch.instructions,
+  };
+  const updatedSnapshot: CakeSnapshot = {
+    ...snapshot,
+    name: patch.name !== undefined && snapshot.slug === null ? patch.name : snapshot.name,
+    spec: { ...snapshot.spec, ...specPatch },
+  };
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ cake_snapshot: updatedSnapshot })
     .eq("id", orderId);
   if (error) throw error;
 }

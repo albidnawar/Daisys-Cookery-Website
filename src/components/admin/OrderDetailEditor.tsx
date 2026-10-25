@@ -11,9 +11,11 @@ import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { formatCakeColor, summarizeSpec } from "@/lib/catalog/specLabels";
 import { formatSlotLabelForDisplay } from "@/lib/dates";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
+import { CakeColorField } from "@/components/cake-detail/CakeColorField";
+import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import type { OrderStatusHistoryEntry } from "@/lib/admin/orderDetail";
 import type { Rider } from "@/lib/admin/ridersAdmin";
-import type { Order, OptionGroup, OrderStatus, PaymentStatus } from "@/lib/types/domain";
+import type { Order, OptionGroup, OptionValue, OrderStatus, PaymentStatus } from "@/lib/types/domain";
 
 const PAYMENT_METHOD_LABELS: Record<Order["paymentMethod"], string> = {
   bkash: "bKash",
@@ -28,12 +30,14 @@ export function OrderDetailEditor({
   history,
   cakeImageUrl,
   riders,
+  colorOptions,
 }: {
   order: Order;
   groupsByCode: Record<string, OptionGroup>;
   history: OrderStatusHistoryEntry[];
   cakeImageUrl: string | null;
   riders: Rider[];
+  colorOptions: OptionValue[];
 }) {
   const router = useRouter();
 
@@ -68,6 +72,72 @@ export function OrderDetailEditor({
   const [savingPrice, setSavingPrice] = useState(false);
   const [priceSaved, setPriceSaved] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
+
+  const [cakeName, setCakeName] = useState(order.cakeSnapshot.name);
+  const [sizeCode, setSizeCode] = useState(order.cakeSnapshot.spec.sizeCode ?? "");
+  const [sponge, setSponge] = useState(order.cakeSnapshot.spec.sponge);
+  const [extras, setExtras] = useState<string[]>(order.cakeSnapshot.spec.extras ?? []);
+  const [message, setMessage] = useState(order.cakeSnapshot.spec.message ?? "");
+  const [cakeColor, setCakeColor] = useState<string[]>(
+    (() => {
+      // Legacy orders can still have the pre-multi-select single-string shape.
+      const c = order.cakeSnapshot.spec.cakeColor as string[] | string | undefined;
+      if (!c) return [];
+      return Array.isArray(c) ? c : [c];
+    })(),
+  );
+  const [instructions, setInstructions] = useState(order.cakeSnapshot.spec.instructions ?? "");
+  const [savingCake, setSavingCake] = useState(false);
+  const [cakeSaved, setCakeSaved] = useState(false);
+  const [cakeError, setCakeError] = useState<string | null>(null);
+  const [cakeEditOpen, setCakeEditOpen] = useState(false);
+
+  const resetCakeFields = () => {
+    setCakeName(order.cakeSnapshot.name);
+    setSizeCode(order.cakeSnapshot.spec.sizeCode ?? "");
+    setSponge(order.cakeSnapshot.spec.sponge);
+    setExtras(order.cakeSnapshot.spec.extras ?? []);
+    setMessage(order.cakeSnapshot.spec.message ?? "");
+    const c = order.cakeSnapshot.spec.cakeColor as string[] | string | undefined;
+    setCakeColor(!c ? [] : Array.isArray(c) ? c : [c]);
+    setInstructions(order.cakeSnapshot.spec.instructions ?? "");
+    setCakeError(null);
+    setCakeSaved(false);
+  };
+
+  const openCakeEdit = () => {
+    resetCakeFields();
+    setCakeEditOpen(true);
+  };
+
+  const saveCakeDetails = async () => {
+    setCakeError(null);
+    setSavingCake(true);
+    setCakeSaved(false);
+    const res = await fetch(`/api/admin/orders/${order.id}/cake`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: order.cakeSnapshot.slug === null ? cakeName : undefined,
+        sizeCode: sizeCode || undefined,
+        sponge,
+        extras,
+        message,
+        cakeColor,
+        instructions,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setCakeError(data.error ?? "Couldn't save those changes");
+      setSavingCake(false);
+      return;
+    }
+    setCakeSaved(true);
+    setSavingCake(false);
+    setCakeEditOpen(false);
+    router.refresh();
+  };
 
   const saveCakePrice = async () => {
     const subtotal = Number(cakePrice);
@@ -201,9 +271,18 @@ export function OrderDetailEditor({
         <div className="flex flex-col gap-6">
           {/* Cake & spec */}
           <section className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6">
-            <p className="mb-3 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
-              Cake
-            </p>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
+                Cake
+              </p>
+              <button
+                type="button"
+                onClick={openCakeEdit}
+                className="rounded-full border-2 border-brand-orange px-3 py-1 font-body text-xs font-bold text-brand-orange hover:bg-brand-orange/10"
+              >
+                Edit cake details
+              </button>
+            </div>
             <p className="font-display text-xl font-semibold text-brand-chocolate">{order.cakeSnapshot.name}</p>
             <p className="mt-1 font-body text-sm text-brand-chocolate/70">
               {order.cakeSnapshot.spec.sizeCode ? `${order.cakeSnapshot.spec.sizeCode} lb` : "Size not set"} &middot;{" "}
@@ -224,6 +303,7 @@ export function OrderDetailEditor({
                 Instructions: {order.cakeSnapshot.spec.instructions}
               </p>
             )}
+
             {cakeImageUrl && (
               <div className="mt-3">
                 <p className="mb-1 font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
@@ -261,6 +341,78 @@ export function OrderDetailEditor({
 
           {lightboxSrc && (
             <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+          )}
+
+          {cakeEditOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-brand-chocolate/40 p-4"
+              onClick={() => setCakeEditOpen(false)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex max-h-[90vh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-xl font-semibold text-brand-chocolate">Edit cake details</h2>
+                  <button
+                    type="button"
+                    onClick={() => setCakeEditOpen(false)}
+                    className="font-body text-sm font-bold text-brand-chocolate/50 hover:text-brand-chocolate"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {order.cakeSnapshot.slug === null ? (
+                  <Field label="Cake name / description">
+                    <input value={cakeName} onChange={(e) => setCakeName(e.target.value)} className="input-field" />
+                  </Field>
+                ) : (
+                  <p className="font-display text-lg font-semibold text-brand-chocolate">{order.cakeSnapshot.name}</p>
+                )}
+
+                <Field label="Size, in pounds">
+                  <input
+                    value={sizeCode}
+                    onChange={(e) => setSizeCode(e.target.value)}
+                    placeholder="e.g. 1"
+                    className="input-field w-32"
+                  />
+                </Field>
+                {groupsByCode.sponge && (
+                  <RadioOptionGroup group={groupsByCode.sponge} value={sponge} onChange={setSponge} columns={4} />
+                )}
+                {groupsByCode.extras && (
+                  <CheckboxOptionGroup group={groupsByCode.extras} value={extras} onChange={setExtras} />
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Board writing">
+                    <input value={message} onChange={(e) => setMessage(e.target.value)} className="input-field" />
+                  </Field>
+                  <Field label="Cake color">
+                    <CakeColorField value={cakeColor} onChange={setCakeColor} colorOptions={colorOptions} />
+                  </Field>
+                </div>
+                <Field label="Instructions">
+                  <textarea
+                    rows={2}
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    className="input-field"
+                  />
+                </Field>
+                {cakeError && <p className="font-body text-sm text-red-600">{cakeError}</p>}
+                {cakeSaved && <p className="font-body text-sm text-emerald-700">Saved.</p>}
+                <div className="flex gap-3">
+                  <Button type="button" disabled={savingCake} onClick={saveCakeDetails} className="w-fit">
+                    {savingCake ? "Saving…" : "Save cake details"}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setCakeEditOpen(false)} className="w-fit">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Customer & fulfilment — editable */}

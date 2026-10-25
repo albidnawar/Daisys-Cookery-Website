@@ -3,6 +3,7 @@ import { getOrder } from "@/lib/orders/store";
 import { resolveCakeForDisplay } from "@/lib/draftOrders/store";
 import { getOrderStatusHistory } from "@/lib/admin/orderDetail";
 import { listRidersAdmin } from "@/lib/admin/ridersAdmin";
+import { listOptionValuesAdmin } from "@/lib/admin/optionValuesAdmin";
 import { requireModulePage } from "@/lib/admin/auth";
 import { OrderDetailEditor } from "@/components/admin/OrderDetailEditor";
 
@@ -16,10 +17,11 @@ export default async function AdminOrderDetailPage({
   const order = await getOrder(id);
   if (!order) notFound();
 
-  const [cake, history, riders] = await Promise.all([
+  const [cake, history, riders, colorOptions] = await Promise.all([
     order.cakeSnapshot.slug ? resolveCakeForDisplay(order.cakeSnapshot.slug) : null,
     getOrderStatusHistory(id),
     listRidersAdmin(),
+    listOptionValuesAdmin("cake_color"),
   ]);
   const groupsByCode = Object.fromEntries((cake?.optionGroups ?? []).map((g) => [g.code, g]));
 
@@ -30,6 +32,7 @@ export default async function AdminOrderDetailPage({
       history={history}
       cakeImageUrl={cake?.heroImageUrl ?? null}
       riders={riders}
+      colorOptions={colorOptions}
     />
   );
 }

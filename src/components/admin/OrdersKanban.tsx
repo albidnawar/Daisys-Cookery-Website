@@ -226,6 +226,7 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                       href={`/admin/orders/${order.id}/slip`}
                       target="_blank"
                       draggable={false}
+                      onPointerDown={(e) => e.stopPropagation()}
                       className="font-body text-xs font-bold text-brand-orange hover:text-brand-chocolate"
                     >
                       Print slip
