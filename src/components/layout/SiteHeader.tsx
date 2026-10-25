@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -14,6 +15,12 @@ const navLinks = [
 
 export function SiteHeader({ customerEmail }: { customerEmail?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // The order-form page (the direct link sent to customers for custom
+  // designs) has its own prominent submit flow — a second "Order a cake"
+  // CTA in the mobile menu there is redundant and competes with it on a
+  // small screen, so it's left out of the phone nav on this one page only.
+  const isOrderForm = pathname?.startsWith("/order-form") ?? false;
   const accountLink = customerEmail
     ? { href: "/account", label: "My account" }
     : { href: "/account/login", label: "Sign in" };
@@ -93,9 +100,11 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string | null })
           >
             {accountLink.label}
           </Link>
-          <LinkButton href="/browse" className="mt-2 w-full">
-            Order a cake
-          </LinkButton>
+          {!isOrderForm && (
+            <LinkButton href="/browse" className="mt-2 w-full">
+              Order a cake
+            </LinkButton>
+          )}
         </nav>
       )}
     </header>
