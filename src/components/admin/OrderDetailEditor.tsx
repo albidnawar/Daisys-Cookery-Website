@@ -9,7 +9,7 @@ import { ImageLightbox } from "@/components/shared/ImageLightbox";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { formatCakeColor, summarizeSpec } from "@/lib/catalog/specLabels";
-import { formatSlotLabelForDisplay } from "@/lib/dates";
+import { formatSlotLabelForDisplay, parseSlotLabel } from "@/lib/dates";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import { CakeColorField } from "@/components/cake-detail/CakeColorField";
 import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
@@ -108,6 +108,48 @@ export function OrderDetailEditor({
   const openCakeEdit = () => {
     resetCakeFields();
     setCakeEditOpen(true);
+  };
+
+  const currentSlot = parseSlotLabel(order.slotLabel);
+  const [slotDate, setSlotDate] = useState(currentSlot?.date ?? "");
+  const [slotTime, setSlotTime] = useState(currentSlot?.startTime ?? "");
+  const [savingSlot, setSavingSlot] = useState(false);
+  const [slotSaved, setSlotSaved] = useState(false);
+  const [slotError, setSlotError] = useState<string | null>(null);
+  const [slotEditOpen, setSlotEditOpen] = useState(false);
+
+  const openSlotEdit = () => {
+    const slot = parseSlotLabel(order.slotLabel);
+    setSlotDate(slot?.date ?? "");
+    setSlotTime(slot?.startTime ?? "");
+    setSlotError(null);
+    setSlotSaved(false);
+    setSlotEditOpen(true);
+  };
+
+  const saveSlot = async () => {
+    if (!slotDate || !slotTime) {
+      setSlotError("Pick both a date and a time");
+      return;
+    }
+    setSlotError(null);
+    setSavingSlot(true);
+    setSlotSaved(false);
+    const res = await fetch(`/api/admin/orders/${order.id}/slot`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: slotDate, startTime: slotTime }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setSlotError(data.error ?? "Couldn't save that");
+      setSavingSlot(false);
+      return;
+    }
+    setSlotSaved(true);
+    setSavingSlot(false);
+    setSlotEditOpen(false);
+    router.refresh();
   };
 
   const saveCakeDetails = async () => {
@@ -415,6 +457,57 @@ export function OrderDetailEditor({
             </div>
           )}
 
+          {slotEditOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-brand-chocolate/40 p-4"
+              onClick={() => setSlotEditOpen(false)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex w-full max-w-sm flex-col gap-4 rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-xl font-semibold text-brand-chocolate">
+                    Edit {order.fulfilmentType === "pickup" ? "pickup" : "delivery"} date &amp; time
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setSlotEditOpen(false)}
+                    className="font-body text-sm font-bold text-brand-chocolate/50 hover:text-brand-chocolate"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <Field label="Date">
+                  <input
+                    type="date"
+                    value={slotDate}
+                    onChange={(e) => setSlotDate(e.target.value)}
+                    className="input-field"
+                  />
+                </Field>
+                <Field label="Time">
+                  <input
+                    type="time"
+                    value={slotTime}
+                    onChange={(e) => setSlotTime(e.target.value)}
+                    className="input-field"
+                  />
+                </Field>
+                {slotError && <p className="font-body text-sm text-red-600">{slotError}</p>}
+                {slotSaved && <p className="font-body text-sm text-emerald-700">Saved.</p>}
+                <div className="flex gap-3">
+                  <Button type="button" disabled={savingSlot} onClick={saveSlot} className="w-fit">
+                    {savingSlot ? "Saving…" : "Save"}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setSlotEditOpen(false)} className="w-fit">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Customer & fulfilment — editable */}
           <form onSubmit={saveDetails} className="flex flex-col gap-4 rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6">
             <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
@@ -441,7 +534,16 @@ export function OrderDetailEditor({
               )}
             </Field>
             <Field label="Slot">
-              <p className="font-body text-sm text-brand-chocolate/70">{formatSlotLabelForDisplay(order.slotLabel)}</p>
+              <div className="flex items-center gap-3">
+                <p className="font-body text-sm text-brand-chocolate/70">{formatSlotLabelForDisplay(order.slotLabel)}</p>
+                <button
+                  type="button"
+                  onClick={openSlotEdit}
+                  className="rounded-full border-2 border-brand-orange px-3 py-1 font-body text-xs font-bold text-brand-orange hover:bg-brand-orange/10"
+                >
+                  Edit
+                </button>
+              </div>
             </Field>
             {order.fulfilmentType === "delivery" && (
               <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-chocolate/10 p-3">

@@ -151,6 +151,30 @@ export async function convertHold(slotId: string, draftId: string): Promise<void
   });
 }
 
+/** Moves an already-placed order's booking to a new date/time — e.g. the
+ * admin correcting a mistake or the customer calling to reschedule. Each
+ * order owns a single-use delivery_slots row (see holdSlot() above), so
+ * this just updates that same row in place via reschedule_order_slot()
+ * (0034_reschedule_order_slot.sql), which re-runs the date-blocked /
+ * day-level max_orders checks only when the date itself is changing. */
+export async function rescheduleOrderSlot(
+  orderId: string,
+  date: string,
+  startTime: string,
+): Promise<void> {
+  const supabase = await createServiceRoleClient();
+  const { error } = await supabase.rpc("reschedule_order_slot", {
+    p_order_id: orderId,
+    p_date: date,
+    p_start_time: startTime,
+  });
+  if (error) {
+    if (error.message?.includes("date_blocked")) throw new DateBlockedError();
+    if (error.message?.includes("daily_cap_reached")) throw new DailyCapReachedError();
+    throw error;
+  }
+}
+
 // Postgres `time` columns come back as "HH:MM:SS" — normalize to "HH:MM" so
 // this always matches the dev fallback's format, since downstream
 // consumers (OrderSummaryCard, AddToCalendarButton) parse it with a strict

@@ -33,6 +33,17 @@ const SLOT_LABEL_PATTERN = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})-(\d{2}:\d{2})$/;
  * am/pm date and time range for display. Falls back to the raw string
  * unchanged if it doesn't match that shape, so an unexpected value never
  * just disappears. */
+/** Pulls the date and start time back out of the raw "YYYY-MM-DD
+ * HH:MM-HH:MM" slot label — the inverse of formatSlotLabel() — for
+ * pre-filling a date/time editor with the order's current booking. */
+export function parseSlotLabel(slotLabel: string | null): { date: string; startTime: string } | null {
+  if (!slotLabel) return null;
+  const match = SLOT_LABEL_PATTERN.exec(slotLabel);
+  if (!match) return null;
+  const [, date, start] = match;
+  return { date, startTime: start };
+}
+
 export function formatSlotLabelForDisplay(slotLabel: string | null, fallback = "To be confirmed"): string {
   if (!slotLabel) return fallback;
   const match = SLOT_LABEL_PATTERN.exec(slotLabel);
