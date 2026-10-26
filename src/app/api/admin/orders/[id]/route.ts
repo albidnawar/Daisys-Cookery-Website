@@ -20,6 +20,9 @@ export async function PATCH(
   if (!input.contactName?.trim() || !input.contactPhone?.trim()) {
     return NextResponse.json({ error: "Name and phone are required" }, { status: 400 });
   }
+  if (input.fulfilmentType === "delivery" && !input.deliveryAddressText?.trim()) {
+    return NextResponse.json({ error: "A delivery address is required" }, { status: 400 });
+  }
   await updateOrderDetails(id, input);
   return NextResponse.json({ ok: true });
 }

@@ -43,6 +43,7 @@ export function OrderDetailEditor({
 
   const [contactName, setContactName] = useState(order.contactName);
   const [contactPhone, setContactPhone] = useState(order.contactPhone);
+  const [fulfilmentType, setFulfilmentType] = useState(order.fulfilmentType);
   const [addressText, setAddressText] = useState(
     (order.deliveryAddress as { text?: string } | null)?.text ?? "",
   );
@@ -228,7 +229,8 @@ export function OrderDetailEditor({
       body: JSON.stringify({
         contactName,
         contactPhone,
-        deliveryAddressText: order.fulfilmentType === "delivery" ? addressText || null : null,
+        fulfilmentType,
+        deliveryAddressText: fulfilmentType === "delivery" ? addressText || null : null,
         kitchenNote: kitchenNote || null,
         manualTrxId: manualTrxId || null,
         needsRiderPickup,
@@ -510,9 +512,40 @@ export function OrderDetailEditor({
 
           {/* Customer & fulfilment — editable */}
           <form onSubmit={saveDetails} className="flex flex-col gap-4 rounded-3xl border-2 border-brand-chocolate/10 bg-white p-6">
-            <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
-              Customer &amp; {order.fulfilmentType === "pickup" ? "pickup" : "delivery"}
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">
+                Customer &amp; {fulfilmentType === "pickup" ? "pickup" : "delivery"}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFulfilmentType("pickup")}
+                  className={`rounded-full border-2 px-3 py-1 font-body text-xs font-bold ${
+                    fulfilmentType === "pickup"
+                      ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
+                      : "border-brand-chocolate/10 text-brand-chocolate"
+                  }`}
+                >
+                  Pickup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFulfilmentType("delivery")}
+                  className={`rounded-full border-2 px-3 py-1 font-body text-xs font-bold ${
+                    fulfilmentType === "delivery"
+                      ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
+                      : "border-brand-chocolate/10 text-brand-chocolate"
+                  }`}
+                >
+                  Delivery
+                </button>
+              </div>
+            </div>
+            {fulfilmentType !== order.fulfilmentType && (
+              <p className="font-body text-xs text-brand-orange">
+                Changed from {order.fulfilmentType} — remember to update the delivery cost in Pricing below after saving.
+              </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Name">
                 <input required value={contactName} onChange={(e) => setContactName(e.target.value)} className="input-field" />
@@ -521,14 +554,18 @@ export function OrderDetailEditor({
                 <input required value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="input-field" />
               </Field>
             </div>
-            <Field label={order.fulfilmentType === "pickup" ? "Zone" : "Delivery address"}>
-              {order.fulfilmentType === "pickup" ? (
-                <p className="font-body text-sm text-brand-chocolate/70">{order.zoneName ?? "Shop pickup"}</p>
+            <Field label={fulfilmentType === "pickup" ? "Zone" : "Delivery address"}>
+              {fulfilmentType === "pickup" ? (
+                <p className="font-body text-sm text-brand-chocolate/70">
+                  {order.fulfilmentType === "pickup" ? order.zoneName ?? "Shop pickup" : "Shop pickup"}
+                </p>
               ) : (
                 <textarea
                   rows={2}
+                  required
                   value={addressText}
                   onChange={(e) => setAddressText(e.target.value)}
+                  placeholder="House, road, area"
                   className="input-field"
                 />
               )}
@@ -545,7 +582,7 @@ export function OrderDetailEditor({
                 </button>
               </div>
             </Field>
-            {order.fulfilmentType === "delivery" && (
+            {fulfilmentType === "delivery" && (
               <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-chocolate/10 p-3">
                 {riders.length > 0 && (
                   <Field label="Choose a saved rider">

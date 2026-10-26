@@ -2,6 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
 import { computeDepositAmount, toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
+import { listZones } from "@/lib/slots/store";
 import type { CakeSnapshot, DraftOrderSpec, OrderStatus } from "@/lib/types/domain";
 
 export type OrderStatusHistoryEntry = {
@@ -31,6 +32,7 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
 export type OrderEditableFields = {
   contactName: string;
   contactPhone: string;
+  fulfilmentType: "pickup" | "delivery";
   deliveryAddressText: string | null;
   kitchenNote: string | null;
   manualTrxId: string | null;
@@ -40,14 +42,37 @@ export type OrderEditableFields = {
   riderPhone: string | null;
 };
 
+/** Switching pickup <-> delivery (e.g. the customer called to change their
+ * mind) needs the order's zone swapped to match — there's one active zone
+ * per fulfilment type (see listZones(), is_active-filtered since the
+ * near/mid/far zone collapse) — and its delivery_address cleared when
+ * moving to pickup, since a pickup order has nowhere to deliver to. The
+ * linked delivery_slots row also carries its own fulfilment_type/zone_id
+ * (set at booking time, see book_exact_time()) purely as denormalized
+ * booking metadata nothing currently reads back out of — updated here too
+ * so it never drifts out of sync with the order it belongs to. Deliberately
+ * leaves delivery_fee/total alone: the admin sets the real price by hand in
+ * the Pricing section, same as every other price path in this file. */
 export async function updateOrderDetails(orderId: string, patch: OrderEditableFields): Promise<void> {
   const supabase = createServiceRoleClient();
-  const { error } = await supabase
+  const zones = await listZones();
+  const zone =
+    patch.fulfilmentType === "pickup"
+      ? zones.find((z) => z.distanceBand === "pickup")
+      : zones.find((z) => z.distanceBand !== "pickup");
+  if (!zone) throw new Error(`No active ${patch.fulfilmentType} zone configured`);
+
+  const { data: updated, error } = await supabase
     .from("orders")
     .update({
       contact_name: patch.contactName,
       contact_phone: normalizePhone(patch.contactPhone),
-      delivery_address: patch.deliveryAddressText ? { text: patch.deliveryAddressText } : null,
+      fulfilment_type: patch.fulfilmentType,
+      zone_id: zone.id,
+      delivery_address:
+        patch.fulfilmentType === "delivery" && patch.deliveryAddressText
+          ? { text: patch.deliveryAddressText }
+          : null,
       kitchen_note: patch.kitchenNote,
       manual_trx_id: patch.manualTrxId,
       needs_rider_pickup: patch.needsRiderPickup,
@@ -55,8 +80,16 @@ export async function updateOrderDetails(orderId: string, patch: OrderEditableFi
       rider_name: patch.riderName,
       rider_phone: patch.riderPhone ? normalizePhone(patch.riderPhone) : null,
     })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .select("slot_id")
+    .single();
   if (error) throw error;
+
+  const { error: slotError } = await supabase
+    .from("delivery_slots")
+    .update({ fulfilment_type: patch.fulfilmentType, zone_id: zone.id })
+    .eq("id", updated.slot_id);
+  if (slotError) throw slotError;
 }
 
 export type CakeSpecPatch = {
