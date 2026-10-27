@@ -34,7 +34,11 @@ export async function PATCH(
         { status: 409 },
       );
     }
-    throw error;
+    console.error("Failed to reschedule order slot", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Couldn't save that" },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true });

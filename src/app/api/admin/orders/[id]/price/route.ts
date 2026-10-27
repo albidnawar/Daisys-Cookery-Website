@@ -36,6 +36,14 @@ export async function PATCH(
     }
   }
 
-  const result = await setOrderPrice(id, subtotal, depositAmount, deliveryFee);
-  return NextResponse.json({ ok: true, paymentStatus: result.paymentStatus });
+  try {
+    const result = await setOrderPrice(id, subtotal, depositAmount, deliveryFee);
+    return NextResponse.json({ ok: true, paymentStatus: result.paymentStatus });
+  } catch (error) {
+    console.error("Failed to update order price", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Couldn't save that" },
+      { status: 500 },
+    );
+  }
 }

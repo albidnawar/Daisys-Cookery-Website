@@ -17,6 +17,15 @@ export async function PATCH(
 
   const { id } = await params;
   const input = (await request.json()) as CakeSpecPatch;
-  await updateOrderCakeSpec(id, input);
+
+  try {
+    await updateOrderCakeSpec(id, input);
+  } catch (error) {
+    console.error("Failed to update cake details", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Couldn't save those changes" },
+      { status: 500 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }

@@ -23,6 +23,15 @@ export async function PATCH(
   if (input.fulfilmentType === "delivery" && !input.deliveryAddressText?.trim()) {
     return NextResponse.json({ error: "A delivery address is required" }, { status: 400 });
   }
-  await updateOrderDetails(id, input);
+
+  try {
+    await updateOrderDetails(id, input);
+  } catch (error) {
+    console.error("Failed to update order details", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Couldn't save those changes" },
+      { status: 500 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }
