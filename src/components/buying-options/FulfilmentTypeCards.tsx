@@ -10,7 +10,7 @@ const COPY = {
     optionTwo: "Option two",
     localDelivery: "Local delivery",
     deliveryDesc:
-      "Inside Chattogram city, at the exact time you choose. Carried by our own rider in a cold box, handed to a person.",
+      "Home delivery is available within Chattogram city. The delivery charge is set based on the cake's weight (in pounds) and the distance — carried out by our home delivery agent.",
   },
   bn: {
     optionOne: "অপশন এক",
@@ -21,7 +21,7 @@ const COPY = {
     optionTwo: "অপশন দুই",
     localDelivery: "লোকাল ডেলিভারি",
     deliveryDesc:
-      "চট্টগ্রাম শহরের ভেতরে, আপনার পছন্দের সময়ে। আমাদের নিজস্ব রাইডার ঠান্ডা বক্সে করে সরাসরি হাতে পৌঁছে দেবে।",
+      "চট্টগ্রাম সিটিতে হোম ডেলিভারি হবে। সেক্ষেত্রে কেকের পাউন্ড ও দূরত্ব অনুযায়ী ডেলিভারি চার্জ নির্ধারণ করা হয় (হোম ডেলিভারি এজেন্ট করে থাকে)।",
   },
 } as const;
 
