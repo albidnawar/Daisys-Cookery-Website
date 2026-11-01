@@ -7,7 +7,8 @@ import type { CakeSnapshot, OrderStatus } from "@/lib/types/domain";
 export const KANBAN_COLUMNS: { key: string; label: string; statuses: OrderStatus[] }[] = [
   { key: "pending", label: "Pending Approval", statuses: ["received"] },
   { key: "deposit_verified", label: "Deposit Verified", statuses: ["confirmed"] },
-  { key: "baking", label: "Baking/Decorating", statuses: ["baking"] },
+  { key: "baking", label: "Baking/Frosting", statuses: ["baking"] },
+  { key: "finishing", label: "Finishing", statuses: ["finishing"] },
   { key: "ready", label: "Ready for Pickup/Delivery", statuses: ["ready", "out_for_delivery"] },
   { key: "completed", label: "Completed", statuses: ["collected", "delivered"] },
 ];
@@ -16,7 +17,8 @@ export const KANBAN_COLUMNS: { key: string; label: string; statuses: OrderStatus
 export const ALL_ORDER_STATUSES: { value: OrderStatus; label: string }[] = [
   { value: "received", label: "Received (pending approval)" },
   { value: "confirmed", label: "Confirmed (deposit verified)" },
-  { value: "baking", label: "Baking/decorating" },
+  { value: "baking", label: "Baking/frosting" },
+  { value: "finishing", label: "Finishing" },
   { value: "ready", label: "Ready for pickup" },
   { value: "out_for_delivery", label: "Out for delivery" },
   { value: "collected", label: "Collected" },

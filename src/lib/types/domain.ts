@@ -164,6 +164,7 @@ export type OrderStatus =
   | "received"
   | "confirmed"
   | "baking"
+  | "finishing"
   | "ready"
   | "out_for_delivery"
   | "collected"

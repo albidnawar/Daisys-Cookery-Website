@@ -142,14 +142,7 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                       draggingId === order.id ? "opacity-40" : ""
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        draggable={false}
-                        className="font-body text-xs font-bold text-brand-chocolate hover:text-brand-orange"
-                      >
-                        {order.orderNumber}
-                      </Link>
+                    <div className="flex items-center justify-end">
                       <span
                         className={`rounded-full px-2 py-0.5 font-body text-[10px] font-bold ${
                           order.orderSource === "manual"
@@ -177,9 +170,16 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                         />
                       </a>
                     )}
-                    <p className="font-display text-base font-semibold text-brand-chocolate">
-                      {order.cakeName}
-                    </p>
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      draggable={false}
+                      className="font-display text-lg font-bold text-brand-chocolate hover:text-brand-orange"
+                    >
+                      {order.orderNumber}
+                    </Link>
+                    {order.cakeName !== "Custom cake design" && (
+                      <p className="font-body text-xs text-brand-chocolate/60">{order.cakeName}</p>
+                    )}
                     <p className="font-body text-xs text-brand-chocolate/60">
                       {order.contactName} &middot; {order.contactPhone}
                     </p>

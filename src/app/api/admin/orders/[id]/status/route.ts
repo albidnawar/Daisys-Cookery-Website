@@ -7,6 +7,7 @@ const VALID_STATUSES: OrderStatus[] = [
   "received",
   "confirmed",
   "baking",
+  "finishing",
   "ready",
   "out_for_delivery",
   "collected",
