@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createOrder, OrderValidationError } from "@/lib/orders/store";
 import { getCurrentCustomer } from "@/lib/customer/auth";
+import { ORDERS_KANBAN_TAG } from "@/lib/admin/ordersAdmin";
 import type { PaymentMethod } from "@/lib/types/domain";
 
 const PAYMENT_METHODS: PaymentMethod[] = ["bkash", "nagad", "card", "cash_on_collection"];
@@ -36,6 +38,7 @@ export async function POST(request: NextRequest) {
       manualTrxId: manualTrxId ?? null,
       customerId: customer?.id ?? null,
     });
+    revalidateTag(ORDERS_KANBAN_TAG, { expire: 0 });
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {
     if (error instanceof OrderValidationError) {

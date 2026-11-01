@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { updatePaymentStatus } from "@/lib/admin/paymentsLedger";
+import { ORDERS_KANBAN_TAG } from "@/lib/admin/ordersAdmin";
 
 export async function PATCH(
   request: NextRequest,
@@ -18,5 +20,6 @@ export async function PATCH(
   const { id } = await params;
   const { paymentStatus } = await request.json();
   await updatePaymentStatus(id, paymentStatus);
+  revalidateTag(ORDERS_KANBAN_TAG, { expire: 0 });
   return NextResponse.json({ ok: true });
 }

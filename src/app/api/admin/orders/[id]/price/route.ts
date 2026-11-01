@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { setOrderPrice } from "@/lib/admin/orderDetail";
+import { ORDERS_KANBAN_TAG } from "@/lib/admin/ordersAdmin";
 
 export async function PATCH(
   request: NextRequest,
@@ -38,6 +40,7 @@ export async function PATCH(
 
   try {
     const result = await setOrderPrice(id, subtotal, depositAmount, deliveryFee);
+    revalidateTag(ORDERS_KANBAN_TAG, { expire: 0 });
     return NextResponse.json({ ok: true, paymentStatus: result.paymentStatus });
   } catch (error) {
     console.error("Failed to update order price", error);

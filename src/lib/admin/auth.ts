@@ -1,6 +1,7 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { hasModule, MODULES, MODULE_ROUTES, type ModuleKey } from "@/lib/admin/modules";
 
 // Re-exported so existing server-side call sites (`import { hasModule }
@@ -35,6 +36,33 @@ function rowToAdmin(data: AdminRow): AdminUser | null {
   };
 }
 
+// A role/account edit (adminAccounts.ts, adminRoles.ts) must call
+// revalidateTag(ADMIN_ROW_TAG) — see their API routes — so a demoted or
+// removed admin isn't still treated as having their old access for up to
+// the TTL below.
+export const ADMIN_ROW_TAG = "admin-users";
+
+// Looking up an admin's row (and their role's modules) is identical work
+// on every single admin API call — only the result differs per user id,
+// and admin_users/admin_roles change rarely, so this is cached separately
+// from auth.getUser() below. auth.getUser() itself still runs on every
+// call, unchanged: it's the thing that actually asks Supabase "is this
+// session still valid," and that check must never be skipped or cached
+// for a gate over financial/customer order data.
+const getCachedAdminRow = unstable_cache(
+  async (userId: string): Promise<AdminRow | null> => {
+    const supabase = createServiceRoleClient();
+    const { data } = await supabase
+      .from("admin_users")
+      .select("id, email, display_name, role_id, admin_roles ( name, modules )")
+      .eq("id", userId)
+      .maybeSingle();
+    return data ?? null;
+  },
+  ["admin-row"],
+  { revalidate: 30, tags: [ADMIN_ROW_TAG] },
+);
+
 /** Server Components / route handlers: returns the logged-in admin, or
  * null if there's no session or the session isn't an admin_users row. A
  * Supabase Auth session alone is not enough — see the migration comment.
@@ -48,11 +76,7 @@ export const getCurrentAdmin = cache(async (): Promise<AdminUser | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase
-    .from("admin_users")
-    .select("id, email, display_name, role_id, admin_roles ( name, modules )")
-    .eq("id", user.id)
-    .maybeSingle();
+  const data = await getCachedAdminRow(user.id);
   if (!data) return null;
 
   return rowToAdmin(data);

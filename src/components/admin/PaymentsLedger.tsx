@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { PAYMENT_STATUS_OPTIONS, type DailyFinancialBreakdown, type PaymentLedgerRow } from "@/lib/admin/paymentsLedgerTypes";
 import { todayKey } from "@/lib/dates";
+import { jsonFetcher } from "@/lib/swr/fetcher";
 import type { PaymentStatus } from "@/lib/types/domain";
+
+type PaymentsResponse = {
+  ledger: PaymentLedgerRow[];
+  pendingMatches: PaymentLedgerRow[];
+  breakdown: DailyFinancialBreakdown;
+};
 
 const METHOD_LABELS: Record<string, string> = {
   bkash: "bKash",
@@ -22,33 +30,30 @@ export function PaymentsLedger({
   initialBreakdown: DailyFinancialBreakdown;
 }) {
   const [dateFilter, setDateFilter] = useState(todayKey());
-  const [ledger, setLedger] = useState(initialLedger);
-  const [pendingMatches, setPendingMatches] = useState(initialPendingMatches);
-  const [breakdown, setBreakdown] = useState(initialBreakdown);
-  const [loading, startLoading] = useTransition();
+  const [initialDate] = useState(dateFilter);
+  const key = `/api/admin/payments${dateFilter ? `?date=${dateFilter}` : ""}`;
+  const { data, isValidating, mutate } = useSWR<PaymentsResponse>(key, jsonFetcher, {
+    fallbackData:
+      dateFilter === initialDate
+        ? { ledger: initialLedger, pendingMatches: initialPendingMatches, breakdown: initialBreakdown }
+        : undefined,
+  });
+  const ledger = data?.ledger ?? [];
+  const pendingMatches = data?.pendingMatches ?? [];
+  const breakdown = data?.breakdown ?? { collectedMfs: 0, collectedCash: 0, pendingCash: 0, orderCount: 0 };
+  const loading = isValidating;
 
-  const refresh = (date: string) => {
-    startLoading(async () => {
-      const params = date ? `?date=${date}` : "";
-      const res = await fetch(`/api/admin/payments${params}`);
-      const data = await res.json();
-      setLedger(data.ledger ?? []);
-      setPendingMatches(data.pendingMatches ?? []);
-      setBreakdown(data.breakdown ?? { collectedMfs: 0, collectedCash: 0, pendingCash: 0, orderCount: 0 });
-    });
-  };
-
-  useEffect(() => {
-    refresh(dateFilter);
-  }, [dateFilter]);
-
+  // Status changes shift money totals (collected vs. pending) and move a
+  // row between the "needs verification" and main lists — real
+  // recomputation an admin needs to see correctly, not something to fake
+  // optimistically — so this just asks SWR to re-fetch after the save.
   const changeStatus = async (id: string, paymentStatus: PaymentStatus) => {
     await fetch(`/api/admin/payments/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentStatus }),
     });
-    refresh(dateFilter);
+    mutate();
   };
 
   return (

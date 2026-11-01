@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { todayKey } from "@/lib/dates";
+import { jsonFetcher } from "@/lib/swr/fetcher";
 
 type CourierMessage = {
   id: string;
@@ -16,18 +18,15 @@ export function CourierMessagesManager({ initialDate, initialMessages }: {
   initialMessages: CourierMessage[];
 }) {
   const [date, setDate] = useState(initialDate);
-  const [messages, setMessages] = useState(initialMessages);
-  const [loading, startLoading] = useTransition();
+  const { data, isValidating } = useSWR<{ messages: CourierMessage[] }>(
+    `/api/admin/courier-messages?date=${date}`,
+    jsonFetcher,
+    { fallbackData: date === initialDate ? { messages: initialMessages } : undefined },
+  );
+  const messages = data?.messages ?? [];
+  const loading = isValidating;
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
-
-  useEffect(() => {
-    startLoading(async () => {
-      const res = await fetch(`/api/admin/courier-messages?date=${date}`);
-      const data = await res.json();
-      setMessages(data.messages ?? []);
-    });
-  }, [date]);
 
   const copy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);

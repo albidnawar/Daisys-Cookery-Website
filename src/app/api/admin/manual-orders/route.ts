@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { createManualOrder, ManualOrderError, type ManualOrderInput } from "@/lib/admin/manualOrders";
+import { ORDERS_KANBAN_TAG } from "@/lib/admin/ordersAdmin";
 
 export async function POST(request: NextRequest) {
   let admin;
@@ -16,6 +18,7 @@ export async function POST(request: NextRequest) {
   const input = (await request.json()) as Omit<ManualOrderInput, "createdByAdminId">;
   try {
     const order = await createManualOrder({ ...input, createdByAdminId: admin.id });
+    revalidateTag(ORDERS_KANBAN_TAG, { expire: 0 });
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {
     if (error instanceof ManualOrderError) {

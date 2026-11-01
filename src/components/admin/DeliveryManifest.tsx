@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { todayKey } from "@/lib/dates";
+import { jsonFetcher } from "@/lib/swr/fetcher";
 import type { ManifestRow } from "@/lib/admin/logistics";
 
 export function DeliveryManifest({ initialDate, initialRows }: { initialDate: string; initialRows: ManifestRow[] }) {
   const [date, setDate] = useState(initialDate);
-  const [rows, setRows] = useState(initialRows);
-  const [loading, startLoading] = useTransition();
-
-  useEffect(() => {
-    startLoading(async () => {
-      const res = await fetch(`/api/admin/logistics/manifest?date=${date}`);
-      const data = await res.json();
-      setRows(data.rows ?? []);
-    });
-  }, [date]);
+  const { data, isValidating } = useSWR<{ rows: ManifestRow[] }>(
+    `/api/admin/logistics/manifest?date=${date}`,
+    jsonFetcher,
+    { fallbackData: date === initialDate ? { rows: initialRows } : undefined },
+  );
+  const rows = data?.rows ?? [];
+  const loading = isValidating;
 
   const groups = new Map<string, ManifestRow[]>();
   for (const row of rows) {

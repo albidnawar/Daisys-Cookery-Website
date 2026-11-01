@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireModule, AdminAuthError } from "@/lib/admin/auth";
 import { updateOrderDetails, type OrderEditableFields } from "@/lib/admin/orderDetail";
+import { ORDERS_KANBAN_TAG } from "@/lib/admin/ordersAdmin";
 
 export async function PATCH(
   request: NextRequest,
@@ -33,5 +35,6 @@ export async function PATCH(
       { status: 500 },
     );
   }
+  revalidateTag(ORDERS_KANBAN_TAG, { expire: 0 });
   return NextResponse.json({ ok: true });
 }

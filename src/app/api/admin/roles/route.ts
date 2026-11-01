@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireOwner, AdminAuthError } from "@/lib/admin/auth";
+import { revalidateTag } from "next/cache";
+import { requireOwner, AdminAuthError, ADMIN_ROW_TAG } from "@/lib/admin/auth";
 import { createCustomRole, listAdminRoles, AdminRoleError } from "@/lib/admin/adminRoles";
 
 async function guard() {
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     const { name, modules } = await request.json();
     const id = await createCustomRole(name, modules ?? []);
+    revalidateTag(ADMIN_ROW_TAG, { expire: 0 });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
     if (error instanceof AdminRoleError) {

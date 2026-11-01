@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { formatSlotLabel } from "@/lib/slots/store";
 import { notifyOrderStatusChange } from "@/lib/notifications/notify";
@@ -14,82 +15,112 @@ import type { CakeSnapshot, OrderStatus } from "@/lib/types/domain";
 // client bundle.
 export type { KanbanOrder } from "@/lib/admin/kanbanColumns";
 
-export async function listOrdersForKanban(date?: string): Promise<KanbanOrder[]> {
-  const supabase = createServiceRoleClient();
-  const query = supabase
-    .from("orders")
-    .select(
-      "id, order_number, cake_snapshot, total, deposit_amount, balance_due, payment_status, status, order_source, fulfilment_type, contact_name, contact_phone, rider_name, rider_phone, rider_pickup_at, delivery_slots ( date, start_time, end_time )",
-    )
-    .neq("status", "cancelled")
-    .order("created_at", { ascending: true });
+// The board has no date filter applied by default (an admin picks one, or
+// hits "Today") — without a cap, that view would keep growing forever as
+// more orders are collected/delivered, since only 'cancelled' is excluded.
+// Recent-first + a generous cap keeps it bounded without hiding anything
+// an admin would actually be looking for; the slot-based sort below still
+// reorders whatever comes back for display.
+const UNFILTERED_ORDER_LIMIT = 300;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (query as any);
-  if (error) throw error;
+// Any write to the orders table (status, price, cake spec, slot, payment
+// status) or a brand-new order must call revalidateTag(ORDERS_KANBAN_TAG)
+// — see the admin orders/payments/manual-orders/checkout API routes.
+export const ORDERS_KANBAN_TAG = "orders-kanban";
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let rows = data as any[];
-  if (date) {
-    rows = rows.filter((row) => row.delivery_slots?.date === date);
-  }
+/** A short TTL mainly guards against repeated page loads/date-filter flips
+ * hitting the database back-to-back — every mutation already busts this
+ * immediately via revalidateTag, and the Kanban board itself no longer
+ * depends on this for its own edits (optimistic updates + Realtime handle
+ * that), so staleness here is bounded and low-stakes. */
+export const listOrdersForKanban = unstable_cache(
+  async (date?: string): Promise<KanbanOrder[]> => {
+    const supabase = createServiceRoleClient();
+    // Filtering by date needs an inner join on delivery_slots so Postgres
+    // can push the date filter down, instead of fetching every open order
+    // and filtering in JS.
+    const slotEmbed = date
+      ? "delivery_slots!inner ( date, start_time, end_time )"
+      : "delivery_slots ( date, start_time, end_time )";
+    let query = supabase
+      .from("orders")
+      .select(
+        `id, order_number, cake_snapshot, total, deposit_amount, balance_due, payment_status, status, order_source, fulfilment_type, contact_name, contact_phone, rider_name, rider_phone, rider_pickup_at, ${slotEmbed}`,
+      )
+      .neq("status", "cancelled");
 
-  const uniqueSlugs = [
-    ...new Set(
-      rows
-        .map((row) => (row.cake_snapshot as CakeSnapshot).slug)
-        .filter((slug): slug is string => Boolean(slug)),
-    ),
-  ];
-  const imageBySlug = new Map<string, string | null>(
-    await Promise.all(
-      uniqueSlugs.map(
-        async (slug) => [slug, (await getCachedCakeBySlug(slug))?.heroImageUrl ?? null] as const,
+    if (date) {
+      query = query.eq("delivery_slots.date", date).order("created_at", { ascending: true });
+    } else {
+      query = query.order("created_at", { ascending: false }).limit(UNFILTERED_ORDER_LIMIT);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (query as any);
+    if (error) throw error;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = data as any[];
+
+    const uniqueSlugs = [
+      ...new Set(
+        rows
+          .map((row) => (row.cake_snapshot as CakeSnapshot).slug)
+          .filter((slug): slug is string => Boolean(slug)),
       ),
-    ),
-  );
+    ];
+    const imageBySlug = new Map<string, string | null>(
+      await Promise.all(
+        uniqueSlugs.map(
+          async (slug) => [slug, (await getCachedCakeBySlug(slug))?.heroImageUrl ?? null] as const,
+        ),
+      ),
+    );
 
-  const kanbanOrders: KanbanOrder[] = rows.map((row) => {
-    const slot = row.delivery_slots;
-    const cakeSlug = (row.cake_snapshot as CakeSnapshot).slug;
-    return {
-      id: row.id,
-      orderNumber: row.order_number,
-      cakeName: (row.cake_snapshot as CakeSnapshot).name,
-      cakeSlug,
-      cakeImageUrl: cakeSlug ? imageBySlug.get(cakeSlug) ?? null : null,
-      spec: (row.cake_snapshot as CakeSnapshot).spec,
-      total: Number(row.total),
-      depositAmount: Number(row.deposit_amount),
-      balanceDue: Number(row.balance_due),
-      paymentStatus: row.payment_status,
-      status: row.status,
-      orderSource: row.order_source,
-      fulfilmentType: row.fulfilment_type,
-      slotDate: slot?.date ?? null,
-      slotStartTime: slot?.start_time ?? null,
-      slotLabel: slot ? formatSlotLabel(slot.date, slot.start_time, slot.end_time) : null,
-      contactName: row.contact_name,
-      contactPhone: row.contact_phone,
-      riderName: row.rider_name ?? null,
-      riderPhone: row.rider_phone ?? null,
-      riderPickupAt: row.rider_pickup_at ?? null,
-    };
-  });
+    const kanbanOrders: KanbanOrder[] = rows.map((row) => {
+      const slot = row.delivery_slots;
+      const cakeSlug = (row.cake_snapshot as CakeSnapshot).slug;
+      return {
+        id: row.id,
+        orderNumber: row.order_number,
+        cakeName: (row.cake_snapshot as CakeSnapshot).name,
+        cakeSlug,
+        cakeImageUrl: cakeSlug ? imageBySlug.get(cakeSlug) ?? null : null,
+        spec: (row.cake_snapshot as CakeSnapshot).spec,
+        total: Number(row.total),
+        depositAmount: Number(row.deposit_amount),
+        balanceDue: Number(row.balance_due),
+        paymentStatus: row.payment_status,
+        status: row.status,
+        orderSource: row.order_source,
+        fulfilmentType: row.fulfilment_type,
+        slotDate: slot?.date ?? null,
+        slotStartTime: slot?.start_time ?? null,
+        slotLabel: slot ? formatSlotLabel(slot.date, slot.start_time, slot.end_time) : null,
+        contactName: row.contact_name,
+        contactPhone: row.contact_phone,
+        riderName: row.rider_name ?? null,
+        riderPhone: row.rider_phone ?? null,
+        riderPickupAt: row.rider_pickup_at ?? null,
+      };
+    });
 
-  // Each column reads top-to-bottom as "what's due soonest" — an order
-  // with no slot yet (shouldn't normally happen) sorts to the end rather
-  // than before everything else.
-  kanbanOrders.sort((a, b) => {
-    if (!a.slotDate || !a.slotStartTime) return 1;
-    if (!b.slotDate || !b.slotStartTime) return -1;
-    const dateCompare = a.slotDate.localeCompare(b.slotDate);
-    if (dateCompare !== 0) return dateCompare;
-    return a.slotStartTime.localeCompare(b.slotStartTime);
-  });
+    // Each column reads top-to-bottom as "what's due soonest" — an order
+    // with no slot yet (shouldn't normally happen) sorts to the end rather
+    // than before everything else.
+    kanbanOrders.sort((a, b) => {
+      if (!a.slotDate || !a.slotStartTime) return 1;
+      if (!b.slotDate || !b.slotStartTime) return -1;
+      const dateCompare = a.slotDate.localeCompare(b.slotDate);
+      if (dateCompare !== 0) return dateCompare;
+      return a.slotStartTime.localeCompare(b.slotStartTime);
+    });
 
-  return kanbanOrders;
-}
+    return kanbanOrders;
+  },
+  ["orders-kanban"],
+  { revalidate: 10, tags: [ORDERS_KANBAN_TAG] },
+);
 
 // A reference photo is only ever useful while the kitchen still has the
 // cake to make — once an order lands in one of these, it's either baked

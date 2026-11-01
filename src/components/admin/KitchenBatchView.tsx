@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { todayKey } from "@/lib/dates";
+import { jsonFetcher } from "@/lib/swr/fetcher";
 import type { KitchenBatchLine } from "@/lib/admin/ordersAdmin";
 
 export function KitchenBatchView({ initialDate, initialBatch }: { initialDate: string; initialBatch: KitchenBatchLine[] }) {
   const [date, setDate] = useState(initialDate);
-  const [batch, setBatch] = useState(initialBatch);
-  const [loading, startLoading] = useTransition();
-
-  useEffect(() => {
-    startLoading(async () => {
-      const res = await fetch(`/api/admin/kitchen-batch?date=${date}`);
-      const data = await res.json();
-      setBatch(data.batch ?? []);
-    });
-  }, [date]);
+  const { data, isValidating } = useSWR<{ batch: KitchenBatchLine[] }>(
+    `/api/admin/kitchen-batch?date=${date}`,
+    jsonFetcher,
+    { fallbackData: date === initialDate ? { batch: initialBatch } : undefined },
+  );
+  const batch = data?.batch ?? [];
+  const loading = isValidating;
 
   const totalCakes = batch.reduce((sum, line) => sum + line.count, 0);
 

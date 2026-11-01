@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireOwner, AdminAuthError } from "@/lib/admin/auth";
+import { revalidateTag } from "next/cache";
+import { requireOwner, AdminAuthError, ADMIN_ROW_TAG } from "@/lib/admin/auth";
 import { AdminAccountError, removeAdminAccount, updateAdminRole } from "@/lib/admin/adminAccounts";
 
 export async function PATCH(
@@ -11,6 +12,7 @@ export async function PATCH(
     const { id } = await params;
     const { roleId } = await request.json();
     await updateAdminRole(id, roleId);
+    revalidateTag(ADMIN_ROW_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof AdminAuthError) {
@@ -31,6 +33,7 @@ export async function DELETE(
     const currentAdmin = await requireOwner();
     const { id } = await params;
     await removeAdminAccount(id, currentAdmin.id);
+    revalidateTag(ADMIN_ROW_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof AdminAuthError) {

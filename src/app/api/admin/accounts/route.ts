@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireOwner, AdminAuthError } from "@/lib/admin/auth";
+import { revalidateTag } from "next/cache";
+import { requireOwner, AdminAuthError, ADMIN_ROW_TAG } from "@/lib/admin/auth";
 import { createAdminAccount, listAdminAccounts, AdminAccountError, type CreateAdminAccountInput } from "@/lib/admin/adminAccounts";
 
 async function guard() {
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     const input = (await request.json()) as CreateAdminAccountInput;
     const id = await createAdminAccount(input);
+    revalidateTag(ADMIN_ROW_TAG, { expire: 0 });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
     if (error instanceof AdminAccountError) {

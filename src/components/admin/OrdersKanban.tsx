@@ -1,10 +1,35 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import useSWR from "swr";
 import { ALL_ORDER_STATUSES, KANBAN_COLUMNS, type KanbanOrder } from "@/lib/admin/kanbanColumns";
 import { formatSlotLabelForDisplay, formatTimeAmPm, todayKey } from "@/lib/dates";
+import { createClient } from "@/lib/supabase/client";
+import { jsonFetcher } from "@/lib/swr/fetcher";
 import type { OrderStatus } from "@/lib/types/domain";
+
+// Shape of a raw `orders` row as Supabase Realtime sends it on an UPDATE —
+// plain table columns, no joined delivery_slots/catalog data. Used to patch
+// a card in place without a refetch; see the "admins can select all
+// orders" RLS policy (migration 0036) that makes these events visible to
+// an admin's browser session at all.
+type RawOrderRow = {
+  id: string;
+  status: OrderStatus;
+  payment_status: string;
+  fulfilment_type: "pickup" | "delivery";
+  contact_name: string;
+  contact_phone: string;
+  rider_name: string | null;
+  rider_phone: string | null;
+  rider_pickup_at: string | null;
+  total: number | string;
+  deposit_amount: number | string;
+  balance_due: number | string;
+  cake_snapshot: { name: string; slug: string | null } | null;
+};
 
 /** riderPickupAt is a timestamptz instant — format just its local time of
  * day through the site's one am/pm house style (formatTimeAmPm), the same
@@ -24,34 +49,116 @@ function resolveDropStatus(columnKey: string, order: KanbanOrder): OrderStatus {
   return KANBAN_COLUMNS.find((c) => c.key === columnKey)!.statuses[0];
 }
 
+/** Mirrors updateOrderStatus()'s auto-settle rule server-side — handing
+ * over the cake also settles the remaining cash balance — so the card's
+ * payment status/Due line stays correct without a refetch. */
+function applyStatus(orders: KanbanOrder[], id: string, status: OrderStatus): KanbanOrder[] {
+  return orders.map((o) => {
+    if (o.id !== id) return o;
+    const autoSettle =
+      (status === "collected" || status === "delivered") &&
+      o.paymentStatus !== "paid_in_full" &&
+      o.paymentStatus !== "refunded";
+    return { ...o, status, paymentStatus: autoSettle ? "paid_in_full" : o.paymentStatus };
+  });
+}
+
 export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }) {
-  const [orders, setOrders] = useState(initialOrders);
   const [dateFilter, setDateFilter] = useState<string>("");
-  const [loading, startLoading] = useTransition();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
-  const refresh = (date: string) => {
-    startLoading(async () => {
-      const params = date ? `?date=${date}` : "";
-      const res = await fetch(`/api/admin/orders${params}`);
-      const data = await res.json();
-      setOrders(data.orders ?? []);
-    });
-  };
+  const key = `/api/admin/orders${dateFilter ? `?date=${dateFilter}` : ""}`;
+  const { data, isValidating, mutate } = useSWR<{ orders: KanbanOrder[] }>(key, jsonFetcher, {
+    fallbackData: dateFilter === "" ? { orders: initialOrders } : undefined,
+  });
+  const orders = data?.orders ?? [];
+  const loading = isValidating;
+
+  // Keeps the board in sync when another admin (or another tab) changes an
+  // order, without polling or re-fetching the whole list ourselves. A new
+  // order needs a full refresh (we don't have its slot/cake-photo data from
+  // the raw row alone); an update just patches the matching card in place.
+  // mutate's identity changes with the key (date filter), so the stable
+  // Realtime subscription below reads it through a ref.
+  const mutateRef = useRef(mutate);
+  useEffect(() => {
+    mutateRef.current = mutate;
+  }, [mutate]);
 
   useEffect(() => {
-    if (dateFilter !== "") refresh(dateFilter);
-  }, [dateFilter]);
+    const supabase = createClient();
+    const channel = supabase
+      .channel("admin-orders-changes")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => {
+        mutateRef.current();
+      })
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders" },
+        (payload) => {
+          const row = payload.new as RawOrderRow;
+          mutateRef.current(
+            (current) => {
+              if (!current) return current;
+              if (row.status === "cancelled") {
+                return { orders: current.orders.filter((o) => o.id !== row.id) };
+              }
+              return {
+                orders: current.orders.map((o) => {
+                  if (o.id !== row.id) return o;
+                  return {
+                    ...o,
+                    cakeName: row.cake_snapshot?.name ?? o.cakeName,
+                    cakeSlug: row.cake_snapshot?.slug ?? o.cakeSlug,
+                    total: Number(row.total),
+                    depositAmount: Number(row.deposit_amount),
+                    balanceDue: Number(row.balance_due),
+                    paymentStatus: row.payment_status,
+                    status: row.status,
+                    fulfilmentType: row.fulfilment_type,
+                    contactName: row.contact_name,
+                    contactPhone: row.contact_phone,
+                    riderName: row.rider_name,
+                    riderPhone: row.rider_phone,
+                    riderPickupAt: row.rider_pickup_at,
+                  };
+                }),
+              };
+            },
+            { revalidate: false },
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const changeStatus = async (id: string, status: OrderStatus) => {
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
-    await fetch(`/api/admin/orders/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    refresh(dateFilter);
+    try {
+      await mutate(
+        async () => {
+          const res = await fetch(`/api/admin/orders/${id}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status }),
+          });
+          if (!res.ok) throw new Error("Failed to save status");
+          return undefined;
+        },
+        {
+          optimisticData: (current) => ({ orders: applyStatus(current?.orders ?? [], id, status) }),
+          populateCache: false,
+          revalidate: false,
+          rollbackOnError: true,
+        },
+      );
+    } catch {
+      alert("Couldn't save that status change — please try again.");
+    }
   };
 
   const handleDrop = (columnKey: string) => {
@@ -160,13 +267,15 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                         rel="noopener noreferrer"
                         draggable={false}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="block h-20 w-full overflow-hidden rounded-lg bg-cream"
+                        className="relative block h-20 w-full overflow-hidden rounded-lg bg-cream"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={order.cakeImageUrl}
                           alt=""
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="288px"
+                          loading="lazy"
+                          className="object-cover"
                         />
                       </a>
                     )}
