@@ -17,11 +17,13 @@ export default async function AdminOrderDetailPage({
   const order = await getOrder(id);
   if (!order) notFound();
 
-  const [cake, history, riders, colorOptions] = await Promise.all([
+  const [cake, history, riders, colorOptions, flavorOptions, extrasOptions] = await Promise.all([
     order.cakeSnapshot.slug ? resolveCakeForDisplay(order.cakeSnapshot.slug) : null,
     getOrderStatusHistory(id),
     listRidersAdmin(),
     listOptionValuesAdmin("cake_color"),
+    listOptionValuesAdmin("sponge"),
+    listOptionValuesAdmin("extras"),
   ]);
   const groupsByCode = Object.fromEntries((cake?.optionGroups ?? []).map((g) => [g.code, g]));
 
@@ -33,6 +35,8 @@ export default async function AdminOrderDetailPage({
       cakeImageUrl={cake?.heroImageUrl ?? null}
       riders={riders}
       colorOptions={colorOptions}
+      flavorOptions={flavorOptions}
+      extrasOptions={extrasOptions}
     />
   );
 }

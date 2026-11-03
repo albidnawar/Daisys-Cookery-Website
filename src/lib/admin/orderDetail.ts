@@ -3,7 +3,11 @@ import { normalizePhone } from "@/lib/phone";
 import { computeDepositAmount, toDepositConfig } from "@/lib/pricing/deposit";
 import { getStoreSettings } from "@/lib/settings/store";
 import { listZones } from "@/lib/slots/store";
+import { getReferenceImages } from "@/lib/customiser/referenceImages";
+import { deleteReferenceImageUrls } from "@/lib/storage/referenceImageCleanup";
 import type { CakeSnapshot, DraftOrderSpec, OrderStatus } from "@/lib/types/domain";
+
+export class OrderReferenceImageError extends Error {}
 
 export type OrderStatusHistoryEntry = {
   status: OrderStatus;
@@ -141,6 +145,82 @@ export async function updateOrderCakeSpec(orderId: string, patch: CakeSpecPatch)
     .update({ cake_snapshot: updatedSnapshot })
     .eq("id", orderId);
   if (error) throw error;
+}
+
+// Matches the customer-facing cap in the draft-order reference-image route
+// (src/app/api/draft-order/[id]/reference-image/route.ts) — a generous
+// server-side sanity ceiling, not a UX limit.
+const MAX_REFERENCE_IMAGES = 10;
+
+/** Throws if the order already has MAX_REFERENCE_IMAGES reference photos —
+ * checked before the caller uploads bytes to Storage, so a near-the-cap
+ * rejection doesn't leave an orphaned file behind. */
+export async function assertOrderCanAddReferenceImage(orderId: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: existing, error } = await supabase
+    .from("orders")
+    .select("cake_snapshot")
+    .eq("id", orderId)
+    .single();
+  if (error) throw error;
+  const snapshot = existing.cake_snapshot as CakeSnapshot;
+  if (getReferenceImages(snapshot.spec).length >= MAX_REFERENCE_IMAGES) {
+    throw new OrderReferenceImageError("Too many reference images on this order already.");
+  }
+}
+
+/** Appends an already-uploaded photo's URL to the order's reference
+ * images — called once the admin has added a photo the customer sent
+ * over Messenger/WhatsApp after the order was placed. */
+export async function addOrderReferenceImage(orderId: string, url: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: existing, error: fetchError } = await supabase
+    .from("orders")
+    .select("cake_snapshot")
+    .eq("id", orderId)
+    .single();
+  if (fetchError) throw fetchError;
+
+  const snapshot = existing.cake_snapshot as CakeSnapshot;
+  const updatedSnapshot: CakeSnapshot = {
+    ...snapshot,
+    spec: { ...snapshot.spec, referenceImageUrls: [...getReferenceImages(snapshot.spec), url] },
+  };
+  const { error } = await supabase
+    .from("orders")
+    .update({ cake_snapshot: updatedSnapshot })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
+/** Removes one reference photo (and deletes it from Storage) — e.g. the
+ * customer sent a better one, or it was added by mistake. Also clears the
+ * legacy single-image field if it happened to be the one removed, so
+ * getReferenceImages() doesn't keep showing it after removal. */
+export async function removeOrderReferenceImage(orderId: string, url: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: existing, error: fetchError } = await supabase
+    .from("orders")
+    .select("cake_snapshot")
+    .eq("id", orderId)
+    .single();
+  if (fetchError) throw fetchError;
+
+  const snapshot = existing.cake_snapshot as CakeSnapshot;
+  const updatedSnapshot: CakeSnapshot = {
+    ...snapshot,
+    spec: {
+      ...snapshot.spec,
+      referenceImageUrls: getReferenceImages(snapshot.spec).filter((u) => u !== url),
+      referenceImageUrl: snapshot.spec.referenceImageUrl === url ? null : snapshot.spec.referenceImageUrl,
+    },
+  };
+  const { error } = await supabase
+    .from("orders")
+    .update({ cake_snapshot: updatedSnapshot })
+    .eq("id", orderId);
+  if (error) throw error;
+  await deleteReferenceImageUrls([url]);
 }
 
 /** Fills in the cake price, the delivery cost (a custom design has no

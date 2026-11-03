@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -24,6 +24,20 @@ const PAYMENT_METHOD_LABELS: Record<Order["paymentMethod"], string> = {
   cash_on_collection: "Cash on collection",
 };
 
+// Flavor ("sponge") and Candles & toppers ("extras") are a single global
+// option group each (same underlying option_values row set for every
+// cake, catalog or custom — see optionValuesAdmin.ts) — groupsByCode only
+// has entries for a catalog cake's linked groups, so a custom-design
+// order (cake_snapshot.slug === null, which in practice is nearly every
+// order) falls back to these fixed, admin-managed labels instead of
+// losing the editor entirely.
+const FLAVOR_GROUP_LABEL = "Flavor";
+const EXTRAS_GROUP_LABEL = "Candles & toppers";
+
+function toOptionGroup(code: string, label: string, values: OptionValue[]): OptionGroup {
+  return { id: code, code, label, inputType: "radio", minSelect: 0, maxSelect: 1, values };
+}
+
 export function OrderDetailEditor({
   order,
   groupsByCode,
@@ -31,6 +45,8 @@ export function OrderDetailEditor({
   cakeImageUrl,
   riders,
   colorOptions,
+  flavorOptions,
+  extrasOptions,
 }: {
   order: Order;
   groupsByCode: Record<string, OptionGroup>;
@@ -38,8 +54,12 @@ export function OrderDetailEditor({
   cakeImageUrl: string | null;
   riders: Rider[];
   colorOptions: OptionValue[];
+  flavorOptions: OptionValue[];
+  extrasOptions: OptionValue[];
 }) {
   const router = useRouter();
+  const spongeGroup = groupsByCode.sponge ?? toOptionGroup("sponge", FLAVOR_GROUP_LABEL, flavorOptions);
+  const extrasGroup = groupsByCode.extras ?? toOptionGroup("extras", EXTRAS_GROUP_LABEL, extrasOptions);
 
   const [contactName, setContactName] = useState(order.contactName);
   const [contactPhone, setContactPhone] = useState(order.contactPhone);
@@ -93,6 +113,14 @@ export function OrderDetailEditor({
   const [cakeError, setCakeError] = useState<string | null>(null);
   const [cakeEditOpen, setCakeEditOpen] = useState(false);
 
+  const [referenceImages, setReferenceImages] = useState<string[]>(
+    getReferenceImages(order.cakeSnapshot.spec),
+  );
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [removingPhoto, setRemovingPhoto] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
   const resetCakeFields = () => {
     setCakeName(order.cakeSnapshot.name);
     setSizeCode(order.cakeSnapshot.spec.sizeCode ?? "");
@@ -104,6 +132,51 @@ export function OrderDetailEditor({
     setInstructions(order.cakeSnapshot.spec.instructions ?? "");
     setCakeError(null);
     setCakeSaved(false);
+    setReferenceImages(getReferenceImages(order.cakeSnapshot.spec));
+    setPhotoError(null);
+  };
+
+  /** Unlike the other cake fields (staged until "Save cake details"),
+   * adding/removing a reference photo commits immediately — there's
+   * nothing to "undo" by clicking Cancel, the same as every other
+   * image-upload control in this admin (ImageUploadField et al). */
+  const uploadReferencePhoto = async (file: File) => {
+    setPhotoError(null);
+    setUploadingPhoto(true);
+    const form = new FormData();
+    form.set("file", file);
+    const res = await fetch(`/api/admin/orders/${order.id}/reference-image`, {
+      method: "POST",
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setPhotoError(data.error ?? "Couldn't upload that photo");
+      setUploadingPhoto(false);
+      return;
+    }
+    setReferenceImages((prev) => [...prev, data.url]);
+    setUploadingPhoto(false);
+    router.refresh();
+  };
+
+  const removeReferencePhoto = async (url: string) => {
+    setPhotoError(null);
+    setRemovingPhoto(url);
+    const res = await fetch(`/api/admin/orders/${order.id}/reference-image`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setPhotoError(data.error ?? "Couldn't remove that photo");
+      setRemovingPhoto(null);
+      return;
+    }
+    setReferenceImages((prev) => prev.filter((u) => u !== url));
+    setRemovingPhoto(null);
+    router.refresh();
   };
 
   const openCakeEdit = () => {
@@ -423,12 +496,8 @@ export function OrderDetailEditor({
                     className="input-field w-32"
                   />
                 </Field>
-                {groupsByCode.sponge && (
-                  <RadioOptionGroup group={groupsByCode.sponge} value={sponge} onChange={setSponge} columns={4} />
-                )}
-                {groupsByCode.extras && (
-                  <CheckboxOptionGroup group={groupsByCode.extras} value={extras} onChange={setExtras} />
-                )}
+                <RadioOptionGroup group={spongeGroup} value={sponge} onChange={setSponge} columns={4} />
+                <CheckboxOptionGroup group={extrasGroup} value={extras} onChange={setExtras} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Board writing">
                     <input value={message} onChange={(e) => setMessage(e.target.value)} className="input-field" />
@@ -445,6 +514,58 @@ export function OrderDetailEditor({
                     className="input-field"
                   />
                 </Field>
+
+                <div>
+                  <span className="mb-1 block font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/60">
+                    Reference photos from customer
+                  </span>
+                  <div className="flex flex-wrap gap-3">
+                    {referenceImages.map((url) => (
+                      <div
+                        key={url}
+                        className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-brand-chocolate/10"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setLightboxSrc(url)}
+                          className="relative block h-full w-full"
+                        >
+                          <Image src={url} alt="Reference" fill className="object-cover" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeReferencePhoto(url)}
+                          disabled={removingPhoto === url}
+                          title="Remove photo"
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-xs font-bold text-brand-chocolate shadow hover:bg-white"
+                        >
+                          {removingPhoto === url ? "…" : "✕"}
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-dashed border-brand-chocolate/25 bg-cream px-2 text-center font-body text-xs text-brand-chocolate/60"
+                    >
+                      {uploadingPhoto ? "Uploading…" : "+ Add photo"}
+                    </button>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadReferencePhoto(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+                  {photoError && <p className="mt-1 font-body text-sm text-red-600">{photoError}</p>}
+                </div>
+
                 {cakeError && <p className="font-body text-sm text-red-600">{cakeError}</p>}
                 {cakeSaved && <p className="font-body text-sm text-emerald-700">Saved.</p>}
                 <div className="flex gap-3">
