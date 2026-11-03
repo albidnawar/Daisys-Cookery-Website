@@ -18,7 +18,8 @@ export default async function AdminOrderOptionsPage() {
         </h1>
         <p className="mt-1 font-body text-sm text-brand-chocolate/60">
           Manage the flavor, cake color, and candles/topper choices customers pick when ordering
-          a cake, each with an optional extra price.
+          a cake, each with an optional extra price. Flavor doubles as each catalog cake&apos;s
+          flavor tag and the public site&apos;s flavor filter — one list, not two.
         </p>
       </div>
 

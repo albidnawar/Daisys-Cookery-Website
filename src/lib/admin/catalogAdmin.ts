@@ -41,7 +41,7 @@ export async function listAllCakesAdmin(): Promise<AdminCakeSummary[]> {
   const { data, error } = await supabase
     .from("cakes")
     .select(
-      "id, slug, name, base_price, is_active, availability, is_featured_home, flavor:flavors ( name )",
+      "id, slug, name, base_price, is_active, availability, is_featured_home, flavor:option_values!cakes_primary_flavor_id_fkey ( label )",
     )
     .order("name");
   if (error) throw error;
@@ -51,7 +51,7 @@ export async function listAllCakesAdmin(): Promise<AdminCakeSummary[]> {
     slug: row.slug,
     name: row.name,
     basePrice: Number(row.base_price),
-    flavorName: row.flavor?.name ?? null,
+    flavorName: row.flavor?.label ?? null,
     isActive: row.is_active,
     availability: row.availability,
     isFeaturedHome: row.is_featured_home,

@@ -48,7 +48,14 @@ export async function DELETE(
     throw error;
   }
   const { id } = await params;
-  await deleteOptionValueAdmin(id);
-  revalidateTag("catalog", { expire: 0 });
-  return NextResponse.json({ ok: true });
+  try {
+    await deleteOptionValueAdmin(id);
+    revalidateTag("catalog", { expire: 0 });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof OptionValueError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    throw error;
+  }
 }

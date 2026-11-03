@@ -7,19 +7,6 @@
 export type Database = {
   public: {
     Tables: {
-      flavors: {
-        Row: {
-          id: string;
-          name: string;
-          slug: string;
-          sort_order: number;
-        };
-        Insert: Partial<Database["public"]["Tables"]["flavors"]["Row"]> & {
-          name: string;
-          slug: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["flavors"]["Row"]>;
-      };
       cakes: {
         Row: {
           id: string;

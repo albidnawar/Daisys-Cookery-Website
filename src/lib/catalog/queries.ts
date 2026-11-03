@@ -22,7 +22,7 @@ type Client = SupabaseClient;
 const CAKE_SUMMARY_SELECT = `
   id, slug, name, short_description, base_price, hero_image_url,
   hero_image_focal_x, hero_image_focal_y,
-  flavor:flavors ( id, name, slug ),
+  flavor:option_values!cakes_primary_flavor_id_fkey ( id, label, value_code ),
   cake_dietary_tags ( tag ),
   cake_events ( event_code )
 `;
@@ -36,7 +36,10 @@ type CakeSummaryRow = {
   hero_image_url: string | null;
   hero_image_focal_x: number;
   hero_image_focal_y: number;
-  flavor: { id: string; name: string; slug: string } | null;
+  // "Flavor" is a priced option_values row (group code "sponge") — see
+  // 0038_merge_flavors_into_option_values.sql. value_code doubles as the
+  // slug (already URL-safe, generated the same way for either use).
+  flavor: { id: string; label: string; value_code: string } | null;
   cake_dietary_tags: { tag: DietaryTag }[];
   cake_events: { event_code: EventCode }[];
 };
@@ -50,7 +53,9 @@ function toCakeSummary(row: CakeSummaryRow): CakeSummary {
     basePrice: Number(row.base_price),
     heroImageUrl: row.hero_image_url,
     heroImageFocal: { x: Number(row.hero_image_focal_x), y: Number(row.hero_image_focal_y) },
-    flavor: row.flavor,
+    flavor: row.flavor
+      ? { id: row.flavor.id, name: row.flavor.label, slug: row.flavor.value_code }
+      : null,
     dietaryTags: row.cake_dietary_tags.map((t) => t.tag),
     events: row.cake_events.map((e) => e.event_code),
   };
@@ -104,13 +109,26 @@ export function applyCatalogFilters(
   return sorted;
 }
 
+/** "Flavor" is the Order Options option group (code "sponge") — the same
+ * priced list an order's cake editor offers — reused here as the
+ * catalog's flavor filter/tag so there's exactly one flavor list to
+ * manage instead of two that could silently drift apart (see
+ * 0038_merge_flavors_into_option_values.sql). */
+async function getSpongeGroupId(supabase: Client): Promise<string> {
+  const { data, error } = await supabase.from("option_groups").select("id").eq("code", "sponge").single();
+  if (error) throw error;
+  return data.id;
+}
+
 export async function listFlavors(supabase: Client): Promise<Flavor[]> {
+  const groupId = await getSpongeGroupId(supabase);
   const { data, error } = await supabase
-    .from("flavors")
-    .select("id, name, slug")
+    .from("option_values")
+    .select("id, label, value_code, sort_order")
+    .eq("group_id", groupId)
     .order("sort_order");
   if (error) throw error;
-  return data;
+  return data.map((v) => ({ id: v.id, name: v.label, slug: v.value_code }));
 }
 
 export type TaxonomyOption = { code: string; label: string };
@@ -134,10 +152,12 @@ export async function listCakes(
   let query = supabase.from("cakes").select(CAKE_SUMMARY_SELECT).eq("is_active", true);
 
   if (filters.flavorSlug) {
+    const groupId = await getSpongeGroupId(supabase);
     const { data: flavor } = await supabase
-      .from("flavors")
+      .from("option_values")
       .select("id")
-      .eq("slug", filters.flavorSlug)
+      .eq("group_id", groupId)
+      .eq("value_code", filters.flavorSlug)
       .maybeSingle();
     query = query.eq("primary_flavor_id", flavor?.id ?? "");
   }
@@ -211,7 +231,7 @@ export async function getCakeBySlug(
       id, slug, name, description, short_description, base_price,
       hero_image_url, hero_image_focal_x, hero_image_focal_y,
       gallery_image_urls, gallery_image_focals, is_customisable,
-      flavor:flavors ( id, name, slug ),
+      flavor:option_values!cakes_primary_flavor_id_fkey ( id, label, value_code ),
       cake_dietary_tags ( tag ),
       cake_events ( event_code ),
       cake_option_groups (

@@ -4,75 +4,6 @@
 -- pending real menu/pricing numbers from the business (see plan's
 -- "Prerequisites" section).
 
-insert into flavors (name, slug, sort_order) values
-  ('Vanilla', 'vanilla', 1),
-  ('Chocolate', 'chocolate', 2),
-  ('Black Forest', 'black-forest', 3),
-  ('Red Velvet', 'red-velvet', 4),
-  ('Butterscotch', 'butterscotch', 5),
-  ('Orange', 'orange', 6),
-  ('Mango', 'mango', 7),
-  ('Lemon', 'lemon', 8),
-  ('Strawberry', 'strawberry', 9),
-  ('Blueberry', 'blueberry', 10),
-  ('Pistachio', 'pistachio', 11);
-
-insert into cakes (slug, name, primary_flavor_id, description, short_description, base_price, is_customisable, is_active)
-select
-  v.slug, v.name, f.id, v.description, v.short_description, v.base_price, true, true
-from (values
-  ('the-vanilla-bean', 'The Vanilla Bean', 'vanilla', 'Bourbon vanilla sponge, whipped cream, a plain gold band.', 'Bourbon vanilla sponge, whipped cream, a plain gold band.', 1150.00),
-  ('dark-chocolate-ganache', 'Dark Chocolate Ganache', 'chocolate', 'Dark sponge, ganache between the layers, cocoa dusted.', 'Dark sponge, ganache between the layers, cocoa dusted.', 1250.00),
-  ('the-winter-gateau', 'The Winter Gateau', 'black-forest', 'Three layers of dark sponge brushed with cherry syrup, whipped cream between, and chocolate shaved off the block by hand.', 'Cherries, cream and shaved chocolate. Two pounds serves eight.', 1400.00),
-  ('daisys-velvet', 'Daisy''s Velvet', 'red-velvet', 'Buttermilk crumb with a cream-cheese frosting, crumbed edge.', 'Cream cheese between three layers, crumbed all round.', 1350.00),
-  ('praline-crown', 'Praline Crown', 'butterscotch', 'Caramel sponge with crushed praline pressed into the sides.', 'Caramel sponge with crushed praline pressed into the sides.', 1300.00),
-  ('orange-zest-delight', 'Orange Zest Delight', 'orange', 'Orange-zested sponge with a light citrus syrup soak.', 'Orange-zested sponge with a light citrus syrup soak.', 1150.00),
-  ('summer-cream-cake', 'Summer Cream Cake', 'mango', 'Alphonso puree folded through the cream, fruit on the crown.', 'Alphonso puree folded through the cream, fruit on the crown.', 1300.00),
-  ('curd-and-cream', 'Curd & Cream', 'lemon', 'Sharp curd, soft meringue peaks, zest across the top.', 'Sharp curd, soft meringue peaks, zest across the top.', 1200.00),
-  ('strawberry-fields', 'Strawberry Fields', 'strawberry', 'Fresh strawberry compote layered through vanilla sponge.', 'Fresh strawberry compote layered through vanilla sponge.', 1300.00),
-  ('blueberry-bliss', 'Blueberry Bliss', 'blueberry', 'Blueberry compote and cream, finished with fresh berries.', 'Blueberry compote and cream, finished with fresh berries.', 1350.00),
-  ('the-green-loaf', 'The Green Loaf', 'pistachio', 'Ground pistachio sponge, honey syrup, nibbed edge.', 'Ground pistachio sponge, honey syrup, nibbed edge.', 1500.00)
-) as v(slug, name, flavor_slug, description, short_description, base_price)
-join flavors f on f.slug = v.flavor_slug;
-
-insert into cake_dietary_tags (cake_id, tag)
-select c.id, t.tag
-from cakes c
-join (values
-  ('the-winter-gateau', 'eggless'),
-  ('the-winter-gateau', 'gluten_free'),
-  ('daisys-velvet', 'eggless'),
-  ('curd-and-cream', 'gluten_free'),
-  ('summer-cream-cake', 'vegan')
-) as t(slug, tag) on t.slug = c.slug;
-
-insert into cake_events (cake_id, event_code)
-select c.id, e.event_code
-from cakes c
-join (values
-  ('the-vanilla-bean', 'birthday'),
-  ('the-vanilla-bean', 'kids_character'),
-  ('dark-chocolate-ganache', 'birthday'),
-  ('dark-chocolate-ganache', 'corporate_office'),
-  ('the-winter-gateau', 'birthday'),
-  ('the-winter-gateau', 'anniversary_romance'),
-  ('daisys-velvet', 'anniversary_romance'),
-  ('daisys-velvet', 'valentines_mothers_fathers_day'),
-  ('praline-crown', 'graduation_success'),
-  ('praline-crown', 'corporate_office'),
-  ('orange-zest-delight', 'eid_festive'),
-  ('summer-cream-cake', 'eid_festive'),
-  ('summer-cream-cake', 'baby_shower_sadh'),
-  ('curd-and-cream', 'baby_shower_sadh'),
-  ('curd-and-cream', 'graduation_success'),
-  ('strawberry-fields', 'valentines_mothers_fathers_day'),
-  ('strawberry-fields', 'engagement_ring'),
-  ('blueberry-bliss', 'engagement_ring'),
-  ('blueberry-bliss', 'wedding_gaye_holud'),
-  ('the-green-loaf', 'wedding_gaye_holud'),
-  ('the-green-loaf', 'corporate_office')
-) as e(slug, event_code) on e.slug = c.slug;
-
 insert into option_groups (code, label, input_type, min_select, max_select, sort_order) values
   ('size_lb', 'Size, in pounds', 'segmented', 1, 1, 1),
   ('shape', 'Shape', 'radio', 1, 1, 2),
@@ -84,6 +15,9 @@ insert into option_groups (code, label, input_type, min_select, max_select, sort
   ('allergen_swap', 'Allergen swaps', 'checkbox_multi', 0, 3, 8),
   ('photo_print', 'Photo print on cake', 'checkbox_multi', 0, 1, 9);
 
+-- Sponge flavor ("Flavor" in the admin UI) doubles as each catalog
+-- cake's flavor tag/filter below — see 0038_merge_flavors_into_option_values.sql
+-- for why there's only one flavor list, not a separate `flavors` table.
 insert into option_values (group_id, label, value_code, price_delta, sort_order, metadata)
 select g.id, v.label, v.value_code, v.price_delta, v.sort_order, v.metadata::jsonb
 from option_groups g
@@ -139,6 +73,63 @@ join (values
 
   ('photo_print', 'Print my reference photo on rice paper', 'photo_print', 400, 1, '{}')
 ) as v(group_code, label, value_code, price_delta, sort_order, metadata) on g.code = v.group_code;
+
+insert into cakes (slug, name, primary_flavor_id, description, short_description, base_price, is_customisable, is_active)
+select
+  v.slug, v.name, ov.id, v.description, v.short_description, v.base_price, true, true
+from (values
+  ('the-vanilla-bean', 'The Vanilla Bean', 'vanilla', 'Bourbon vanilla sponge, whipped cream, a plain gold band.', 'Bourbon vanilla sponge, whipped cream, a plain gold band.', 1150.00),
+  ('dark-chocolate-ganache', 'Dark Chocolate Ganache', 'chocolate', 'Dark sponge, ganache between the layers, cocoa dusted.', 'Dark sponge, ganache between the layers, cocoa dusted.', 1250.00),
+  ('the-winter-gateau', 'The Winter Gateau', 'black-forest', 'Three layers of dark sponge brushed with cherry syrup, whipped cream between, and chocolate shaved off the block by hand.', 'Cherries, cream and shaved chocolate. Two pounds serves eight.', 1400.00),
+  ('daisys-velvet', 'Daisy''s Velvet', 'red-velvet', 'Buttermilk crumb with a cream-cheese frosting, crumbed edge.', 'Cream cheese between three layers, crumbed all round.', 1350.00),
+  ('praline-crown', 'Praline Crown', 'butterscotch', 'Caramel sponge with crushed praline pressed into the sides.', 'Caramel sponge with crushed praline pressed into the sides.', 1300.00),
+  ('orange-zest-delight', 'Orange Zest Delight', 'orange', 'Orange-zested sponge with a light citrus syrup soak.', 'Orange-zested sponge with a light citrus syrup soak.', 1150.00),
+  ('summer-cream-cake', 'Summer Cream Cake', 'mango', 'Alphonso puree folded through the cream, fruit on the crown.', 'Alphonso puree folded through the cream, fruit on the crown.', 1300.00),
+  ('curd-and-cream', 'Curd & Cream', 'lemon', 'Sharp curd, soft meringue peaks, zest across the top.', 'Sharp curd, soft meringue peaks, zest across the top.', 1200.00),
+  ('strawberry-fields', 'Strawberry Fields', 'strawberry', 'Fresh strawberry compote layered through vanilla sponge.', 'Fresh strawberry compote layered through vanilla sponge.', 1300.00),
+  ('blueberry-bliss', 'Blueberry Bliss', 'blueberry', 'Blueberry compote and cream, finished with fresh berries.', 'Blueberry compote and cream, finished with fresh berries.', 1350.00),
+  ('the-green-loaf', 'The Green Loaf', 'pistachio', 'Ground pistachio sponge, honey syrup, nibbed edge.', 'Ground pistachio sponge, honey syrup, nibbed edge.', 1500.00)
+) as v(slug, name, flavor_slug, description, short_description, base_price)
+join option_groups og on og.code = 'sponge'
+join option_values ov on ov.group_id = og.id and ov.value_code = v.flavor_slug;
+
+insert into cake_dietary_tags (cake_id, tag)
+select c.id, t.tag
+from cakes c
+join (values
+  ('the-winter-gateau', 'eggless'),
+  ('the-winter-gateau', 'gluten_free'),
+  ('daisys-velvet', 'eggless'),
+  ('curd-and-cream', 'gluten_free'),
+  ('summer-cream-cake', 'vegan')
+) as t(slug, tag) on t.slug = c.slug;
+
+insert into cake_events (cake_id, event_code)
+select c.id, e.event_code
+from cakes c
+join (values
+  ('the-vanilla-bean', 'birthday'),
+  ('the-vanilla-bean', 'kids_character'),
+  ('dark-chocolate-ganache', 'birthday'),
+  ('dark-chocolate-ganache', 'corporate_office'),
+  ('the-winter-gateau', 'birthday'),
+  ('the-winter-gateau', 'anniversary_romance'),
+  ('daisys-velvet', 'anniversary_romance'),
+  ('daisys-velvet', 'valentines_mothers_fathers_day'),
+  ('praline-crown', 'graduation_success'),
+  ('praline-crown', 'corporate_office'),
+  ('orange-zest-delight', 'eid_festive'),
+  ('summer-cream-cake', 'eid_festive'),
+  ('summer-cream-cake', 'baby_shower_sadh'),
+  ('curd-and-cream', 'baby_shower_sadh'),
+  ('curd-and-cream', 'graduation_success'),
+  ('strawberry-fields', 'valentines_mothers_fathers_day'),
+  ('strawberry-fields', 'engagement_ring'),
+  ('blueberry-bliss', 'engagement_ring'),
+  ('blueberry-bliss', 'wedding_gaye_holud'),
+  ('the-green-loaf', 'wedding_gaye_holud'),
+  ('the-green-loaf', 'corporate_office')
+) as e(slug, event_code) on e.slug = c.slug;
 
 insert into cake_option_groups (cake_id, option_group_id)
 select c.id, g.id from cakes c cross join option_groups g where c.is_customisable;

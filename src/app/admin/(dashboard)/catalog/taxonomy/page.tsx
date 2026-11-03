@@ -1,11 +1,11 @@
+import Link from "next/link";
 import { requireModulePage } from "@/lib/admin/auth";
-import { listFlavorsAdmin, listDietaryTagsAdmin, listOccasionsAdmin } from "@/lib/admin/taxonomyAdmin";
+import { listDietaryTagsAdmin, listOccasionsAdmin } from "@/lib/admin/taxonomyAdmin";
 import { TaxonomyManager } from "@/components/admin/TaxonomyManager";
 
 export default async function AdminTaxonomyPage() {
   await requireModulePage("content_media");
-  const [flavors, dietaryTags, occasions] = await Promise.all([
-    listFlavorsAdmin(),
+  const [dietaryTags, occasions] = await Promise.all([
     listDietaryTagsAdmin(),
     listOccasionsAdmin(),
   ]);
@@ -17,21 +17,15 @@ export default async function AdminTaxonomyPage() {
           Flavors &amp; tags
         </h1>
         <p className="mt-1 font-body text-sm text-brand-chocolate/60">
-          Manage the flavors, dietary tags, and occasions cakes can be tagged with in the
-          product catalog.
+          Manage the dietary tags and occasions cakes can be tagged with in the product catalog.
+          Flavors moved to{" "}
+          <Link href="/admin/catalog/options" className="font-bold text-brand-orange hover:text-brand-chocolate">
+            Order Options
+          </Link>{" "}
+          — one list, used both for a cake&apos;s catalog flavor tag and for what customers can
+          pick (and pay extra for) when customizing or ordering a cake.
         </p>
       </div>
-
-      <section>
-        <h2 className="mb-3 font-display text-xl font-semibold text-brand-chocolate">Flavors</h2>
-        <TaxonomyManager
-          apiBase="/api/admin/flavors"
-          listKey="flavors"
-          bodyKey="name"
-          placeholder="e.g. Pistachio"
-          initialItems={flavors.map((f) => ({ id: f.id, label: f.name }))}
-        />
-      </section>
 
       <section>
         <h2 className="mb-3 font-display text-xl font-semibold text-brand-chocolate">

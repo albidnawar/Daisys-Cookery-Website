@@ -97,13 +97,13 @@ export async function getTopSellerStats(days: number): Promise<TopSellerStats> {
   const cutoff = new Date(Date.now() - days * 86400_000).toISOString();
   const [{ data: orders, error: ordersError }, { data: cakes, error: cakesError }] = await Promise.all([
     supabase.from("orders").select("cake_snapshot").neq("status", "cancelled").gte("created_at", cutoff),
-    supabase.from("cakes").select("slug, flavors ( name )"),
+    supabase.from("cakes").select("slug, flavor:option_values!cakes_primary_flavor_id_fkey ( label )"),
   ]);
   if (ordersError) throw ordersError;
   if (cakesError) throw cakesError;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const flavorBySlug = new Map((cakes as any[]).map((c) => [c.slug, c.flavors?.name ?? null]));
+  const flavorBySlug = new Map((cakes as any[]).map((c) => [c.slug, c.flavor?.label ?? null]));
 
   const flavorCounts = new Map<string, number>();
   const weightCounts = new Map<string, number>();

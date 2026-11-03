@@ -1,5 +1,4 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import type { Flavor } from "@/lib/types/domain";
 
 export class TaxonomyInUseError extends Error {}
 
@@ -11,56 +10,10 @@ function slugifyCode(label: string): string {
     .replace(/(^_|_$)/g, "");
 }
 
-// Flavors ---------------------------------------------------------------
-
-export async function listFlavorsAdmin(): Promise<Flavor[]> {
-  const supabase = createServiceRoleClient();
-  const { data, error } = await supabase.from("flavors").select("id, name, slug").order("sort_order");
-  if (error) throw error;
-  return data;
-}
-
-export async function createFlavorAdmin(name: string): Promise<string> {
-  const supabase = createServiceRoleClient();
-  const { data: existing } = await supabase
-    .from("flavors")
-    .select("sort_order")
-    .order("sort_order", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const { data, error } = await supabase
-    .from("flavors")
-    .insert({ name, slug: slugifyCode(name), sort_order: (existing?.sort_order ?? 0) + 1 })
-    .select("id")
-    .single();
-  if (error) {
-    if (error.code === "23505") throw new TaxonomyInUseError(`A flavor named "${name}" already exists.`);
-    throw error;
-  }
-  return data.id;
-}
-
-export async function updateFlavorAdmin(id: string, name: string): Promise<void> {
-  const supabase = createServiceRoleClient();
-  const { error } = await supabase.from("flavors").update({ name }).eq("id", id);
-  if (error) throw error;
-}
-
-/** Flavors referenced by a cake (cakes.primary_flavor_id) can't be hard-
- * deleted — catch the FK violation and surface a clear message, same
- * pattern as deleteCake() in catalogAdmin.ts. */
-export async function deleteFlavorAdmin(id: string): Promise<void> {
-  const supabase = createServiceRoleClient();
-  const { error } = await supabase.from("flavors").delete().eq("id", id);
-  if (error) {
-    if (error.code === "23503") {
-      throw new TaxonomyInUseError(
-        "This flavor is used by one or more cakes. Change those cakes' flavor first.",
-      );
-    }
-    throw error;
-  }
-}
+// Flavors are no longer managed here — they're a priced option_values
+// group (code "sponge"), managed at Order Options, which also doubles as
+// the catalog's flavor filter/tag (see listFlavors() in
+// src/lib/catalog/queries.ts and 0038_merge_flavors_into_option_values.sql).
 
 // Dietary tags ------------------------------------------------------------
 

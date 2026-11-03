@@ -100,12 +100,21 @@ export async function updateOptionValueAdmin(
   }
 }
 
-/** Nothing else in the schema references an option_values row by id (orders
- * keep their own cake_snapshot JSON copy of whatever was picked at the
- * time), so deleting one is always safe — no FK-in-use guard needed, unlike
- * deleteFlavorAdmin/deleteDietaryTag in taxonomyAdmin.ts. */
+/** Orders keep their own cake_snapshot JSON copy of whatever was picked at
+ * the time, so they never block a delete. A Flavor option value can still
+ * be in use as a catalog cake's primary_flavor_id (see
+ * 0038_merge_flavors_into_option_values.sql) — that FK violation is caught
+ * and surfaced as a clear message, the same pattern deleteDietaryTag() in
+ * taxonomyAdmin.ts already uses. */
 export async function deleteOptionValueAdmin(id: string): Promise<void> {
   const supabase = createServiceRoleClient();
   const { error } = await supabase.from("option_values").delete().eq("id", id);
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23503") {
+      throw new OptionValueError(
+        "This option is used by one or more cakes as their flavor. Change those cakes' flavor first.",
+      );
+    }
+    throw error;
+  }
 }
