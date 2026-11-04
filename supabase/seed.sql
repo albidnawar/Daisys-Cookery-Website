@@ -8,7 +8,7 @@ insert into option_groups (code, label, input_type, min_select, max_select, sort
   ('size_lb', 'Size, in pounds', 'segmented', 1, 1, 1),
   ('shape', 'Shape', 'radio', 1, 1, 2),
   ('tiers', 'Tiers', 'radio', 1, 1, 3),
-  ('sponge', 'Sponge flavor', 'radio', 1, 1, 4),
+  ('sponge', 'Sponge flavor', 'checkbox_multi', 1, 5, 4),
   ('filling', 'Filling', 'radio', 1, 1, 5),
   ('frosting_finish', 'Frosting & finish', 'radio', 1, 1, 6),
   ('extras', 'Candles & toppers', 'checkbox_multi', 0, 5, 7),

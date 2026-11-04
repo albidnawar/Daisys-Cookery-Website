@@ -1,4 +1,4 @@
-import { RadioOptionGroup } from "@/components/customiser/OptionGroupPicker";
+import { CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import type { DraftOrderSpec, OptionGroup } from "@/lib/types/domain";
 
 export function StepSponge({
@@ -12,9 +12,9 @@ export function StepSponge({
 }) {
   if (!groupsByCode.sponge) return null;
   return (
-    <RadioOptionGroup
+    <CheckboxOptionGroup
       group={groupsByCode.sponge}
-      value={spec.sponge}
+      value={spec.sponge ?? []}
       onChange={(sponge) => onChange({ sponge })}
       columns={4}
     />

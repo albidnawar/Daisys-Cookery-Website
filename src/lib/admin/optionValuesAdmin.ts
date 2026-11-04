@@ -3,12 +3,13 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { OptionValue } from "@/lib/types/domain";
 
 // The three option groups this admin module manages — Flavor (code
-// "sponge", kept from when it also covered filling/frosting) and Cake
-// color are single-pick radios, Candles & toppers (code "extras") is a
-// multi-pick checkbox group. All three already support a per-choice price
-// via option_values.price_delta (see calculatePrice.ts), so this is just
-// giving the admin CRUD access to rows that previously only came from
-// supabase/seed.sql.
+// "sponge", kept from when it also covered filling/frosting) and Candles
+// & toppers (code "extras") are multi-pick checkbox groups; Cake color is
+// multi-select too, though it's edited through its own CakeColorField UI
+// rather than this generic admin screen. All three already support a
+// per-choice price via option_values.price_delta (see calculatePrice.ts —
+// cake_color's is inert by design), so this is just giving the admin CRUD
+// access to rows that previously only came from supabase/seed.sql.
 export type OptionGroupCode = "sponge" | "cake_color" | "extras";
 
 export class OptionValueError extends Error {}

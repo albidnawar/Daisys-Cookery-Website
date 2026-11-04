@@ -18,6 +18,13 @@ function labelFor(groupsByCode: Record<string, OptionGroup>, code: string, value
   );
 }
 
+function labelsFor(groupsByCode: Record<string, OptionGroup>, code: string, valueCodes: string[] | undefined) {
+  if (!valueCodes || valueCodes.length === 0) return "-";
+  return valueCodes
+    .map((vc) => groupsByCode[code]?.values.find((v) => v.valueCode === vc)?.label ?? vc)
+    .join(", ");
+}
+
 export function SummaryPanel({
   cakeName,
   cakeImageUrl,
@@ -87,7 +94,7 @@ export function SummaryPanel({
 
       <table className="w-full font-body text-sm">
         <tbody>
-          <Row label="Flavor" value={labelFor(groupsByCode, "sponge", spec.sponge)} />
+          <Row label="Flavor" value={labelsFor(groupsByCode, "sponge", spec.sponge)} />
           <Row label="Message" value={spec.message || "-"} />
           <Row label="Extras" value={extrasLabels || "-"} />
         </tbody>

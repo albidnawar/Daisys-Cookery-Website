@@ -8,7 +8,7 @@ import { MonthCalendar } from "@/components/buying-options/MonthCalendar";
 import { TimeSlotPicker } from "@/components/buying-options/TimeSlotPicker";
 import { ContactFieldsForm, type ContactFields } from "@/components/checkout/ContactFieldsForm";
 import { CakeColorField } from "@/components/cake-detail/CakeColorField";
-import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
+import { CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import { ReferenceImageDropzone } from "@/components/customiser/ReferenceImageDropzone";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import { todayKey } from "@/lib/dates";
@@ -360,7 +360,7 @@ export function OrderFormClient({
             )}
 
             {groupsByCode.sponge && (
-              <RadioOptionGroup group={groupsByCode.sponge} value={spec.sponge} onChange={(sponge) => set({ sponge })} columns={4} />
+              <CheckboxOptionGroup group={groupsByCode.sponge} value={spec.sponge ?? []} onChange={(sponge) => set({ sponge })} columns={4} />
             )}
             {groupsByCode.extras && (
               <CheckboxOptionGroup group={groupsByCode.extras} value={spec.extras ?? []} onChange={(extras) => set({ extras })} />

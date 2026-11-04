@@ -47,10 +47,12 @@ export function CheckboxOptionGroup({
   group,
   value,
   onChange,
+  columns,
 }: {
   group: OptionGroup;
   value: string[];
   onChange: (valueCodes: string[]) => void;
+  columns?: 1 | 2 | 4;
 }) {
   const toggle = (code: string) => {
     onChange(
@@ -58,12 +60,19 @@ export function CheckboxOptionGroup({
     );
   };
 
+  const colClass =
+    columns === 4
+      ? "grid grid-cols-2 sm:grid-cols-4"
+      : columns === 2
+        ? "grid grid-cols-2"
+        : "flex flex-wrap";
+
   return (
     <div>
       <h4 className="mb-3 font-display text-lg font-semibold text-brand-chocolate">
         {group.label}
       </h4>
-      <div className="flex flex-wrap gap-2">
+      <div className={`gap-2 ${colClass}`}>
         {group.values.map((v) => (
           <button
             key={v.id}

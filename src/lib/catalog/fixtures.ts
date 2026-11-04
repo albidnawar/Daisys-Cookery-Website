@@ -53,10 +53,10 @@ export const FIXTURE_OPTION_GROUPS: OptionGroup[] = [
   group(
     "sponge",
     "Flavor",
-    "radio",
+    "checkbox_multi",
     FIXTURE_FLAVORS_SPONGE_VALUES(),
     1,
-    1,
+    5,
   ),
   group("cake_color", "Cake color", "radio", [
     ["white", "White", 0],

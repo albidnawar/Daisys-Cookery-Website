@@ -74,7 +74,7 @@ export type DraftOrderSpec = {
   sizeCode?: string; // "1".."5", a custom typed weight, or the transient "other" sentinel
   shape?: string;
   tiers?: string;
-  sponge?: string;
+  sponge?: string[];
   filling?: string;
   frostingFinish?: string;
   extras?: string[];

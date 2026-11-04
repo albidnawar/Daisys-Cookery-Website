@@ -12,6 +12,22 @@ export function labelFor(
   );
 }
 
+/** Flavor became a multi-select array after shipping as a single string —
+ * same legacy-shape concern as formatCakeColor() below, since a frozen
+ * cake_snapshot from before that change still has the old string sitting
+ * in the database. */
+export function labelsFor(
+  groupsByCode: Record<string, OptionGroup>,
+  code: string,
+  valueCodes: string[] | string | undefined,
+): string[] {
+  if (!valueCodes) return [];
+  const codes = Array.isArray(valueCodes) ? valueCodes : [valueCodes];
+  return codes
+    .map((c) => labelFor(groupsByCode, code, c))
+    .filter((l): l is string => Boolean(l));
+}
+
 /** A short, comma-joined "flavor · message" summary line, the same shape
  * the basket and account order-history screens show. */
 export function summarizeSpec(
@@ -19,7 +35,7 @@ export function summarizeSpec(
   spec: DraftOrderSpec,
 ): string {
   const parts = [
-    labelFor(groupsByCode, "sponge", spec.sponge),
+    labelsFor(groupsByCode, "sponge", spec.sponge).join(", ") || null,
     spec.message ? `"${spec.message}"` : null,
   ].filter(Boolean);
   return parts.join(" · ") || "Custom cake";

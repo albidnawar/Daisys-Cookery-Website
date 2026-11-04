@@ -12,7 +12,7 @@ import { formatCakeColor, summarizeSpec } from "@/lib/catalog/specLabels";
 import { formatSlotLabelForDisplay, parseSlotLabel } from "@/lib/dates";
 import { getReferenceImages } from "@/lib/customiser/referenceImages";
 import { CakeColorField } from "@/components/cake-detail/CakeColorField";
-import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
+import { CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import type { OrderStatusHistoryEntry } from "@/lib/admin/orderDetail";
 import type { Rider } from "@/lib/admin/ridersAdmin";
 import type { Order, OptionGroup, OptionValue, OrderStatus, PaymentStatus } from "@/lib/types/domain";
@@ -35,7 +35,7 @@ const FLAVOR_GROUP_LABEL = "Flavor";
 const EXTRAS_GROUP_LABEL = "Candles & toppers";
 
 function toOptionGroup(code: string, label: string, values: OptionValue[]): OptionGroup {
-  return { id: code, code, label, inputType: "radio", minSelect: 0, maxSelect: 1, values };
+  return { id: code, code, label, inputType: "checkbox_multi", minSelect: 0, maxSelect: values.length, values };
 }
 
 export function OrderDetailEditor({
@@ -96,7 +96,14 @@ export function OrderDetailEditor({
 
   const [cakeName, setCakeName] = useState(order.cakeSnapshot.name);
   const [sizeCode, setSizeCode] = useState(order.cakeSnapshot.spec.sizeCode ?? "");
-  const [sponge, setSponge] = useState(order.cakeSnapshot.spec.sponge);
+  const [sponge, setSponge] = useState<string[]>(
+    (() => {
+      // Legacy orders can still have the pre-multi-select single-string shape.
+      const s = order.cakeSnapshot.spec.sponge as string[] | string | undefined;
+      if (!s) return [];
+      return Array.isArray(s) ? s : [s];
+    })(),
+  );
   const [extras, setExtras] = useState<string[]>(order.cakeSnapshot.spec.extras ?? []);
   const [message, setMessage] = useState(order.cakeSnapshot.spec.message ?? "");
   const [cakeColor, setCakeColor] = useState<string[]>(
@@ -124,7 +131,8 @@ export function OrderDetailEditor({
   const resetCakeFields = () => {
     setCakeName(order.cakeSnapshot.name);
     setSizeCode(order.cakeSnapshot.spec.sizeCode ?? "");
-    setSponge(order.cakeSnapshot.spec.sponge);
+    const s = order.cakeSnapshot.spec.sponge as string[] | string | undefined;
+    setSponge(!s ? [] : Array.isArray(s) ? s : [s]);
     setExtras(order.cakeSnapshot.spec.extras ?? []);
     setMessage(order.cakeSnapshot.spec.message ?? "");
     const c = order.cakeSnapshot.spec.cakeColor as string[] | string | undefined;
@@ -496,7 +504,7 @@ export function OrderDetailEditor({
                     className="input-field w-32"
                   />
                 </Field>
-                <RadioOptionGroup group={spongeGroup} value={sponge} onChange={setSponge} columns={4} />
+                <CheckboxOptionGroup group={spongeGroup} value={sponge} onChange={setSponge} columns={4} />
                 <CheckboxOptionGroup group={extrasGroup} value={extras} onChange={setExtras} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Board writing">

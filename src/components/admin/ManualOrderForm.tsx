@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { CakeColorField } from "@/components/cake-detail/CakeColorField";
-import { RadioOptionGroup, CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
+import { CheckboxOptionGroup } from "@/components/customiser/OptionGroupPicker";
 import { todayKey } from "@/lib/dates";
 import { calculatePrice, withDeliveryFee } from "@/lib/pricing/calculatePrice";
 import { computeDepositAmount, depositLabel, type DepositConfig } from "@/lib/pricing/deposit";
@@ -268,9 +268,9 @@ export function ManualOrderForm({
                   </Field>
                 )}
                 {groupsByCode.sponge && (
-                  <RadioOptionGroup
+                  <CheckboxOptionGroup
                     group={groupsByCode.sponge}
-                    value={spec.sponge}
+                    value={spec.sponge ?? []}
                     onChange={(sponge) => set({ sponge })}
                     columns={4}
                   />

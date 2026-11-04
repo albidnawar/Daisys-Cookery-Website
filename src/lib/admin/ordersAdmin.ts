@@ -199,7 +199,10 @@ export async function getKitchenBatch(date: string): Promise<KitchenBatchLine[]>
 
   for (const order of orders) {
     const sizeLb = order.spec.sizeCode ?? "?";
-    const sponge = order.spec.sponge ?? null;
+    // Legacy orders can still have the pre-multi-select single-string shape.
+    const rawSponge = order.spec.sponge as string[] | string | undefined;
+    const spongeList = Array.isArray(rawSponge) ? rawSponge : rawSponge ? [rawSponge] : [];
+    const sponge = spongeList.length > 0 ? spongeList.join(" + ") : null;
     const key = `${order.cakeName}::${sizeLb}::${sponge ?? ""}`;
     const existing = groups.get(key);
     if (existing) {

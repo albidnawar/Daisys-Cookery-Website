@@ -99,7 +99,7 @@ export async function updateOrderDetails(orderId: string, patch: OrderEditableFi
 export type CakeSpecPatch = {
   name?: string;
   sizeCode?: string;
-  sponge?: string;
+  sponge?: string[];
   extras?: string[];
   message?: string;
   cakeColor?: string[];
