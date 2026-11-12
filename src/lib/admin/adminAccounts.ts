@@ -111,9 +111,27 @@ export async function removeAdminAccount(id: string, currentAdminId: string): Pr
     throw new AdminAccountError("Can't remove the last owner.");
   }
 
-  // Only revokes portal access (deletes the admin_users row) — the
-  // underlying Supabase Auth user is left alone, since they may still
-  // have a legitimate reason to hold a login (e.g. also a customer).
   const { error } = await supabase.from("admin_users").delete().eq("id", id);
   if (error) throw error;
+
+  // Revoking portal access deletes the admin_users row above; whether the
+  // underlying Supabase Auth login should go too depends on whether this
+  // person also has a customer account on the same email (e.g. they order
+  // cakes themselves) — if so, leave their login alone. Otherwise it's a
+  // pure admin-only account with nothing left pointing at it, so clean it
+  // up too, or the email is stuck "already registered" if someone tries to
+  // re-add them later. Best-effort: failing to delete the orphaned Auth
+  // user shouldn't fail the removal itself, since access is already
+  // revoked either way.
+  const { data: customerProfile } = await supabase
+    .from("customer_profiles")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!customerProfile) {
+    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(id);
+    if (authDeleteError) {
+      console.error(`Couldn't delete orphaned Auth user ${id} after admin removal:`, authDeleteError.message);
+    }
+  }
 }
