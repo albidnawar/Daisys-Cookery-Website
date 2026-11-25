@@ -1,4 +1,13 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { listCustomerEventTags } from "@/lib/admin/customerEventTags";
+import { categorizeOrderEvent } from "@/lib/admin/orderEventCategory";
+import type { CakeSnapshot } from "@/lib/types/domain";
+
+export type CustomerOrderEntry = {
+  date: string;
+  total: number;
+  eventCategory: string | null;
+};
 
 export type CustomerSummary = {
   contactPhone: string;
@@ -8,6 +17,14 @@ export type CustomerSummary = {
   lastOrderDate: string;
   customerId: string | null;
   savedAddressCount: number;
+  // Every order this customer placed, most recent first — the full
+  // ordering history behind orderCount/lastOrderDate, each tagged with
+  // what occasion it looks like it was for (see orderEventCategory.ts).
+  orders: CustomerOrderEntry[];
+  // A hand-picked occasion tag for orders categorizeOrderEvent() couldn't
+  // confidently tag itself (see customerEventTags.ts) — shown alongside
+  // whatever auto-detected categories the customer's orders already have.
+  manualTag: string | null;
 };
 
 /** Groups by contact_phone rather than customer_id — most of this
@@ -18,20 +35,33 @@ export type CustomerSummary = {
  * a linked account's saved addresses can still be shown. */
 export async function listCustomerSummaries(): Promise<CustomerSummary[]> {
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
-    .from("orders")
-    .select("contact_name, contact_phone, total, created_at, customer_id")
-    .neq("status", "cancelled")
-    .order("created_at", { ascending: false });
+  const [{ data, error }, manualTags] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("contact_name, contact_phone, total, created_at, customer_id, cake_snapshot")
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false }),
+    listCustomerEventTags(),
+  ]);
   if (error) throw error;
 
   const byPhone = new Map<string, CustomerSummary>();
   for (const row of data ?? []) {
+    const snap = row.cake_snapshot as CakeSnapshot;
+    const spec = snap?.spec ?? {};
+    const eventText = [snap?.name, spec.message, spec.instructions].filter(Boolean).join(" ");
+    const orderEntry: CustomerOrderEntry = {
+      date: row.created_at,
+      total: Number(row.total),
+      eventCategory: categorizeOrderEvent(eventText),
+    };
+
     const existing = byPhone.get(row.contact_phone);
     if (existing) {
       existing.orderCount += 1;
       existing.lifetimeSpend += Number(row.total);
       existing.customerId ??= row.customer_id;
+      existing.orders.push(orderEntry);
     } else {
       byPhone.set(row.contact_phone, {
         contactPhone: row.contact_phone,
@@ -41,6 +71,8 @@ export async function listCustomerSummaries(): Promise<CustomerSummary[]> {
         lastOrderDate: row.created_at,
         customerId: row.customer_id,
         savedAddressCount: 0,
+        orders: [orderEntry],
+        manualTag: manualTags.get(row.contact_phone) ?? null,
       });
     }
   }

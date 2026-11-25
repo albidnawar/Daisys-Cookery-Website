@@ -17,5 +17,14 @@ export function normalizePhone(raw: string): string {
   } else if (digits.length === 10 && digits.startsWith("1")) {
     digits = "0" + digits;
   }
+  // A customer sometimes types two numbers into the one phone field (e.g.
+  // "01712345678, 01812345678" for an alternate contact) — stripping the
+  // separator above then concatenates them into one long garbled digit
+  // string. Detected by a second "01" sitting right after the first
+  // 11-digit number; when that happens, keep only the first number rather
+  // than storing the concatenation.
+  if (digits.length > 11 && digits.startsWith("01") && /^01/.test(digits.slice(11))) {
+    digits = digits.slice(0, 11);
+  }
   return digits;
 }
