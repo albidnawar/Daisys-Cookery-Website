@@ -2,9 +2,11 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { ChatIcon, GlobeIcon } from "@/components/admin/AdminNavIcons";
 import { CopyOrderFormLinkButton } from "@/components/admin/CopyOrderFormLinkButton";
-import { getSalesSummary, getTopSellerStats, type RankedStat } from "@/lib/admin/analytics";
+import { OverviewRangeSection } from "@/components/admin/OverviewRangeSection";
+import { getOverviewRangeStats, getSalesSummary } from "@/lib/admin/analytics";
 import { hasModule, requireModulePage } from "@/lib/admin/auth";
 import type { ModuleKey } from "@/lib/admin/modules";
+import { todayKey } from "@/lib/dates";
 
 const QUICK_LINKS: { href: string; label: string; desc: string; module: ModuleKey }[] = [
   { href: "/admin/catalog", label: "Product catalog", desc: "Edit cakes, prices, photos, and where they appear on the site.", module: "content_media" },
@@ -22,31 +24,13 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function RankedList({ title, items, emptyText }: { title: string; items: RankedStat[]; emptyText: string }) {
-  return (
-    <div className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-5">
-      <p className="mb-3 font-display text-lg font-semibold text-brand-chocolate">{title}</p>
-      {items.length === 0 ? (
-        <p className="font-body text-sm text-brand-chocolate/60">{emptyText}</p>
-      ) : (
-        <ol className="flex flex-col gap-2">
-          {items.map((item, i) => (
-            <li key={item.label} className="flex items-center justify-between font-body text-sm">
-              <span className="text-brand-chocolate">
-                {i + 1}. {item.label}
-              </span>
-              <span className="font-bold text-brand-orange">{item.count}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </div>
-  );
-}
-
 export default async function AdminOverviewPage() {
   const admin = await requireModulePage("overview");
-  const [sales, topSellers] = await Promise.all([getSalesSummary(), getTopSellerStats(30)]);
+  const today = todayKey();
+  const [sales, rangeStats] = await Promise.all([
+    getSalesSummary(),
+    getOverviewRangeStats(today.slice(0, 8) + "01", today),
+  ]);
   const quickLinks = QUICK_LINKS.filter((link) => hasModule(admin, link.module));
 
   return (
@@ -86,16 +70,7 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
-      <div>
-        <h2 className="mb-4 font-display text-2xl font-semibold text-brand-chocolate">
-          Top sellers (last 30 days)
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <RankedList title="Top flavors" items={topSellers.topFlavors} emptyText="No flavor data yet." />
-          <RankedList title="Popular weights" items={topSellers.topWeights} emptyText="No orders yet." />
-          <RankedList title="Popular designs" items={topSellers.topDesigns} emptyText="No orders yet." />
-        </div>
-      </div>
+      <OverviewRangeSection initialStats={rangeStats} />
 
       {quickLinks.length > 0 && (
       <div>

@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { listOptionValuesAdmin } from "@/lib/admin/optionValuesAdmin";
 import { todayKey } from "@/lib/dates";
 import type { CakeSnapshot } from "@/lib/types/domain";
 
@@ -66,10 +67,14 @@ export async function getSalesSummary(): Promise<SalesSummary> {
 
 export type RankedStat = { label: string; count: number };
 
-export type TopSellerStats = {
+export type OverviewRangeStats = {
+  revenue: number;
+  orderCount: number;
+  webOrderCount: number;
+  manualOrderCount: number;
   topFlavors: RankedStat[];
   topWeights: RankedStat[];
-  topDesigns: RankedStat[];
+  topKeywords: RankedStat[];
 };
 
 const WEIGHT_LABELS: Record<string, string> = {
@@ -81,52 +86,118 @@ const WEIGHT_LABELS: Record<string, string> = {
   other: "Custom (>5 lb)",
 };
 
-function topN(counts: Map<string, number>, n = 5): RankedStat[] {
+function topN(counts: Map<string, number>, n = 8): RankedStat[] {
   return [...counts.entries()]
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, n);
 }
 
-/** Flavor is resolved from the *current* catalog via the frozen snapshot's
- * slug — good enough for a top-sellers report since flavors are rarely
- * reassigned after the fact. Custom-quote orders (no slug) simply don't
- * count toward flavor stats. */
-export async function getTopSellerStats(days: number): Promise<TopSellerStats> {
+// Generic words that show up constantly in cake names, icing messages, and
+// theme notes but carry no information about what makes an order distinct
+// ("Happy Birthday" tells you nothing a hundred other orders didn't also
+// say) — filtered out so the keyword ranking surfaces actual themes
+// ("unicorn", "wedding", "football") instead of this filler.
+const KEYWORD_STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "is",
+  "it", "this", "that", "please", "want", "wanted", "need", "needed", "like",
+  "would", "could", "can", "make", "making", "also", "just", "some", "any",
+  "thanks", "thank", "you", "your", "our", "we", "order", "ordering", "cake",
+  "custom", "design", "flavor", "flavour", "bean", "happy", "dear", "from",
+  "will", "all", "are", "have", "has", "but", "not", "one", "two", "lb",
+  "same", "add", "name", "years",
+  // Romanized-Bengali grammatical connectors (e.g. "hobe"/"thakbe" = "will
+  // be", "likha"/"lekha" = "written", "upore" = "on top") that show up
+  // constantly in Banglish instructions — grammar, not theme content.
+  "hobe", "hobee", "hbe", "likha", "lekha", "upore", "thakbe",
+]);
+
+function extractKeywords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter((word) => word.length >= 3 && !KEYWORD_STOPWORDS.has(word)),
+  );
+}
+
+/** Revenue, order mix, and top sellers for an arbitrary admin-chosen date
+ * range — all keyed off the order's *due* date (its delivery/pickup slot
+ * date), the same axis getSalesSummary() uses, so a custom range composes
+ * sensibly with the fixed "today"/"this month" cards above it. `from`/`to`
+ * are inclusive "YYYY-MM-DD" keys. */
+export async function getOverviewRangeStats(from: string, to: string): Promise<OverviewRangeStats> {
   const supabase = createServiceRoleClient();
-  const cutoff = new Date(Date.now() - days * 86400_000).toISOString();
-  const [{ data: orders, error: ordersError }, { data: cakes, error: cakesError }] = await Promise.all([
-    supabase.from("orders").select("cake_snapshot").neq("status", "cancelled").gte("created_at", cutoff),
-    supabase.from("cakes").select("slug, flavor:option_values!cakes_primary_flavor_id_fkey ( label )"),
+  const [{ data: orders, error: ordersError }, spongeValues] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("total, order_source, cake_snapshot, delivery_slots!inner ( date )")
+      .neq("status", "cancelled")
+      .gte("delivery_slots.date", from)
+      .lte("delivery_slots.date", to),
+    listOptionValuesAdmin("sponge"),
   ]);
   if (ordersError) throw ordersError;
-  if (cakesError) throw cakesError;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const flavorBySlug = new Map((cakes as any[]).map((c) => [c.slug, c.flavor?.label ?? null]));
+  const spongeLabelByCode = new Map(spongeValues.map((v) => [v.valueCode, v.label]));
+
+  const stats: OverviewRangeStats = {
+    revenue: 0,
+    orderCount: 0,
+    webOrderCount: 0,
+    manualOrderCount: 0,
+    topFlavors: [],
+    topWeights: [],
+    topKeywords: [],
+  };
 
   const flavorCounts = new Map<string, number>();
   const weightCounts = new Map<string, number>();
-  const designCounts = new Map<string, number>();
+  const keywordCounts = new Map<string, number>();
 
-  for (const row of orders ?? []) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (orders ?? []) as any[]) {
+    stats.revenue += Number(row.total);
+    stats.orderCount += 1;
+    if (row.order_source === "web") stats.webOrderCount += 1;
+    else stats.manualOrderCount += 1;
+
     const snap = row.cake_snapshot as CakeSnapshot;
+    const spec = snap.spec ?? {};
 
-    const flavor = snap.slug ? flavorBySlug.get(snap.slug) : null;
-    if (flavor) flavorCounts.set(flavor, (flavorCounts.get(flavor) ?? 0) + 1);
+    // Flavor became a multi-select array after shipping as a single
+    // string — a frozen cake_snapshot from before that change can still
+    // hold the old shape (same legacy-shape concern as specLabels.ts).
+    const rawSponge = spec.sponge as string[] | string | undefined;
+    const spongeCodes = Array.isArray(rawSponge) ? rawSponge : rawSponge ? [rawSponge] : [];
+    for (const code of spongeCodes) {
+      const label = spongeLabelByCode.get(code) ?? code;
+      flavorCounts.set(label, (flavorCounts.get(label) ?? 0) + 1);
+    }
 
-    const sizeCode = snap.spec?.sizeCode;
+    const sizeCode = spec.sizeCode;
     if (sizeCode) {
       const label = WEIGHT_LABELS[sizeCode] ?? sizeCode;
       weightCounts.set(label, (weightCounts.get(label) ?? 0) + 1);
     }
 
-    designCounts.set(snap.name, (designCounts.get(snap.name) ?? 0) + 1);
+    // "Popular design" used to group by the literal cake name, but most
+    // orders are customized "Build your own cake" ones that all carry the
+    // same placeholder name (see customise/[slug]/page.tsx and
+    // orders/store.ts) — grouping by exact name mostly just counted that
+    // placeholder. Instead, pull keywords out of every bit of freeform
+    // text an order actually carries (the cake's own name/title, the
+    // on-cake icing message, and the customer's theme notes) so recurring
+    // themes surface regardless of which path the order came through.
+    const keywordText = [snap.name, spec.message, spec.instructions].filter(Boolean).join(" ");
+    for (const keyword of extractKeywords(keywordText)) {
+      keywordCounts.set(keyword, (keywordCounts.get(keyword) ?? 0) + 1);
+    }
   }
 
-  return {
-    topFlavors: topN(flavorCounts),
-    topWeights: topN(weightCounts),
-    topDesigns: topN(designCounts),
-  };
+  stats.topFlavors = topN(flavorCounts);
+  stats.topWeights = topN(weightCounts);
+  stats.topKeywords = topN(keywordCounts);
+
+  return stats;
 }
