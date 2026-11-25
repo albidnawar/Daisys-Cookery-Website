@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import type { OverviewRangeStats, RankedStat } from "@/lib/admin/analytics";
+import type { OverviewRangeStats, RankedStat, WeekdayStat } from "@/lib/admin/analytics";
 import { todayKey } from "@/lib/dates";
 import { jsonFetcher } from "@/lib/swr/fetcher";
 
@@ -27,6 +27,29 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-5">
       <p className="font-body text-xs font-bold uppercase tracking-widest text-brand-chocolate/50">{label}</p>
       <p className="mt-1 font-display text-2xl font-semibold text-brand-chocolate">{value}</p>
+    </div>
+  );
+}
+
+function WeekdayBars({ items }: { items: WeekdayStat[] }) {
+  const max = Math.max(1, ...items.map((i) => i.count));
+  return (
+    <div className="rounded-3xl border-2 border-brand-chocolate/10 bg-white p-5">
+      <p className="mb-3 font-display text-lg font-semibold text-brand-chocolate">Orders by day of week</p>
+      <ul className="flex flex-col gap-2">
+        {items.map((item) => (
+          <li key={item.weekday} className="flex items-center gap-3 font-body text-sm" title={`${item.count} orders`}>
+            <span className="w-24 shrink-0 text-brand-chocolate/70">{item.weekday}</span>
+            <span className="h-2 flex-1 overflow-hidden rounded-full bg-brand-chocolate/5">
+              <span
+                className="block h-full rounded-full bg-brand-orange"
+                style={{ width: `${(item.count / max) * 100}%` }}
+              />
+            </span>
+            <span className="w-8 shrink-0 text-right font-bold text-brand-chocolate">{item.count}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -105,6 +128,12 @@ export function OverviewRangeSection({ initialStats }: { initialStats: OverviewR
             </button>
           ))}
           {isValidating && <span className="font-body text-xs text-brand-chocolate/50">Loading…</span>}
+          <a
+            href={`/api/admin/analytics/export?from=${from}&to=${to}`}
+            className="rounded-full border-2 border-brand-chocolate/15 px-4 py-1.5 font-body text-sm font-bold text-brand-chocolate hover:border-brand-orange/40"
+          >
+            Export CSV
+          </a>
         </div>
       </div>
 
@@ -115,10 +144,34 @@ export function OverviewRangeSection({ initialStats }: { initialStats: OverviewR
         <StatCard label="Manual / FB inbox orders" value={String(stats.manualOrderCount)} />
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Cancellation rate"
+          value={`${stats.cancellationRatePct.toFixed(1)}% (${stats.cancelledCount})`}
+        />
+        <StatCard
+          label="Rush orders (<24h notice)"
+          value={`${stats.rushOrderRatePct.toFixed(1)}% (${stats.rushOrderCount})`}
+        />
+        <StatCard
+          label="Avg / median lead time"
+          value={`${stats.avgLeadDays.toFixed(1)}d / ${stats.medianLeadDays.toFixed(1)}d`}
+        />
+        <StatCard
+          label="Repeat-customer revenue"
+          value={`${stats.repeatRevenueSharePct.toFixed(1)}% (৳${stats.repeatRevenue.toLocaleString("en-BD")})`}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <RankedList title="Top flavors" items={stats.topFlavors} emptyText="No flavor data yet." />
         <RankedList title="Popular weights" items={stats.topWeights} emptyText="No orders yet." />
         <RankedList title="Top requested themes" items={stats.topKeywords} emptyText="No orders yet." />
+        <RankedList title="Top occasions" items={stats.topOccasions} emptyText="No tagged orders yet." />
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <WeekdayBars items={stats.ordersByWeekday} />
       </div>
     </div>
   );
