@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireOwner, AdminAuthError, ADMIN_ROW_TAG } from "@/lib/admin/auth";
-import { deleteCustomRole, updateCustomRole, AdminRoleError } from "@/lib/admin/adminRoles";
+import { deleteCustomRole, updateCustomRole, updateRoleModules, AdminRoleError } from "@/lib/admin/adminRoles";
 
 export async function PATCH(
   request: NextRequest,
@@ -11,7 +11,14 @@ export async function PATCH(
     await requireOwner();
     const { id } = await params;
     const { name, modules } = await request.json();
-    await updateCustomRole(id, name, modules ?? []);
+    // A built-in role's name is never sent (RoleManager doesn't show a
+    // name field for it) — only its module list can change, via the path
+    // that works on built-in roles too.
+    if (name === undefined) {
+      await updateRoleModules(id, modules ?? []);
+    } else {
+      await updateCustomRole(id, name, modules ?? []);
+    }
     revalidateTag(ADMIN_ROW_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {

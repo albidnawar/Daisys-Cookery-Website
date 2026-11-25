@@ -27,15 +27,20 @@ import type { ComponentType, SVGProps } from "react";
 
 type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 type NavItem = { label: string; href: string; icon: NavIcon };
-type NavGroup = { label: string; items: NavItem[]; module?: ModuleKey };
+type NavGroup = { label: string; items: NavItem[]; module?: ModuleKey; ownerOnly?: boolean };
 
 // Settings has no `module` — it's always visible (its own page decides how
 // much of itself to show based on role), everything else maps to exactly
-// one module in src/lib/admin/modules.ts.
-const NAV: ((NavItem & { module?: ModuleKey }) | NavGroup)[] = [
+// one module in src/lib/admin/modules.ts. Order Manager is `ownerOnly`
+// instead: like Settings it's deliberately not in the module system at
+// all (see requireOwner()'s comment in auth.ts), but unlike Settings it
+// has nothing useful to show a non-owner, so it's hidden from the nav
+// entirely rather than rendering a degraded page.
+const NAV: ((NavItem & { module?: ModuleKey; ownerOnly?: boolean }) | NavGroup)[] = [
   { label: "New Order", href: "/admin/orders/new", icon: NewOrderIcon, module: "new_order" },
   { label: "Overview", href: "/admin", icon: OverviewIcon, module: "overview" },
   { label: "Live Orders", href: "/admin/orders", icon: BoardIcon, module: "live_orders" },
+  { label: "Order Manager", href: "/admin/order-manager", icon: BoardIcon, ownerOnly: true },
   { label: "Courier Messages", href: "/admin/courier-messages", icon: TruckIcon, module: "courier_messages" },
   { label: "Delivery Man Details", href: "/admin/delivery-riders", icon: UsersIcon, module: "delivery_riders" },
   { label: "Kitchen Batch", href: "/admin/kitchen", icon: ChefHatIcon, module: "kitchen_batch" },
@@ -58,7 +63,7 @@ const NAV: ((NavItem & { module?: ModuleKey }) | NavGroup)[] = [
   { label: "Settings", href: "/admin/settings", icon: GearIcon },
 ];
 
-function isGroup(item: (NavItem & { module?: ModuleKey }) | NavGroup): item is NavGroup {
+function isGroup(item: (NavItem & { module?: ModuleKey; ownerOnly?: boolean }) | NavGroup): item is NavGroup {
   return "items" in item;
 }
 
@@ -67,7 +72,9 @@ export function AdminSidebar({ admin }: { admin: AdminUser }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const visibleNav = NAV.filter((item) => !item.module || hasModule(admin, item.module));
+  const visibleNav = NAV.filter(
+    (item) => (!item.module || hasModule(admin, item.module)) && (!item.ownerOnly || admin.roleName === "owner"),
+  );
 
   // Several hrefs can share a prefix (e.g. "/admin/catalog" and
   // "/admin/catalog/taxonomy") — only the longest matching one should ever

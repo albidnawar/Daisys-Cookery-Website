@@ -85,6 +85,8 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
     }
   };
 
+  const editingRole = roles.find((r) => r.id === editingId) ?? null;
+
   const startEdit = (role: AdminRole) => {
     setEditingId(role.id);
     setEditName(role.name);
@@ -96,10 +98,14 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
     if (!editingId) return;
     setSavingEdit(true);
     setRowError(null);
+    // A built-in role (owner/marketing/sales) never sends `name` — the UI
+    // below doesn't let it be changed, and the API uses that to route to
+    // the modules-only update path, which also works on built-in roles.
+    const body = editingRole?.isSystem ? { modules: editModules } : { name: editName, modules: editModules };
     const res = await fetch(`/api/admin/roles/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, modules: editModules }),
+      body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
     setSavingEdit(false);
@@ -128,9 +134,8 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
   return (
     <div className="flex flex-col gap-6">
       <p className="font-body text-sm text-brand-chocolate/60">
-        Owner, Marketing, and Sales are built in. Marketing sees only Content &amp; Media, Sales
-        sees everything except it, and Owner sees everything. Add a custom role below for anything
-        in between.
+        Owner, Marketing, and Sales are built in — they can&apos;t be renamed or deleted, but you
+        can edit which modules each one can access below. Add a custom role for anything else.
       </p>
 
       {rowError && <p className="font-body text-sm text-red-600">{rowError}</p>}
@@ -140,12 +145,21 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
           <div key={role.id} className="rounded-2xl border-2 border-brand-chocolate/10 bg-white p-4">
             {editingId === role.id ? (
               <div className="flex flex-col gap-3">
-                <input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="input-field w-full max-w-xs"
-                />
+                {role.isSystem ? (
+                  <p className="font-body text-sm font-bold capitalize text-brand-chocolate">{role.name}</p>
+                ) : (
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="input-field w-full max-w-xs"
+                  />
+                )}
                 <ModuleCheckboxes selected={editModules} onToggle={toggleEdit} />
+                {role.name === "owner" && (
+                  <p className="font-body text-xs text-brand-chocolate/50">
+                    Owner always has full access regardless of this list.
+                  </p>
+                )}
                 <div className="flex gap-3">
                   <Button type="button" variant="primary" disabled={savingEdit} onClick={saveEdit}>
                     {savingEdit ? "Saving…" : "Save"}
@@ -168,15 +182,15 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
                   </p>
                   <p className="mt-1 font-body text-xs text-brand-chocolate/60">{describeModules(role)}</p>
                 </div>
-                {!role.isSystem && (
-                  <div className="flex gap-4">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(role)}
-                      className="font-body text-sm font-bold text-brand-orange hover:text-brand-chocolate"
-                    >
-                      Edit
-                    </button>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(role)}
+                    className="font-body text-sm font-bold text-brand-orange hover:text-brand-chocolate"
+                  >
+                    Edit
+                  </button>
+                  {!role.isSystem && (
                     <button
                       type="button"
                       onClick={() => setConfirmingId(role.id)}
@@ -184,8 +198,8 @@ export function RoleManager({ roles }: { roles: AdminRole[] }) {
                     >
                       Delete
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>

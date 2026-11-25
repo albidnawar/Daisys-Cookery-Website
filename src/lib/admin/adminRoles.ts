@@ -90,6 +90,21 @@ export async function updateCustomRole(id: string, name: string, modules: string
   }
 }
 
+/** Changes only a role's module list — including a built-in role's
+ * (owner/marketing/sales), which updateCustomRole() refuses to touch at
+ * all. Never changes `name` or `is_system`, so a built-in role still
+ * can't be renamed or deleted through this path — only which modules it
+ * grants. Editing "owner"'s list has no actual effect on access, since
+ * hasModule() already treats that role name as always-allowed regardless
+ * of its stored modules (see modules.ts) — it's left editable anyway so
+ * Settings doesn't need a special case for it. */
+export async function updateRoleModules(id: string, modules: string[]): Promise<void> {
+  const clean = cleanModules(modules);
+  const supabase = createServiceRoleClient();
+  const { error } = await supabase.from("admin_roles").update({ modules: clean }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteCustomRole(id: string): Promise<void> {
   const supabase = createServiceRoleClient();
   const { data: existing, error: fetchError } = await supabase
