@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { ImageLightbox } from "@/components/shared/ImageLightbox";
-import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
+import { ALL_ORDER_STATUSES, NON_CANCEL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import { PAYMENT_STATUS_OPTIONS } from "@/lib/admin/paymentsLedgerTypes";
 import { formatCakeColor, summarizeSpec } from "@/lib/catalog/specLabels";
 import { formatSlotLabelForDisplay, parseSlotLabel } from "@/lib/dates";
@@ -877,7 +877,11 @@ export function OrderDetailEditor({
                 onChange={(e) => changeStatus(e.target.value as OrderStatus)}
                 className="input-field"
               >
-                {ALL_ORDER_STATUSES.map((s) => (
+                {/* Cancelling is owner-only, from Order Manager — left out here so it
+                    can't be hit by accident, except an already-cancelled order still
+                    shows its real status rather than silently falling back to the
+                    first option in the list. */}
+                {(status === "cancelled" ? ALL_ORDER_STATUSES : NON_CANCEL_ORDER_STATUSES).map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
                   </option>

@@ -26,6 +26,12 @@ export const ALL_ORDER_STATUSES: { value: OrderStatus; label: string }[] = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+// Used by the Kanban board and order-detail page's status dropdowns, which
+// bakers use day-to-day — "Cancelled" is deliberately left out of both so
+// it can't be hit by accident; cancelling an order is only ever done from
+// the owner-only Order Manager, which still uses ALL_ORDER_STATUSES.
+export const NON_CANCEL_ORDER_STATUSES = ALL_ORDER_STATUSES.filter((s) => s.value !== "cancelled");
+
 export type KanbanOrder = {
   id: string;
   orderNumber: string;

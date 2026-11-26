@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import useSWR from "swr";
-import { ALL_ORDER_STATUSES, KANBAN_COLUMNS, type KanbanOrder } from "@/lib/admin/kanbanColumns";
+import { KANBAN_COLUMNS, NON_CANCEL_ORDER_STATUSES, type KanbanOrder } from "@/lib/admin/kanbanColumns";
 import { formatSlotLabelForDisplay, formatTimeAmPm, todayKey } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/client";
 import { jsonFetcher } from "@/lib/swr/fetcher";
@@ -325,7 +325,7 @@ export function OrdersKanban({ initialOrders }: { initialOrders: KanbanOrder[] }
                       draggable={false}
                       className="input-field text-xs"
                     >
-                      {ALL_ORDER_STATUSES.map((s) => (
+                      {NON_CANCEL_ORDER_STATUSES.map((s) => (
                         <option key={s.value} value={s.value}>
                           {s.label}
                         </option>
