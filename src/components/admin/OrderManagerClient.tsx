@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ALL_ORDER_STATUSES } from "@/lib/admin/kanbanColumns";
 import type { OrderManagerRow } from "@/lib/admin/orderManager";
+import { formatTimeAmPm } from "@/lib/dates";
 import { jsonFetcher } from "@/lib/swr/fetcher";
 import type { OrderStatus } from "@/lib/types/domain";
 
@@ -14,6 +16,14 @@ const PAGE_SIZE = 20;
 function formatDate(date: string | null): string {
   if (!date) return "-";
   return new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// An exact-time booking stores start === end (see formatSlotLabelForDisplay
+// in lib/dates.ts for the same treatment) — show it as a single time rather
+// than a zero-width range.
+function formatSlotTime(start: string | null, end: string | null): string {
+  if (!start || !end) return "-";
+  return start === end ? formatTimeAmPm(start) : `${formatTimeAmPm(start)}-${formatTimeAmPm(end)}`;
 }
 
 export function OrderManagerClient() {
@@ -263,8 +273,8 @@ export function OrderManagerClient() {
               </th>
               <th className="p-3">Order</th>
               <th className="p-3">Customer</th>
-              <th className="p-3">Cake</th>
               <th className="p-3">Due date</th>
+              <th className="p-3">Delivery time</th>
               <th className="p-3">Total</th>
               <th className="p-3">Status</th>
               <th className="p-3" />
@@ -277,7 +287,12 @@ export function OrderManagerClient() {
                   <input type="checkbox" checked={selected.has(order.id)} onChange={() => toggleRow(order.id)} />
                 </td>
                 <td className="p-3">
-                  <p className="font-bold text-brand-chocolate">{order.orderNumber}</p>
+                  <Link
+                    href={`/admin/orders/${order.id}`}
+                    className="font-bold text-brand-chocolate hover:text-brand-orange hover:underline"
+                  >
+                    {order.orderNumber}
+                  </Link>
                   <p className="text-xs text-brand-chocolate/50">{order.orderSource}</p>
                 </td>
                 <td className="p-3 text-brand-chocolate/70">
@@ -285,8 +300,8 @@ export function OrderManagerClient() {
                   <br />
                   <span className="text-xs">{order.contactPhone}</span>
                 </td>
-                <td className="p-3 text-brand-chocolate/70">{order.cakeName}</td>
                 <td className="p-3 text-brand-chocolate/70">{formatDate(order.slotDate)}</td>
+                <td className="p-3 text-brand-chocolate/70">{formatSlotTime(order.slotStartTime, order.slotEndTime)}</td>
                 <td className="p-3 font-bold text-brand-chocolate">৳{order.total.toLocaleString("en-BD")}</td>
                 <td className="p-3">
                   <select

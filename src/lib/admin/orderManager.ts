@@ -9,11 +9,12 @@ export type OrderManagerRow = {
   orderNumber: string;
   contactName: string;
   contactPhone: string;
-  cakeName: string;
   total: number;
   status: OrderStatus;
   orderSource: "web" | "manual";
   slotDate: string | null;
+  slotStartTime: string | null;
+  slotEndTime: string | null;
   createdAt: string;
 };
 
@@ -38,12 +39,14 @@ export async function listOrdersForManager(filter: OrderManagerFilter): Promise<
   // Same conditional-inner-join trick as listOrdersForKanban(): only force
   // the inner join when a date filter actually needs it pushed down to
   // Postgres, so orders with no slot at all still show up otherwise.
-  const slotEmbed = needsSlotFilter ? "delivery_slots!inner ( date )" : "delivery_slots ( date )";
+  const slotEmbed = needsSlotFilter
+    ? "delivery_slots!inner ( date, start_time, end_time )"
+    : "delivery_slots ( date, start_time, end_time )";
 
   let query = supabase
     .from("orders")
     .select(
-      `id, order_number, contact_name, contact_phone, cake_snapshot, total, status, order_source, created_at, ${slotEmbed}`,
+      `id, order_number, contact_name, contact_phone, total, status, order_source, created_at, ${slotEmbed}`,
     )
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
@@ -64,11 +67,12 @@ export async function listOrdersForManager(filter: OrderManagerFilter): Promise<
     orderNumber: row.order_number,
     contactName: row.contact_name,
     contactPhone: row.contact_phone,
-    cakeName: (row.cake_snapshot as CakeSnapshot)?.name ?? "Custom cake",
     total: Number(row.total),
     status: row.status,
     orderSource: row.order_source,
     slotDate: row.delivery_slots?.date ?? null,
+    slotStartTime: row.delivery_slots?.start_time ?? null,
+    slotEndTime: row.delivery_slots?.end_time ?? null,
     createdAt: row.created_at,
   }));
 }
